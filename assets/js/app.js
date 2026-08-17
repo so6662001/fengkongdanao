@@ -59,7 +59,8 @@
       g: '风险看板', items: [
         { k: 'inv', t: '库存风险看板', h: 'dashboard-inventory.html', i: 'box', n: 3 },
         { k: 'ar', t: '应收欠款风险看板', h: 'dashboard-receivable.html', i: 'wallet', n: 4 },
-        { k: 'global', t: '全局经营风控总看板', h: 'dashboard-global.html', i: 'globe', n: 2 }
+        { k: 'global', t: '全局经营风控总看板', h: 'dashboard-global.html', i: 'globe', n: 2 },
+        { k: 'price', t: '采购智能定价预警', h: 'pricing-alert.html', i: 'trend', tag: 'NEW' }
       ]
     },
     {
@@ -88,6 +89,7 @@
     inv: ['风险看板', '库存风险看板'],
     ar: ['风险看板', '应收欠款风险看板'],
     global: ['风险看板', '全局经营风控总看板'],
+    price: ['风险看板', '采购智能定价预警'],
     flow: ['执行与迭代', '第三层 · 业务执行与预警'],
     wheel: ['执行与迭代', '数据飞轮闭环与落地路线']
   };

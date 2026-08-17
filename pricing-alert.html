@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>采购智能定价预警 · 钢铁行业 AI 风控大脑</title>
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body data-page="price">
+<div class="app-bg"></div>
+<div class="layout">
+  <div class="main">
+    <div class="content">
+
+      <div class="page-head">
+        <div>
+          <h1>采购智能定价预警</h1>
+          <p>把<b class="c-teal">平台行情指数</b>、<b class="c-teal">500+ 商户线上报价流</b>、<b class="c-teal">上游钢厂调价</b>三路信号合成一个判断：
+             这个规格现在处在哪个阶段。分 <b class="c-green">平稳期</b> → <b class="c-yellow">波动期</b> → <b class="c-orange">加速涨跌期</b> 三档阶梯，
+             <b>逐个材质、逐个规格独立判定</b>，并直接给出该买多少、限价多少、备几天货。</p>
+        </div>
+        <div class="ph-right">
+          <div class="seg" id="scopeSeg">
+            <button class="on" data-v="all">全部品类</button>
+            <button data-v="螺纹钢">螺纹钢</button>
+            <button data-v="热轧卷">热轧卷</button>
+            <button data-v="中厚板">中厚板</button>
+            <button data-v="镀锌卷">镀锌卷</button>
+          </div>
+          <button class="btn">推送设置</button>
+        </div>
+      </div>
+
+      <div class="stat-strip mb" id="kpiStrip"></div>
+
+      <!-- ===================== 三阶段阶梯 ===================== -->
+      <div class="card mb accent-top">
+        <div class="card-hd">
+          <h3>三阶段阶梯：每个阶段该怎么采</h3>
+          <span class="sub">同一个规格在不同阶段，采购动作是完全不同的 —— 尤其加速期分上涨、下跌两个方向，动作正好相反</span>
+        </div>
+        <div class="card-bd">
+          <div class="grid g4 mb" id="stageCards"></div>
+          <div class="fs12 b6 mb" style="margin-bottom:7px">采购策略对照表</div>
+          <div class="tbl-wrap" style="max-height:none"><table class="tbl" id="stgTbl"></table></div>
+          <div class="note red mt">
+            <b>加速期最容易犯的两个错</b>：一是在<b>加速下跌期</b>看着比上周便宜就补货 —— 结果下周更便宜，而且上游此时急着抛货往往是在回笼现金，预付款风险同步上升；
+            二是在<b>加速上涨期</b>还按「随用随买」的节奏 —— 等于每天都用更贵的价格补库，犹豫的成本比溢价更高。
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== 阶段识别引擎 ===================== -->
+      <div class="grid g-3-2 mb">
+        <div class="card">
+          <div class="card-hd"><h3>阶段识别引擎 · 判定指标与阈值</h3><span class="sub">7 项指标加权打分，落在区间判定阶段</span></div>
+          <div class="tbl-wrap" style="max-height:none"><table class="tbl" id="thTbl"></table></div>
+          <div class="card-ft">
+            综合得分 = Σ（单项得分 × 权重），单项按落档取 0 / 50 / 100 分。
+            <b class="c-green">得分 &lt; 30</b> 判为平稳期，<b class="c-yellow">30 ~ 62</b> 判为波动期，<b class="c-red">≥ 62</b> 判为加速涨跌期（方向由 7 日涨跌幅符号决定）。
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><h3>防抖动确认机制</h3><span class="sub">阶段判定不能一天一变，否则采购无所适从</span></div>
+          <div class="card-bd">
+            <div class="chart h200" id="hystChart"></div>
+            <div class="divider"></div>
+            <div class="tl">
+              <div class="tl-i blue"><div class="tl-t">① 双周期确认</div><div class="tl-b">连续 <b>2 个数据周期</b>同向满足才切换阶段（热门规格为 2 小时，长尾规格为 2 日），避免单点异常报价触发误判。</div></div>
+              <div class="tl-i orange"><div class="tl-t">② 滞回带 ±5 分</div><div class="tl-b">从低阶段升到高阶段需超过阈值 +5 分；从高阶段降回低阶段需低于阈值 −5 分。防止分数在临界点反复横跳。</div></div>
+              <div class="tl-i red"><div class="tl-t">③ 逆向切换更严格</div><div class="tl-b">加速期回落到波动期需<b>连续 3 期</b>确认 —— 宁可多警示两天，也不要过早解除警报。</div></div>
+              <div class="tl-i green"><div class="tl-t">④ 异常报价剔除</div><div class="tl-b">偏离同规格中位价 ±20% 的挂牌先剔除再算指标，避免个别错标价格把整个规格误判进加速期。</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== 规格级阶段矩阵 ===================== -->
+      <div class="card mb">
+        <div class="card-hd">
+          <h3>规格级阶段矩阵 <span class="tag tag-teal">材质 × 规格</span></h3>
+          <span class="sub">点击任一规格查看判定过程与定价建议</span>
+          <div class="hd-act">
+            <div class="legend" id="matLegend"></div>
+          </div>
+        </div>
+        <div class="card-bd">
+          <div id="matrix"></div>
+          <div class="note mt">
+            <b>为什么必须做到规格级</b>：同样是螺纹钢 HRB400E，<b class="c-red">Φ16~Φ22 已进入加速下跌期</b>（83 家商户集中抛售、跌幅超 3%），
+            但 <b class="c-green">Φ32 因规格偏门、平台货源本就稀少，仍处在平稳期</b>。
+            如果只看「螺纹钢」一个品类指数就一刀切暂停采购，Φ32 会因为断供影响交付；反过来只看品类均价照常备货，Φ20 就会在下跌通道里越买越亏。
+            <b>材质和规格不同，阶段可以完全不同，这正是逐规格判定的价值。</b>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== 单规格详情 ===================== -->
+      <div class="card mb" id="detailCard">
+        <div class="card-hd">
+          <h3 id="dTitle">—</h3>
+          <span class="sub" id="dSub"></span>
+          <div class="hd-act" id="dTags"></div>
+        </div>
+        <div class="card-bd">
+          <div class="grid g-3-2 mb" style="gap:14px">
+            <div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">价格走势与阶段分段 <span class="fs10 t4">（背景色 = 当时所处阶段；横线 = 各价格锚位）</span></div>
+              <div class="chart h300" id="priceChart"></div>
+              <div class="legend mt" style="justify-content:center" id="priceLegend"></div>
+            </div>
+            <div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">阶段判定明细</div>
+              <div class="chart h140 mb" id="scoreGauge"></div>
+              <div class="tbl-wrap" style="max-height:none"><table class="tbl" id="scoreTbl"></table></div>
+            </div>
+          </div>
+
+          <div class="grid g-2-3" style="gap:14px">
+            <div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">价格锚位</div>
+              <div id="anchors"></div>
+              <div class="divider"></div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">库存与用量</div>
+              <div id="stockKv"></div>
+              <div class="divider"></div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">未来 3 日阶段转换概率</div>
+              <div class="chart h140" id="nextChart"></div>
+            </div>
+            <div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">采购定价建议</div>
+              <div id="adviceBox"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== 阶段切换预警 + 动作清单 ===================== -->
+      <div class="grid g-2-3 mb">
+        <div class="card red">
+          <div class="card-hd"><h3><span class="dot dot-red pulse"></span>今日阶段切换预警</h3>
+            <span class="sub">切换即推送，不等采购来看</span>
+          </div>
+          <div class="card-bd" style="max-height:440px;overflow-y:auto"><div class="tl" id="transTl"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-hd">
+            <h3>采购动作清单</h3><span class="sub">按阶段分组，可直接带入采购申请单</span>
+            <div class="hd-act">
+              <div class="seg" id="actSeg">
+                <button class="on" data-v="all">全部</button>
+                <button data-v="accel_down">加速下跌</button>
+                <button data-v="accel_up">加速上涨</button>
+                <button data-v="volatile">波动</button>
+                <button data-v="stable">平稳</button>
+              </div>
+            </div>
+          </div>
+          <div class="tbl-wrap" style="max-height:440px"><table class="tbl" id="actTbl"></table></div>
+        </div>
+      </div>
+
+      <!-- ===================== 效果 ===================== -->
+      <div class="grid g3">
+        <div class="card">
+          <div class="card-hd"><h3>建议采纳率与节省金额</h3><span class="sub">近 6 个月</span></div>
+          <div class="card-bd"><div class="chart h230" id="btChart"></div></div>
+          <div class="card-ft">累计节省采购成本约 <b class="c-green">229.7 万元</b>，主要来自加速下跌期的暂停备货与加速上涨期的提前锁价</div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><h3>采购均价 vs 市场均价</h3><span class="sub">负数代表买得比市场便宜</span></div>
+          <div class="card-bd"><div class="chart h230" id="gapChart"></div></div>
+          <div class="card-ft">8 月我方采购均价低于同期平台市场均价 <b class="c-green">28 元/吨</b></div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><h3>接入方式</h3><span class="sub">阶段判定结果同步回 ERP</span></div>
+          <div class="card-bd">
+            <div id="apiCode"></div>
+            <div class="note blue mt">
+              采购员在 ERP 采购申请单里填完品类数量，页面直接显示当前阶段徽章与建议限价；
+              阶段发生切换时通过 <code class="mono">Webhook risk.pricing.stage_changed</code> 推送，ERP 可自动更新已保存申请单上的限价提示。
+            </div>
+            <div class="flex gap6 mt">
+              <a class="btn btn-sm" href="open-api.html">接口文档</a>
+              <a class="btn btn-sm" href="erp-embed.html">ERP 嵌入效果</a>
+              <a class="btn btn-sm" href="workflow.html">采购审批流程</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/charts.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/pricing.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  const P = Pricing, ST = P.STAGES, M = Mock, esc = App.esc;
+  let scope = 'all', current = 'RB-400E-020';
+
+  const inScope = s => scope === 'all' || s.cat === scope;
+  const fmtPct = v => (v * 100).toFixed(2) + '%';
+  const signPct = v => (v > 0 ? '+' : '') + (v * 100).toFixed(2) + '%';
+
+  /* ---------------- KPI ---------------- */
+  function drawKpi() {
+    const list = P.SKUS.filter(inScope);
+    const cnt = k => list.filter(s => s.stage === k).length;
+    const pause = list.filter(s => s.advice.suggestQty === 0 || s.stage === 'accel_down').length;
+    document.getElementById('kpiStrip').innerHTML = `
+      <div><div class="ss-t">监控规格数</div><div class="ss-v">${list.length}</div></div>
+      <div><div class="ss-t">平稳期</div><div class="ss-v c-green">${cnt('stable')}</div></div>
+      <div><div class="ss-t">波动期</div><div class="ss-v c-yellow">${cnt('volatile')}</div></div>
+      <div><div class="ss-t">加速上涨期</div><div class="ss-v c-orange">${cnt('accel_up')}</div></div>
+      <div><div class="ss-t">加速下跌期</div><div class="ss-v c-red">${cnt('accel_down')}</div></div>
+      <div><div class="ss-t">今日阶段切换</div><div class="ss-v">${P.TRANSITIONS.length}</div></div>
+      <div><div class="ss-t">建议暂停 / 收紧采购</div><div class="ss-v c-red">${pause} <span class="fs11 t4">个规格</span></div></div>`;
+  }
+
+  /* ---------------- 三阶段卡片 ---------------- */
+  document.getElementById('stageCards').innerHTML = P.STAGE_ORDER.map(k => {
+    const s = ST[k];
+    return `<div class="node" style="border-color:${s.color}44;background:linear-gradient(160deg,${s.color}14,rgba(11,18,31,.6));padding:13px 14px">
+      <div class="node-t" style="font-size:13px">
+        <span class="dot" style="background:${s.color};box-shadow:0 0 8px ${s.color}"></span>
+        ${s.name}<span class="tag ${s.levelTag} ml-auto">${s.level}</span>
+      </div>
+      <div class="fs10 t4" style="margin:2px 0 8px">${s.sub}</div>
+      <div class="fs10 t4" style="letter-spacing:.5px;margin-bottom:3px">市场特征</div>
+      <div class="fs11 t2" style="line-height:1.8">${s.feature}</div>
+      <div class="fs10 t4" style="letter-spacing:.5px;margin:9px 0 3px">采购要点</div>
+      <div class="fs11 t3" style="line-height:1.8">${s.risk}</div>
+    </div>`;
+  }).join('');
+
+  /* ---------------- 策略对照表 ---------------- */
+  document.getElementById('stgTbl').innerHTML = `
+    <thead><tr><th style="width:130px">决策维度</th>
+      <th style="color:#34d399">平稳期</th><th style="color:#fbbf24">波动期</th>
+      <th style="color:#fb923c">加速上涨期</th><th style="color:#f4586e">加速下跌期</th></tr></thead>
+    <tbody>${P.STRATEGY.map(r => `<tr>
+      <td class="t-main nowrap">${r.dim}</td>
+      <td class="fs11 t2">${r.stable}</td><td class="fs11 t2">${r.volatile}</td>
+      <td class="fs11 t2">${r.up}</td><td class="fs11 t2">${r.down}</td>
+    </tr>`).join('')}</tbody>`;
+
+  /* ---------------- 阈值表 ---------------- */
+  document.getElementById('thTbl').innerHTML = `
+    <thead><tr><th>判定指标</th><th class="num">权重</th>
+      <th style="color:#34d399">平稳期</th><th style="color:#fbbf24">波动期</th><th style="color:#f4586e">加速期</th>
+      <th>数据来源</th><th>为什么用它</th></tr></thead>
+    <tbody>${P.THRESHOLDS.map(t => `<tr>
+      <td class="t-main fs11">${t.name}</td>
+      <td class="num b6">${t.w}%</td>
+      <td class="mono fs11 c-green">${t.stable}</td>
+      <td class="mono fs11 c-yellow">${t.volatile}</td>
+      <td class="mono fs11 c-red">${t.accel}</td>
+      <td class="fs11 t3 nowrap">${t.src}</td>
+      <td class="fs11 t3" style="line-height:1.7">${t.why}</td>
+    </tr>`).join('')}</tbody>`;
+
+  /* ---------------- 滞回带示意 ---------------- */
+  Chart.line('#hystChart', {
+    xLabels: M.days(20), min: 0,
+    markLines: [
+      { value: 62, label: '加速期阈值 62', color: '#f4586e' },
+      { value: 30, label: '波动期阈值 30', color: '#fbbf24' }
+    ],
+    series: [
+      { name: '综合得分', data: M.walk(1201, 20, 22, 5, i => (i > 11 ? 5.2 : .6)).map(v => Math.max(4, Math.round(v))), color: '#38bdf8', area: true },
+      { name: '确认后判定档位', data: [0, 0, 0, 0, 0, 0, 30, 30, 30, 30, 30, 30, 30, 30, 30, 62, 62, 62, 62, 62], color: '#a78bfa', dashed: true, dots: false }
+    ],
+    yFmt: v => v.toFixed(0)
+  });
+
+  /* ---------------- 矩阵 ---------------- */
+  document.getElementById('matLegend').innerHTML = P.STAGE_ORDER.map(k =>
+    `<span><i class="sq" style="background:${ST[k].color}"></i>${ST[k].name}</span>`).join('');
+
+  function drawMatrix() {
+    const list = P.SKUS.filter(inScope);
+    const cats = [];
+    list.forEach(s => { if (!cats.includes(s.cat)) cats.push(s.cat); });
+    document.getElementById('matrix').innerHTML = cats.map(cat => {
+      const rows = list.filter(s => s.cat === cat);
+      const mats = [];
+      rows.forEach(s => { if (!mats.includes(s.material)) mats.push(s.material); });
+      return `<div style="margin-bottom:14px">
+        <div class="flex items-c gap8 mb" style="margin-bottom:6px">
+          <span class="tag tag-blue">${cat}</span>
+          <span class="fs10 t4">${rows.length} 个规格 · ${mats.length} 种材质</span>
+        </div>
+        ${mats.map(mat => `
+          <div class="flex items-c gap8" style="margin-bottom:6px">
+            <span class="fs11 b6 t2" style="width:76px;flex:none">${mat}</span>
+            <div class="flex gap6 wrap" style="flex:1">
+              ${rows.filter(s => s.material === mat).map(s => {
+        const c = ST[s.stage].color;
+        const on = s.id === current;
+        return `<div class="mat-cell" data-id="${s.id}" style="
+                  min-width:118px;border:1px solid ${c}${on ? 'ee' : '55'};border-radius:8px;padding:6px 9px;cursor:pointer;
+                  background:linear-gradient(160deg,${c}${on ? '2e' : '14'},rgba(11,18,31,.5));transition:.15s;
+                  ${on ? 'box-shadow:0 0 0 1px ' + c + ',0 6px 16px -8px ' + c : ''}">
+                  <div class="flex items-c gap6">
+                    <span class="fs11 b6">${s.spec}</span>
+                    <span class="tag ${ST[s.stage].tag} ml-auto" style="font-size:9.5px;padding:0 5px">${ST[s.stage].short}</span>
+                  </div>
+                  <div class="flex items-c gap6" style="margin-top:2px">
+                    <span class="mono fs11">${s.price.median.toLocaleString()}</span>
+                    <span class="mono fs10 ml-auto ${s.ind.chg7d < 0 ? 'c-red' : 'c-green'}">${signPct(s.ind.chg7d)}</span>
+                  </div>
+                  <div class="fs10 t4" style="margin-top:1px">${s.stageDays} 天 · 得分 ${s.score}</div>
+                </div>`;
+      }).join('')}
+            </div>
+          </div>`).join('')}
+      </div>`;
+    }).join('');
+    document.querySelectorAll('.mat-cell').forEach(c => {
+      c.onclick = () => { current = c.dataset.id; drawMatrix(); drawDetail(); };
+    });
+  }
+
+  /* ---------------- 单规格详情 ---------------- */
+  function drawDetail() {
+    const s = P.SKUS.find(x => x.id === current);
+    const st = ST[s.stage];
+    document.getElementById('dTitle').innerHTML =
+      `${s.cat} ${s.material} ${s.spec} <span class="tag ${st.tag}">${st.name}</span>`;
+    document.getElementById('dSub').textContent = `${s.mill} · ${s.region} · 已持续 ${s.stageDays} 天（由${ST[s.prevStage].name}切入）`;
+    document.getElementById('dTags').innerHTML =
+      `<span class="tag tag-grey mono">综合得分 ${s.score}</span>
+       <span class="tag ${st.levelTag}">${st.level}</span>
+       <span class="tag tag-grey">推送：${s.advice.push}</span>`;
+
+    /* 价格走势 */
+    const bands = s.bands.map(b => ({
+      from: b.from, to: b.to, color: ST[b.stage].color + '1f',
+      label: ST[b.stage].name, textColor: ST[b.stage].color
+    }));
+    Chart.line('#priceChart', {
+      xLabels: M.days(30), bands: bands,
+      markLines: [
+        { value: s.price.myCost, label: '我方成本 ' + s.price.myCost.toLocaleString(), color: '#f472b6' },
+        { value: s.price.limitPrice, label: '建议限价 ' + s.price.limitPrice.toLocaleString(), color: '#34d399' },
+        { value: s.price.support, label: '成本支撑 ' + s.price.support.toLocaleString(), color: '#7f9cc0' }
+      ],
+      series: [
+        { name: '平台中位价', data: s.series, color: '#fbbf24', area: true, dots: false, unit: ' 元/吨' },
+        { name: '平台25分位价', data: s.series.map((v, i) => Math.round(v * (1 - s.ind.disp * 1.35))), color: '#38bdf8', dashed: true, dots: false, unit: ' 元/吨' },
+        { name: '钢厂出厂价', data: s.series.map((v, i) => Math.round(v + (s.ind.chg7d < 0 ? 8 : -14) + (i - 29) * (s.ind.millAdj / 30) * .12)), color: '#a78bfa', dots: false, unit: ' 元/吨' }
+      ],
+      yFmt: v => v.toFixed(0)
+    });
+    document.getElementById('priceLegend').innerHTML = `
+      <span><i style="background:#fbbf24"></i>平台中位价</span>
+      <span><i style="background:#38bdf8"></i>25 分位价</span>
+      <span><i style="background:#a78bfa"></i>钢厂出厂价</span>
+      <span><i style="background:#f472b6"></i>我方成本</span>
+      <span><i style="background:#34d399"></i>建议限价</span>`;
+
+    /* 得分仪表 */
+    Chart.gauge('#scoreGauge', {
+      value: s.score, min: 0, max: 100, digits: 1, thickness: 12, label: '综合得分 · ' + st.name,
+      segments: [{ to: .30, color: '#34d399' }, { to: .62, color: '#fbbf24' }, { to: 1, color: s.ind.chg7d < 0 ? '#f4586e' : '#fb923c' }]
+    });
+
+    /* 判定明细 */
+    document.getElementById('scoreTbl').innerHTML = `
+      <thead><tr><th>指标</th><th class="num">实测值</th><th class="num">档位</th><th class="num">权重</th><th class="num">贡献分</th></tr></thead>
+      <tbody>${s.scoreDetail.map(d => {
+      const bt = { accel: ['tag-red', '加速', 'var(--red)'], volatile: ['tag-yellow', '波动', 'var(--yellow)'], stable: ['tag-green', '平稳', 'var(--green)'] }[d.band];
+      return `<tr>
+        <td class="fs11 t2">${d.name}</td>
+        <td class="num b6">${d.val}</td>
+        <td class="num"><span class="tag ${bt[0]}">${bt[1]}</span></td>
+        <td class="num t3">${d.w}%</td>
+        <td class="num b6" style="color:${bt[2]}">${d.contrib}</td>
+      </tr>`;
+    }).join('')}
+      <tr style="background:rgba(56,189,248,.06)"><td class="b7" colspan="4">综合得分</td><td class="num b7 c-blue">${s.score}</td></tr></tbody>`;
+
+    /* 价格锚位 */
+    const anch = [
+      ['平台中位价', s.price.median, ''],
+      ['平台 25 分位价', s.price.p25, '低价资源集中区'],
+      ['近 30 日最低价', s.price.min30, ''],
+      ['钢厂出厂价', s.price.mill, '成本锚'],
+      ['成本支撑位', s.price.support, '钢厂价 × 0.982'],
+      ['我方库存成本', s.price.myCost, s.price.median < s.price.myCost ? '市场价已低于成本' : '仍高于成本'],
+      ['建议采购限价', s.price.limitPrice, '本阶段限价锚']
+    ];
+    document.getElementById('anchors').innerHTML = anch.map(a => `
+      <div class="kv"><span>${a[0]}${a[2] ? ' <span class="t4 fs10">· ' + a[2] + '</span>' : ''}</span>
+      <b class="${a[0] === '建议采购限价' ? 'c-green' : a[0] === '我方库存成本' ? 'c-pink' : ''}" ${a[0] === '我方库存成本' ? 'style="color:#f472b6"' : ''}>${a[1].toLocaleString()} 元/吨</b></div>`).join('');
+
+    /* 库存 */
+    const k = s.stock;
+    document.getElementById('stockKv').innerHTML = `
+      <div class="kv"><span>当前在库</span><b>${k.onHand.toLocaleString()} 吨</b></div>
+      <div class="kv"><span>月均用量 / 日均</span><b>${k.monthlyUse.toLocaleString()} / ${k.dailyUse} 吨</b></div>
+      <div class="kv"><span>当前可供天数</span><b class="${k.coverDays > k.targetDays ? 'c-orange' : 'c-green'}">${k.coverDays} 天</b></div>
+      <div class="kv"><span>本阶段目标备货天数</span><b>${k.targetDays} 天</b></div>
+      <div class="kv"><span>单次采购量上限</span><b>${k.capQty.toLocaleString()} 吨</b></div>
+      <div class="kv"><span>建议本期采购量</span><b class="${k.suggestQty > 0 ? 'c-blue' : 'c-red'}">${k.suggestQty > 0 ? k.suggestQty.toLocaleString() + ' 吨' : '0（不采）'}</b></div>`;
+
+    /* 转换概率 */
+    Chart.donut('#nextChart', {
+      inner: .58, centerVal: s.nextProb.keep + '%', centerLabel: '维持当前阶段', unit: '%',
+      items: [
+        { label: '维持 ' + st.name, value: s.nextProb.keep, color: st.color },
+        { label: '转入 ' + ST[s.nextProb.to].name, value: s.nextProb.p, color: ST[s.nextProb.to].color },
+        { label: '其他', value: s.nextProb.other, color: '#4c5c76' }
+      ]
+    });
+
+    /* 建议 */
+    const a = s.advice;
+    const toneMap = { red: 'var(--red)', orange: 'var(--orange)', yellow: 'var(--yellow)', green: 'var(--green)' };
+    document.getElementById('adviceBox').innerHTML = `
+      <div class="ai-box mb" style="border-color:${st.color}55;background:linear-gradient(160deg,${st.color}18,rgba(20,26,45,.55))">
+        <div class="ai-hd" style="color:${st.color}">${App.icon('trend', 14)} 当前阶段建议：${a.action}
+          <span class="m">更新于 3 分钟前</span></div>
+        <div class="grid g4 mb" style="gap:9px;margin-top:4px">
+          <div class="node center" style="padding:8px"><div class="fs10 t4">建议限价</div><div class="mono b7" style="font-size:16px;color:${st.color}">${a.limitPrice.toLocaleString()}</div><div class="fs10 t4">元/吨</div></div>
+          <div class="node center" style="padding:8px"><div class="fs10 t4">建议采购量</div><div class="mono b7" style="font-size:16px;color:${a.suggestQty ? 'var(--brand)' : 'var(--red)'}">${a.suggestQty.toLocaleString()}</div><div class="fs10 t4">吨</div></div>
+          <div class="node center" style="padding:8px"><div class="fs10 t4">目标备货</div><div class="mono b7" style="font-size:16px">${a.targetDays}</div><div class="fs10 t4">天</div></div>
+          <div class="node center" style="padding:8px"><div class="fs10 t4">预付上限</div><div class="mono b7" style="font-size:16px">${a.prepay}</div><div class="fs10 t4">&nbsp;</div></div>
+        </div>
+        <div class="ai-txt">
+          <b style="color:#fff">判定依据</b><br>
+          ${a.reasons.map((r, i) => `${i + 1}. ${r}`).join('<br>')}
+        </div>
+      </div>
+      <div class="grid g3 mb" style="gap:9px">
+        <div class="node"><div class="fs10 t4">账期要求</div><div class="fs12 b6" style="margin-top:2px">${a.term}</div></div>
+        <div class="node"><div class="fs10 t4">锁价 / 框架协议</div><div class="fs12 b6" style="margin-top:2px">${a.lock}</div></div>
+        <div class="node"><div class="fs10 t4">推送对象</div><div class="fs12 b6" style="margin-top:2px">${a.push}</div></div>
+      </div>
+      <div class="flex gap6 wrap">
+        <button class="btn btn-sm btn-primary">带入采购申请单</button>
+        <button class="btn btn-sm">生成询价单（限价 ${a.limitPrice.toLocaleString()}）</button>
+        <button class="btn btn-sm">加入监控关注</button>
+        <button class="btn btn-sm ml-auto">否决建议并说明原因</button>
+      </div>`;
+  }
+
+  /* ---------------- 阶段切换预警 ---------------- */
+  document.getElementById('transTl').innerHTML = P.TRANSITIONS.map(t => {
+    const s = P.SKUS.find(x => x.id === t.id) || {};
+    const to = ST[t.to];
+    return `<div class="tl-i ${t.to === 'accel_down' ? 'red' : t.to === 'accel_up' ? 'orange' : t.to === 'volatile' ? 'orange' : 'green'}">
+      <div class="tl-t">
+        <span>${s.cat || ''} ${s.material || ''} ${s.spec || ''}</span>
+        <span class="tag ${ST[t.from].tag}" style="opacity:.65">${ST[t.from].short}</span>
+        <span class="t4">→</span>
+        <span class="tag ${to.tag}">${to.short}</span>
+        <span class="tl-time ml-auto">${t.time}</span>
+      </div>
+      <div class="tl-b">${t.trigger}</div>
+      <div class="flex gap6 wrap" style="margin-top:5px">
+        <span class="tag tag-grey">→ ${t.push}</span>
+        <span class="tag tag-blue">${t.act}</span>
+        <button class="btn btn-sm ml-auto" data-goto="${t.id}">查看</button>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('transTl').addEventListener('click', e => {
+    const b = e.target.closest('[data-goto]');
+    if (b) { current = b.dataset.goto; scope = 'all'; App.seg('#scopeSeg'); drawMatrix(); drawDetail(); document.getElementById('detailCard').scrollIntoView({ behavior: 'smooth' }); }
+  });
+
+  /* ---------------- 动作清单 ---------------- */
+  function drawAct(f) {
+    const rows = P.SKUS.filter(inScope).filter(s => f === 'all' || s.stage === f)
+      .sort((a, b) => P.STAGE_ORDER.indexOf(b.stage) - P.STAGE_ORDER.indexOf(a.stage) || b.score - a.score);
+    document.getElementById('actTbl').innerHTML = `
+      <thead><tr><th>品类 / 材质 / 规格</th><th>阶段</th><th class="num">中位价</th><th class="num">7日</th>
+        <th class="num">建议限价</th><th class="num">建议采购量</th><th class="num">可供天数</th><th>建议动作</th><th></th></tr></thead>
+      <tbody>${rows.map(s => `<tr data-id="${s.id}" style="cursor:pointer">
+        <td class="t-main fs11">${s.material} ${s.spec}<div class="t-sub">${s.cat} · ${s.mill} · ${s.region}</div></td>
+        <td class="nowrap"><span class="tag ${ST[s.stage].tag}">${ST[s.stage].short}</span><div class="t-sub">${s.stageDays}天</div></td>
+        <td class="num">${s.price.median.toLocaleString()}</td>
+        <td class="num ${s.ind.chg7d < 0 ? 'c-red' : 'c-green'}">${signPct(s.ind.chg7d)}</td>
+        <td class="num b6" style="color:${ST[s.stage].color}">${s.price.limitPrice.toLocaleString()}</td>
+        <td class="num ${s.advice.suggestQty ? '' : 'c-red'}">${s.advice.suggestQty ? s.advice.suggestQty.toLocaleString() : '0'}</td>
+        <td class="num ${s.stock.coverDays > s.stock.targetDays ? 'c-orange' : ''}">${s.stock.coverDays}</td>
+        <td class="fs11 t2">${s.advice.action}</td>
+        <td class="nowrap"><button class="btn btn-sm">带入申请单</button></td>
+      </tr>`).join('')}</tbody>`;
+    document.querySelectorAll('#actTbl tbody tr').forEach(tr => {
+      tr.onclick = () => { current = tr.dataset.id; drawMatrix(); drawDetail(); document.getElementById('detailCard').scrollIntoView({ behavior: 'smooth' }); };
+    });
+  }
+
+  /* ---------------- 回测 ---------------- */
+  Chart.bar('#btChart', {
+    xLabels: P.BACKTEST.months,
+    series: [{ name: '节省采购成本', data: P.BACKTEST.saved, color: '#34d399', unit: ' 万元', fmt: v => v.toFixed(1) }],
+    lineSeries: [{ name: '建议采纳率', data: P.BACKTEST.followed, color: '#38bdf8', unit: ' %' }],
+    yFmt: v => v.toFixed(0)
+  });
+  Chart.bar('#gapChart', {
+    xLabels: P.BACKTEST.months,
+    series: [{ name: '采购均价 − 市场均价', data: P.BACKTEST.avgCostGap, color: '#38bdf8', unit: ' 元/吨' }],
+    yFmt: v => v.toFixed(0)
+  });
+
+  /* ---------------- API 示例 ---------------- */
+  document.getElementById('apiCode').innerHTML =
+    `<div class="code-hd">${App.icon('link', 12)} POST /v1/pricing/stage</div>
+<pre class="code">${App.json({ erpSkuCode: '螺纹钢HRB400E-20-沙钢-9M', region: '上海', qty: 3000 })}
+
+<span class="c">// 响应</span>
+${App.json({
+      stdCode: 'RB-400E-020-9000-SG', stage: 'accel_down', stageName: '加速下跌期',
+      stageDays: 6, score: 78.5, level: 'red',
+      advice: { action: '暂停采购', limitPrice: 3354, suggestQty: 0, targetStockDays: 2, prepayMax: 0, lock: '严禁锁价' },
+      anchors: { marketMedian: 3472, marketP25: 3399, min30d: 3341, millPrice: 3480, support: 3417, myCost: 3598 }
+    })}</pre>`;
+
+  /* ---------------- 初始化 ---------------- */
+  App.seg('#scopeSeg', v => {
+    scope = v;
+    const list = P.SKUS.filter(inScope);
+    if (!list.find(s => s.id === current)) current = list[0].id;
+    drawKpi(); drawMatrix(); drawDetail(); drawAct(document.querySelector('#actSeg .on').dataset.v);
+  });
+  App.seg('#actSeg', v => drawAct(v));
+  drawKpi(); drawMatrix(); drawDetail(); drawAct('all');
+})();
+</script>
+</body>
+</html>

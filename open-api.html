@@ -26,8 +26,8 @@
       </div>
 
       <div class="stat-strip mb">
-        <div><div class="ss-t">已开放接口</div><div class="ss-v c-blue">16 <span class="fs11 t4">个 REST</span></div></div>
-        <div><div class="ss-t">Webhook 事件</div><div class="ss-v c-ai">4 <span class="fs11 t4">类</span></div></div>
+        <div><div class="ss-t">已开放接口</div><div class="ss-v c-blue">17 <span class="fs11 t4">个 REST</span></div></div>
+        <div><div class="ss-t">Webhook 事件</div><div class="ss-v c-ai">5 <span class="fs11 t4">类</span></div></div>
         <div><div class="ss-t">嵌入式组件</div><div class="ss-v c-orange">5 <span class="fs11 t4">个</span></div></div>
         <div><div class="ss-t">日均调用量</div><div class="ss-v">28,460</div></div>
         <div><div class="ss-t">P95 响应延迟</div><div class="ss-v c-green">142 <span class="fs11 t4">ms</span></div></div>
@@ -455,6 +455,37 @@ X-SRB-Role:      sales   <span class="c">// 角色决定返回字段范围</span
 
     purchase: [
       {
+        m: 'POST', path: '/v1/pricing/stage', name: '行情阶段与定价建议',
+        desc: '按规格返回当前所处的行情阶段（平稳 / 波动 / 加速涨跌）、判定得分、建议限价、建议采购量、目标备货天数与预付上限。采购员填完品类就能看到该不该买、买多少、最高出到什么价',
+        where: 'ERP 采购申请单「品名规格」填完后自动触发，显示在单价输入框上方的阶段徽章与限价提示',
+        level: '中频计算', p95: '142ms',
+        params: [
+          ['erpSkuCode', 'string', 1, 'ERP 物料编码，自动映射为平台标准规格码'],
+          ['region', 'string', 0, '区域，默认取收货仓所在区域'],
+          ['qty', 'number', 0, '拟采购数量（吨），传入后返回是否超出本阶段单次上限'],
+          ['unitPrice', 'number', 0, '拟采购单价，传入后返回与建议限价的差额']
+        ],
+        req: { erpSkuCode: '螺纹钢HRB400E-20-沙钢-9M', region: '上海', qty: 3000, unitPrice: 3520 },
+        resp: {
+          stdCode: 'RB-400E-020-9000-SG', stage: 'accel_down', stageName: '加速下跌期',
+          stageDays: 6, score: 79.6, level: 'red', levelText: '红 · 强警示',
+          scoreDetail: [
+            { name: '7日涨跌幅', value: '-3.42%', band: 'accel', weight: 20, contrib: 14.8 },
+            { name: '加速度', value: '2.14', band: 'accel', weight: 18, contrib: 13.6 },
+            { name: '挂牌商户数环比', value: '+124%', band: 'accel', weight: 13, contrib: 13.0 }
+          ],
+          advice: {
+            action: '暂停采购', limitPrice: 3302, suggestQty: 0, exceedCap: true,
+            targetStockDays: 2, currentCoverDays: 186.5, prepayMaxRatio: 0,
+            paymentTerm: '必须现结或压价', lockPolicy: '严禁锁价',
+            priceGapVsLimit: 218, reasons: ['7日跌幅3.42%且3日均速为10日均速的2.14倍', '挂牌商户数3日环比+124%，撤牌率同步下降']
+          },
+          anchors: { marketMedian: 3472, marketP25: 3393, min30d: 3322, millPrice: 3480, costSupport: 3417, myCost: 3598 },
+          nextStageProb: { keep: 62, accel_down: 62, volatile: 31, other: 7 },
+          pushTo: ['采购主管', '总经理']
+        }
+      },
+      {
         m: 'POST', path: '/v1/risk/purchase/check', name: '采购申请风控校验',
         desc: '采购员提交采购申请时调用。同时看内部库存水位、平台该品类整体挂牌货源体量、同业报价、行情指数、供货商失信风险，给出建议采购量',
         where: 'ERP 采购申请单提交区上方的风险面板',
@@ -796,6 +827,32 @@ X-SRB-Role:      sales   <span class="c">// 角色决定返回字段范围</span
             marketAvgPrice: 3472, myCostPrice: 3598, priceGap: -126, unrealizedLoss: 537000,
             suggestedAction: '5 日内分 3 批降价出清 60%，并暂停该品类新增采购',
             recommendedErpAction: 'mark_priority_clearance'
+          }
+        }
+      },
+      {
+        m: 'HOOK', path: 'risk.pricing.stage_changed', name: '行情阶段切换',
+        desc: '某规格的行情阶段发生切换（如波动期 → 加速下跌期）时推送。ERP 收到后可自动更新已保存采购申请单上的限价提示，并对超限单据转审批',
+        where: 'ERP 采购模块预警 + 已保存采购申请单的限价自动刷新',
+        level: '事件推送', p95: '投递 P95 310ms',
+        params: [
+          ['data.erpSkuCode', 'string', 1, 'ERP 物料编码'],
+          ['data.from / data.to', 'enum', 1, '切换前后的阶段'],
+          ['data.advice', 'object', 1, '新阶段下的采购建议'],
+          ['data.recommendedErpAction', 'enum', 0, '建议 ERP 侧执行的动作']
+        ],
+        req: 'POST https://erp.your-company.com/webhook/risk\nX-SRB-Event: risk.pricing.stage_changed',
+        resp: {
+          event: 'risk.pricing.stage_changed', eventId: 'evt_p71c3f08', occurredAt: '2026-08-17T09:12:04+08:00',
+          data: {
+            erpSkuCode: '螺纹钢HRB400E-20-沙钢-9M', stdCode: 'RB-400E-020-9000-SG',
+            from: 'volatile', to: 'accel_down', fromName: '波动期', toName: '加速下跌期',
+            trigger: '7日跌幅由2.4%扩大至3.42%，加速度2.14突破阈值，挂牌商户数3日+124%',
+            score: 79.6, confirmedPeriods: 2,
+            advice: { action: '暂停采购', limitPrice: 3302, prevLimitPrice: 3520, targetStockDays: 2, prepayMaxRatio: 0 },
+            affectedDraftOrders: ['PR-20260817-0021'],
+            recommendedErpAction: 'refresh_limit_price_and_require_approval',
+            pushTo: ['采购主管', '总经理']
           }
         }
       },

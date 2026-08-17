@@ -70,7 +70,10 @@
           <div class="card-hd">
             <h3>采购审批节点风控能力增强 <span class="tag tag-teal">本次升级</span></h3>
             <span class="sub">不仅看自有库存水位，同时拉取资源平台当前该品类整体挂牌货源体量、同业报价、行情指数</span>
-            <div class="hd-act"><span class="tag tag-grey">从源头减少积压库存</span></div>
+            <div class="hd-act">
+              <a class="btn btn-sm btn-primary" href="pricing-alert.html">三阶段定价预警</a>
+              <span class="tag tag-grey">从源头减少积压库存</span>
+            </div>
           </div>
           <div class="card-bd">
             <div class="flow-pipe mb">
@@ -98,7 +101,9 @@
             <div class="card-ft">累计拦截 14 笔、压缩采购量 1.87 万吨，规避潜在跌价损失约 <b class="c-green">284 万元</b></div>
           </div>
           <div class="card">
-            <div class="card-hd"><h3>品类采购建议</h3><span class="sub">基于平台货源体量与行情指数</span></div>
+            <div class="card-hd"><h3>品类采购建议</h3><span class="sub">基于三阶段定价预警</span>
+              <div class="hd-act"><a class="btn btn-sm" href="pricing-alert.html">规格级详情</a></div>
+            </div>
             <div class="card-bd"><div id="poSug"></div></div>
           </div>
           <div class="card">
@@ -343,10 +348,15 @@
 
   document.getElementById('poSug').innerHTML = M.categories.map(c => {
     const tight = c.listersDelta < 0;
+    const stage = tight ? ['加速上涨', 'tag-orange', '提前锁量锁价']
+      : c.pressure >= 70 ? ['加速下跌', 'tag-red', '暂停备货']
+        : c.pressure >= 45 ? ['波动', 'tag-yellow', '小批量多批次']
+          : ['平稳', 'tag-green', '按需采购'];
     return `<div class="flex items-c gap8" style="padding:6px 0;border-bottom:1px dashed rgba(125,158,214,.09)">
       <span class="fs11 b6" style="flex:1">${c.name.split(' ')[0]} ${c.code.split('-')[1] || ''}</span>
       <span class="fs10 t4 mono nowrap">${c.listers}家(${c.listersDelta > 0 ? '+' : ''}${c.listersDelta})</span>
-      <span class="tag ${tight ? 'tag-green' : c.pressure >= 70 ? 'tag-red' : 'tag-orange'} nowrap">${tight ? '可适度备货' : c.pressure >= 70 ? '暂停采购' : '谨慎小量'}</span>
+      <span class="tag ${stage[1]} nowrap">${stage[0]}</span>
+      <span class="fs10 t3 nowrap" style="width:74px;text-align:right">${stage[2]}</span>
     </div>`;
   }).join('');
 
