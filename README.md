@@ -24,6 +24,7 @@ python3 -m http.server 8080
 | 风控大脑总览 | `index.html` | 经营风险 KPI、双驱动数据打通链路、预警流、工单回流、模型效果 |
 | 四层架构全景 | `architecture.html` | 数据接入层 → 模型引擎层 → 业务执行预警层 → 可视化层，含避坑要点 |
 | 数据接入层 | `data-source.html` | 14 类数据源清单、500+ 商户报价流、行情指数 API、失信检测 API、规格编码标准化映射工作台、向量知识库 |
+| 数据源字段规范 | `data-dictionary.html` | 14 类数据源逐个的字段级输入要求、清洗校验规则、输出字段与消费方；含统一口径规范、主键与主数据映射、数据质量分级 |
 | 模型引擎层 | `model-engine.html` | 量化预测模型（呆滞跌价 / 坏账 / 供应链风险子模型）特征扩容、三大 Agent、工具集、RAG→LoRA 选型策略 |
 | Agent 推理实录 | `agent-detail.html` | 三个典型推理场景的完整推理链、多套处置方案测算、人工决策回填 |
 | 库存风险看板 | `dashboard-inventory.html` | 批次呆滞概率与浮亏、**市场抛压指数面板**（挂牌热度曲线 + 同业价格曲线 vs 成本线） |
@@ -68,6 +69,7 @@ python3 -m http.server 8080
 ├── index.html                     # 总览
 ├── architecture.html              # 四层架构
 ├── data-source.html               # 第一层：数据接入
+├── data-dictionary.html           # 数据源字段规范（数据字典）
 ├── model-engine.html              # 第二层：模型引擎
 ├── agent-detail.html              # Agent 推理实录
 ├── dashboard-inventory.html       # 库存风险看板
@@ -82,6 +84,7 @@ python3 -m http.server 8080
     └── js
         ├── charts.js              # 零依赖 SVG 图表库（折线/柱状/排名/环形/仪表/雷达/热力/流向）
         ├── data.js                # 模拟业务数据（品类、客户、供货商、报价流、工单、规格映射…）
+        ├── dict.js                # 14 类数据源的字段级输入/校验/输出定义
         └── app.js                 # 侧边导航、顶栏、AI 问答抽屉、预警中心、通用组件
 ```
 

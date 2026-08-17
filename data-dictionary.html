@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>数据源字段规范 · 钢铁行业 AI 风控大脑</title>
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body data-page="dict">
+<div class="app-bg"></div>
+<div class="layout">
+  <div class="main">
+    <div class="content">
+
+      <div class="page-head">
+        <div>
+          <h1>数据源字段规范（数据字典）</h1>
+          <p>14 类数据源逐个给出<b class="c-blue">输入要求</b>（源系统必须提供哪些字段、什么口径、什么校验）与
+             <b class="c-blue">输出定义</b>（清洗标准化后入湖产出哪些字段、被哪个模型或接口消费）。
+             先看通用规范 —— 钢贸的<b class="c-yellow">磅计/理计、含税/不含税、提货/送到</b>三组口径不统一的话，后面所有比价与风险结论都是错的。</p>
+        </div>
+        <div class="ph-right">
+          <button class="btn" id="expandAllBtn">展开全部字段</button>
+          <button class="btn" onclick="window.print()">导出字典</button>
+        </div>
+      </div>
+
+      <div class="stat-strip mb">
+        <div><div class="ss-t">数据源</div><div class="ss-v c-blue">14 <span class="fs11 t4">类</span></div></div>
+        <div><div class="ss-t">输入字段定义</div><div class="ss-v" id="cntIn">—</div></div>
+        <div><div class="ss-t">输出字段定义</div><div class="ss-v c-teal" id="cntOut">—</div></div>
+        <div><div class="ss-t">阻断级校验规则</div><div class="ss-v c-red">L1</div></div>
+        <div><div class="ss-t">数据分层</div><div class="ss-v">ODS→DWD→DWS→特征层</div></div>
+        <div><div class="ss-t">统一口径</div><div class="ss-v c-yellow">磅计 / 不含税 / 提货价</div></div>
+      </div>
+
+      <!-- ===================== 通用规范 ===================== -->
+      <div class="card mb accent-top">
+        <div class="card-hd">
+          <h3>通用规范（所有数据源共同遵守）</h3>
+          <span class="sub">口径不统一是钢贸数据项目最常见的翻车点，比字段缺失更隐蔽也更致命</span>
+        </div>
+        <div class="card-bd">
+          <div class="tabs" data-group="cm" id="cmTabs" style="margin-bottom:12px">
+            <button class="on" data-tab="cal">统一口径规范</button>
+            <button data-tab="key">主键与主数据映射</button>
+            <button data-tab="layer">数据分层与保留</button>
+            <button data-tab="qa">数据质量规则分级</button>
+          </div>
+
+          <div data-panel="cal" data-group="cm">
+            <table class="tbl">
+              <thead><tr><th style="width:110px">口径维度</th><th style="width:230px">统一标准</th><th>为什么必须统一 / 换算方式</th><th style="width:200px">示例</th></tr></thead>
+              <tbody id="calTbl"></tbody>
+            </table>
+            <div class="note red mt">
+              <b>最容易被忽略的一条</b>：平台商户挂牌大量是「含税 / 送到价 / 理计」，而 ERP 库存成本往往是「不含税 / 提货 / 磅计」。
+              直接拿两个数相减，得到的价差可能有 <b>15% 以上的系统性偏差</b> —— 足以让「浮亏 53 万」变成「浮盈 20 万」，风控结论完全反向。
+              所以口径换算必须放在<b>聚合之前</b>完成，而不是在看板上临时折算。
+            </div>
+          </div>
+
+          <div data-panel="key" data-group="cm" style="display:none">
+            <table class="tbl">
+              <thead><tr><th style="width:230px">主键</th><th style="width:150px">含义</th><th>生成规则</th><th style="width:300px">为什么关键</th></tr></thead>
+              <tbody id="keyTbl"></tbody>
+            </table>
+            <div class="note mt">
+              <b>一句话概括</b>：<code class="mono">uscc</code> 打通「我方客户 / 我方供应商 / 平台入驻商户 / 失信检测主体」四个身份，
+              <code class="mono">sku_std_code</code> 打通「ERP 物料 / 平台挂牌规格」两个口径。这两个键没建好，本次升级的所有新增能力都无法生效。
+            </div>
+          </div>
+
+          <div data-panel="layer" data-group="cm" style="display:none">
+            <div class="flow-pipe mb" id="layerPipe"></div>
+            <table class="tbl">
+              <thead><tr><th style="width:70px">分层</th><th style="width:100px">名称</th><th>职责</th><th style="width:130px">保留策略</th></tr></thead>
+              <tbody id="layerTbl"></tbody>
+            </table>
+            <div class="note blue mt">
+              ODS 层坚持<b>原样落地不加工</b>：一旦模型结论被质疑，要能回到源系统当时给了什么，否则没法定位是数据问题还是模型问题。
+              特征层带<b>特征版本号</b>，模型换版本时可回溯当时用的是哪一版特征。
+            </div>
+          </div>
+
+          <div data-panel="qa" data-group="cm" style="display:none">
+            <div class="grid g3" id="qaCards"></div>
+            <div class="note mt">
+              分级的意义：不能因为一个垛位号没填就把整批库存数据挡在外面，也不能让一条无法映射规格的报价悄悄污染市场均价。
+              <b>L1 拒绝入湖并告警，L2 入湖但降权，L3 只记日志</b> —— 三档分开处理，数据可用性与准确性才能兼顾。
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== 数据源字段规范 ===================== -->
+      <div class="grid" style="grid-template-columns:242px 1fr;gap:14px;align-items:start">
+        <!-- 左侧清单 -->
+        <div class="card" style="position:sticky;top:74px">
+          <div class="card-hd"><h3>数据源清单</h3></div>
+          <div class="card-bd" style="padding:8px" id="srcList"></div>
+        </div>
+
+        <!-- 右侧详情 -->
+        <div id="detail"></div>
+      </div>
+
+      <!-- ===================== 数据质量监控 ===================== -->
+      <div class="card mt">
+        <div class="card-hd"><h3>数据质量监控与异常处理</h3><span class="sub">规范要能被度量，否则只是文档</span></div>
+        <div class="card-bd">
+          <div class="grid g-2-3" style="gap:14px">
+            <div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">各数据源今日质量得分</div>
+              <div class="chart h300" id="qaChart"></div>
+              <div class="fs10 t4 center">得分 = 100 − L1 拒绝率×100 − L2 告警率×30</div>
+            </div>
+            <div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">今日异常明细与处理动作</div>
+              <table class="tbl mb">
+                <thead><tr><th>等级</th><th>数据源</th><th>异常内容</th><th>影响</th><th>处理动作</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="tag tag-red">L1</span></td><td class="fs11">商家报价数据流</td><td class="fs11 t2">55 条报价规格无法映射标准编码</td><td class="fs11 t3">不进入市场特征聚合</td><td class="fs11">进待映射队列，人工确认后回流规则库</td></tr>
+                  <tr><td><span class="tag tag-red">L1</span></td><td class="fs11">客户授信档案</td><td class="fs11 t2">3 家客户 uscc 为空</td><td class="fs11 c-red">该客户失信检测与商户关联全部失效</td><td class="fs11">推送待补录清单给业务归属人</td></tr>
+                  <tr><td><span class="tag tag-orange">L2</span></td><td class="fs11">商家报价数据流</td><td class="fs11 t2">128 条报价偏离中位价 ±20%</td><td class="fs11 t3">聚合均价时剔除</td><td class="fs11">标记异常报价，观察是否为个别错标</td></tr>
+                  <tr><td><span class="tag tag-orange">L2</span></td><td class="fs11">ERP 库存台账</td><td class="fs11 t2">6 个批次理计与磅计偏差 &gt; 5%</td><td class="fs11 t3">货值与浮亏测算可能偏差</td><td class="fs11">推送仓库复磅</td></tr>
+                  <tr><td><span class="tag tag-orange">L2</span></td><td class="fs11">合同扫描件</td><td class="fs11 t2">4 份合同账期与 ERP 台账不一致</td><td class="fs11 c-orange">逾期天数被低估</td><td class="fs11">推送财务核对，以合同为准修正</td></tr>
+                  <tr><td><span class="tag tag-yellow">L3</span></td><td class="fs11">行情指数 API</td><td class="fs11 t2">2 个区域指数样本数 &lt; 20</td><td class="fs11 t3">模型中降权 50%</td><td class="fs11">标记 low_confidence，正常入湖</td></tr>
+                </tbody>
+              </table>
+              <div class="grid g2" style="gap:11px">
+                <div class="note red">
+                  <b>阻断级异常的处理原则</b>：数据不进特征层，但<b>业务不停</b>。例如某客户 uscc 缺失，风控接口返回「新客户待评估」而不是报错，ERP 照常开单，同时把补录任务推给业务归属人。
+                </div>
+                <div class="note green">
+                  <b>映射闭环</b>：待映射队列里的人工确认结果会回流规则库与向量库，规则命中率从上线时的 71% 提升到现在的 82.1%，整体映射率 96.8%。这一条本身也是数据飞轮的一部分。
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/charts.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/dict.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  const C = Dict.COMMON, S = Dict.SOURCES, esc = App.esc;
+
+  /* ---------- 统计 ---------- */
+  const cntIn = S.reduce((a, s) => a + s.input.length + (s.respFields ? s.respFields.length : 0), 0);
+  const cntOut = S.reduce((a, s) => a + s.output.length, 0);
+  document.getElementById('cntIn').textContent = cntIn + ' 个';
+  document.getElementById('cntOut').textContent = cntOut + ' 个';
+
+  /* ---------- 通用规范 ---------- */
+  document.getElementById('calTbl').innerHTML = C.caliber.map(r => `
+    <tr><td class="t-main nowrap">${r[0]}</td><td class="fs11 c-yellow b6">${r[1]}</td>
+    <td class="fs11 t2" style="line-height:1.75">${r[2]}</td><td class="mono fs10 t3">${esc(r[3])}</td></tr>`).join('');
+
+  document.getElementById('keyTbl').innerHTML = C.keys.map(r => `
+    <tr><td class="mono fs11 c-blue">${esc(r[0])}</td><td class="fs11 t-main">${r[1]}</td>
+    <td class="fs11 t2" style="line-height:1.75">${r[2]}</td><td class="fs11 t3" style="line-height:1.75">${r[3]}</td></tr>`).join('');
+
+  document.getElementById('layerTbl').innerHTML = C.layers.map(r => `
+    <tr><td><span class="tag tag-blue mono">${r.code}</span></td><td class="t-main fs11">${r.name}</td>
+    <td class="fs11 t2" style="line-height:1.75">${r.desc}</td><td class="fs11 t3">${r.keep}</td></tr>`).join('');
+
+  document.getElementById('layerPipe').innerHTML = C.layers.map((l, i) =>
+    `${i ? '<div class="fp-arrow">→</div>' : ''}<div class="fp-box"><div class="fp-t">${l.code} · ${l.name}</div><div class="fp-b">${l.keep}</div></div>`).join('');
+
+  document.getElementById('qaCards').innerHTML = C.quality.map(q => `
+    <div class="node" style="border-color:rgba(${q.color === 'red' ? '244,88,110' : q.color === 'orange' ? '251,146,60' : '251,191,36'},.34)">
+      <div class="node-t"><span class="tag tag-${q.color}">${q.lv} ${q.name}</span></div>
+      <div class="fs11 c-${q.color === 'yellow' ? 'yellow' : q.color}" style="margin:5px 0 7px;font-weight:600">处理动作：${q.act}</div>
+      <ul class="node-ul">${q.rules.map(x => `<li>${x}</li>`).join('')}</ul>
+    </div>`).join('');
+
+  App.tabs('#cmTabs');
+
+  /* ---------- 左侧清单 ---------- */
+  const groups = [
+    { k: 'in', n: '企业内部 · 结构化', c: 'tag-blue' },
+    { k: 'un', n: '企业内部 · 非结构化', c: 'tag-ai' },
+    { k: 'plat', n: '自有平台 · 核心增量', c: 'tag-teal' },
+    { k: 'ext', n: '第三方补充', c: 'tag-grey' }
+  ];
+  document.getElementById('srcList').innerHTML = groups.map(g => `
+    <div class="nav-group-t" style="padding:9px 8px 4px">${g.n}</div>
+    ${S.filter(s => s.group === g.k).map(s => `
+      <div class="nav-item src-nav" data-id="${s.id}" style="cursor:pointer">
+        <span>${s.name}</span>
+        ${s.hot ? '<span class="dot-n" style="background:rgba(45,212,191,.14);color:#2dd4bf;border-color:rgba(45,212,191,.35)">核心</span>' : ''}
+      </div>`).join('')}`).join('');
+
+  /* ---------- 详情渲染 ---------- */
+  function fieldRows(rows) {
+    return rows.map(f => `
+      <tr>
+        <td class="mono fs11 c-blue nowrap">${esc(f[0])}</td>
+        <td class="mono fs10 t3 nowrap">${esc(f[1])}</td>
+        <td class="nowrap">${f[2] ? '<span class="tag tag-red">必填</span>' : '<span class="t4 fs11">可选</span>'}</td>
+        <td class="fs11 t2" style="line-height:1.75">${f[3]}</td>
+        <td class="mono fs10 t4">${f[4] === null ? 'null' : esc(String(f[4]))}</td>
+      </tr>`).join('');
+  }
+  function outRows(rows) {
+    return rows.map(f => `
+      <tr>
+        <td class="mono fs11 c-teal nowrap">${esc(f[0])}</td>
+        <td class="mono fs10 t3 nowrap">${esc(f[1])}</td>
+        <td class="fs11 t2" style="line-height:1.75">${f[2]}</td>
+        <td class="fs11 t3">${f[3]}</td>
+      </tr>`).join('');
+  }
+
+  function detailHtml(s) {
+    const gm = groups.find(g => g.k === s.group);
+    return `
+      <div class="card mb ${s.hot ? 'accent-top' : ''}">
+        <div class="card-hd">
+          <h3>${s.name} ${s.hot ? '<span class="tag tag-teal">本次核心增量</span>' : ''}</h3>
+          <span class="sub mono">${esc(s.table)}</span>
+          <div class="hd-act"><span class="tag ${gm.c}">${gm.n}</span></div>
+        </div>
+        <div class="card-bd">
+          <div class="grid g6 mb" style="gap:9px">
+            <div class="node"><div class="fs10 t4">接入方式</div><div class="fs11 b6" style="margin-top:2px">${s.meta.way}</div></div>
+            <div class="node"><div class="fs10 t4">同步频率</div><div class="fs11 b6" style="margin-top:2px">${s.meta.freq}</div></div>
+            <div class="node"><div class="fs10 t4">业务主键</div><div class="fs11 b6 mono" style="margin-top:2px">${esc(s.meta.pk)}</div></div>
+            <div class="node"><div class="fs10 t4">增量策略</div><div class="fs11 b6" style="margin-top:2px">${s.meta.inc}</div></div>
+            <div class="node"><div class="fs10 t4">数据体量</div><div class="fs11 b6" style="margin-top:2px">${s.meta.vol}</div></div>
+            <div class="node"><div class="fs10 t4">在风控中的角色</div><div class="fs11 b6" style="margin-top:2px">${s.meta.role}</div></div>
+          </div>
+
+          <div class="fs12 b6 mb" style="margin-bottom:7px">
+            <span class="tag tag-blue">输入</span> ${s.inputTitle || '源系统必须提供的字段'}
+            <span class="fs10 t4">（共 ${s.input.length} 个字段，标红为必填）</span>
+          </div>
+          <table class="tbl mb">
+            <thead><tr><th style="width:170px">字段名</th><th style="width:120px">类型</th><th style="width:64px">必填</th><th>业务口径与说明</th><th style="width:190px">示例值</th></tr></thead>
+            <tbody>${fieldRows(s.input)}</tbody>
+          </table>
+
+          ${s.respFields ? `
+          <div class="fs12 b6 mb" style="margin-bottom:7px">
+            <span class="tag tag-blue">输入</span> ${s.outputTitle}
+            <span class="fs10 t4">（共 ${s.respFields.length} 个字段）</span>
+          </div>
+          <table class="tbl mb">
+            <thead><tr><th style="width:170px">字段名</th><th style="width:120px">类型</th><th style="width:64px">必填</th><th>业务口径与说明</th><th style="width:190px">示例值</th></tr></thead>
+            <tbody>${fieldRows(s.respFields)}</tbody>
+          </table>` : ''}
+
+          <div class="fs12 b6 mb" style="margin-bottom:7px"><span class="tag tag-yellow">清洗</span> 校验规则与口径转换</div>
+          <div class="grid g2 mb" style="gap:8px">
+            ${s.rules.map(r => {
+              const lv = r.startsWith('L1') ? 'red' : r.startsWith('L2') ? 'orange' : r.startsWith('L3') ? 'yellow' : 'blue';
+              return `<div class="note ${lv === 'yellow' ? '' : lv}" style="font-size:11px">${r}</div>`;
+            }).join('')}
+          </div>
+
+          <div class="fs12 b6 mb" style="margin-bottom:7px">
+            <span class="tag tag-teal">输出</span> 清洗标准化后入湖产出的字段
+            <span class="fs10 t4">（共 ${s.output.length} 个，含派生特征）</span>
+          </div>
+          <table class="tbl mb">
+            <thead><tr><th style="width:210px">字段名</th><th style="width:130px">类型</th><th>说明</th><th style="width:230px">主要消费方</th></tr></thead>
+            <tbody>${outRows(s.output)}</tbody>
+          </table>
+
+          <div class="grid g-3-2" style="gap:12px">
+            <div>
+              <div class="code-hd">${App.icon('file', 12)} 输出示例（DWD / 特征层）</div>
+              <pre class="code">${App.json(s.sample)}</pre>
+            </div>
+            <div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">下游消费方</div>
+              <div class="flex gap6 wrap mb">
+                ${s.consumers.map(c => `<span class="src-pill ${/API|Webhook|POST|GET/.test(c) ? 'plat' : /模型|子模型/.test(c) ? '' : 'erp'}">${esc(c)}</span>`).join('')}
+              </div>
+              <div class="note blue" style="font-size:11px">
+                <b>字段变更约定</b>：源系统新增字段可直接加，风控侧向后兼容；<b>删除或修改已有字段口径必须提前 5 个工作日通知</b>，
+                否则会静默污染特征层 —— 模型不会报错，只会给出错误结论，这类问题最难排查。
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  const host = document.getElementById('detail');
+  function render(id, scroll) {
+    const s = S.find(x => x.id === id);
+    document.querySelectorAll('.src-nav').forEach(n => n.classList.toggle('active', n.dataset.id === id));
+    host.innerHTML = detailHtml(s);
+    if (scroll) window.scrollTo({ top: host.offsetTop - 90, behavior: 'smooth' });
+  }
+
+  document.getElementById('srcList').addEventListener('click', e => {
+    const n = e.target.closest('.src-nav');
+    if (n) render(n.dataset.id, true);
+  });
+  render('listing');
+
+  document.getElementById('expandAllBtn').onclick = function () {
+    document.querySelectorAll('.src-nav').forEach(n => n.classList.remove('active'));
+    host.innerHTML = S.map(detailHtml).join('');
+    this.textContent = '已展开全部 14 类';
+    window.scrollTo({ top: host.offsetTop - 90, behavior: 'smooth' });
+  };
+
+  /* ---------- 质量得分 ---------- */
+  Chart.rank('#qaChart', {
+    metric: '质量得分', labelW: 152, fmt: v => v.toFixed(1),
+    items: [
+      { label: '平台行情指数 API', value: 99.4, color: '#34d399' },
+      { label: '客户授信档案', value: 92.9, color: '#fbbf24', note: '3 家客户 uscc 缺失' },
+      { label: 'ERP 库存台账', value: 98.2, color: '#34d399' },
+      { label: '采购/销售订单', value: 99.1, color: '#34d399' },
+      { label: '应收台账', value: 99.6, color: '#34d399' },
+      { label: '财务票据数据', value: 97.8, color: '#34d399' },
+      { label: '商家报价数据流', value: 94.6, color: '#fb923c', note: '55 条待映射 + 128 条异常报价' },
+      { label: '企业失信检测 API', value: 98.8, color: '#34d399' },
+      { label: '业务员沟通纪要', value: 96.2, color: '#34d399' },
+      { label: '合同扫描件', value: 89.4, color: '#f4586e', note: '4 份账期与台账不一致 + OCR 置信度偏低' },
+      { label: '外部钢厂调价', value: 97.1, color: '#34d399' },
+      { label: '下游开工数据', value: 95.8, color: '#34d399' },
+      { label: '行业舆情资讯', value: 93.2, color: '#fb923c' }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

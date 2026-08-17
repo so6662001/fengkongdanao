@@ -50,6 +50,7 @@
     {
       g: '数据与模型', items: [
         { k: 'data', t: '数据接入层', h: 'data-source.html', i: 'db', tag: 'NEW' },
+        { k: 'dict', t: '数据源字段规范', h: 'data-dictionary.html', i: 'file', tag: 'NEW' },
         { k: 'model', t: '模型引擎层', h: 'model-engine.html', i: 'cpu' },
         { k: 'agent', t: 'Agent 推理实录', h: 'agent-detail.html', i: 'bot' }
       ]
@@ -81,6 +82,7 @@
     index: ['总览', '风控大脑总览'],
     arch: ['总览', '四层架构全景'],
     data: ['数据与模型', '第一层 · 数据接入层'],
+    dict: ['数据与模型', '数据源字段规范（数据字典）'],
     model: ['数据与模型', '第二层 · 模型引擎层'],
     agent: ['数据与模型', 'Agent 智能体推理实录'],
     inv: ['风险看板', '库存风险看板'],
