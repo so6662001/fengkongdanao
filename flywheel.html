@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>数据飞轮与落地路线 · 钢铁行业 AI 风控大脑</title>
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body data-page="wheel">
+<div class="app-bg"></div>
+<div class="layout">
+  <div class="main">
+    <div class="content">
+
+      <div class="page-head">
+        <div>
+          <h1>数据飞轮闭环与分阶段落地路线</h1>
+          <p>循环五步不变，但案例素材池扩大为两类：<b class="c-blue">企业自身经营案例</b> ＋ <b class="c-teal">资源平台沉淀的行业市场波动、商户爆雷案例</b>。长期运行之后，系统不仅学习本公司做生意的经验，还会持续学习整个商圈几百家商家共同的市场行为规律。</p>
+        </div>
+        <div class="ph-right">
+          <span class="tag tag-ai lg">当前：一期已上线，二期进行中</span>
+        </div>
+      </div>
+
+      <!-- ===== 飞轮 ===== -->
+      <div class="card mb ai">
+        <div class="card-hd">
+          <h3>核心：数据飞轮闭环（越用越好）</h3>
+          <span class="sub">AI 判断 → 人工决策 → 案例记录 → 归档入库 → 定期迭代</span>
+          <div class="hd-act"><span class="tag tag-green">案例池 3,186 条</span><span class="tag tag-ai">微调样本 214 条</span></div>
+        </div>
+        <div class="card-bd">
+          <div class="grid g-1-2" style="gap:18px">
+            <div>
+              <div class="wheel" id="wheel"></div>
+            </div>
+            <div>
+              <div class="tl">
+                <div class="tl-i blue">
+                  <div class="tl-t">第 1 步 · AI 输出风险判断与处置建议</div>
+                  <div class="tl-b">AI 结合<b>内部数据 + 平台全域市场数据</b>输出风险判断与处置建议，推送给业务人员。每条建议附带推理链、数据来源与多套方案测算。</div>
+                </div>
+                <div class="tl-i orange">
+                  <div class="tl-t">第 2 步 · 业务人员做出决策</div>
+                  <div class="tl-b">在工单记录<b>采纳 / 部分采纳 / 否决</b>，并填写实际执行动作。最终决策权保留在人手中，AI 不自动下达业务指令。</div>
+                </div>
+                <div class="tl-i orange">
+                  <div class="tl-t">第 3 步 · 系统记录完整案例</div>
+                  <div class="tl-b">记录三件事：<b>当时 AI 的判断逻辑（包含当时平台市场数据快照）</b>、人的决策、最终业务结果（这批货有没有滞销、该客户有没有坏账）。</div>
+                </div>
+                <div class="tl-i green">
+                  <div class="tl-t">第 4 步 · 案例自动归档进入私有向量知识库</div>
+                  <div class="tl-b">同时对<b>高频判断失误场景</b>打标，纳入微调数据集。</div>
+                </div>
+                <div class="tl-i green">
+                  <div class="tl-t">第 5 步 · 定期迭代</div>
+                  <div class="tl-b">知识库实时检索更新；周期性使用沉淀业务数据开展 <b>LoRA 微调</b>。</div>
+                </div>
+              </div>
+              <div class="note green mt">
+                长期运行之后，这套系统预判市场拐点的能力持续变强 —— 因为它同时学习「你自己的经营经验」与「整个商圈几百家商家的共同行为规律」，
+                这是独立第三方行情系统无法给到的独特优势。
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 案例池 ===== -->
+      <div class="grid g3 mb">
+        <div class="card">
+          <div class="card-hd"><h3>案例素材池构成</h3><span class="sub">本次升级后闭环素材更丰富</span></div>
+          <div class="card-bd">
+            <div class="chart h230" id="poolChart"></div>
+            <div class="divider"></div>
+            <div class="kv"><span><span class="dot dot-blue"></span> 企业自身经营案例</span><b>2,256 条（70.8%）</b></div>
+            <div class="kv"><span><span class="dot" style="background:#2dd4bf"></span> 平台行业市场波动案例</span><b class="c-teal">704 条（22.1%）</b></div>
+            <div class="kv"><span><span class="dot dot-red"></span> 行业商户爆雷历史事件</span><b class="c-teal">226 条（7.1%）</b></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><h3>案例沉淀与模型效果</h3><span class="sub">案例量增长 ↔ 预警准确率</span></div>
+          <div class="card-bd"><div class="chart h230" id="growChart"></div></div>
+          <div class="card-ft">案例池每增加 1,000 条，预警准确率平均提升 <b class="c-green">4.8</b> 个百分点</div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><h3>微调样本来源</h3><span class="sub">高频判断失误场景优先</span></div>
+          <div class="card-bd">
+            <div class="chart h230" id="fineChart"></div>
+            <div class="note mt">
+              典型样本：<b>WO-20260805-022</b>（中厚板建议降价被否决，后市场回升 90 元/吨，业务判断正确）→ 说明模型对「区域性供给收缩」信号敏感度不足，已纳入微调集。
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 三期路线 ===== -->
+      <div class="card mb">
+        <div class="card-hd"><h3>项目分阶段落地路线（三期规划，循序渐进）</h3>
+          <div class="hd-act"><span class="tag tag-green">一期 已完成</span><span class="tag tag-blue">二期 进行中</span><span class="tag tag-grey">三期 规划</span></div>
+        </div>
+        <div class="card-bd">
+          <div class="gantt mb">
+            <div class="gantt-head">
+              <span>第1月</span><span>第2月</span><span>第3月</span><span>第4月</span><span>第5月</span><span>第6月</span><span>第7月+</span>
+            </div>
+            <div class="gantt-row">
+              <span class="g-lbl c-green">一期</span>
+              <div class="g-track"><div class="g-bar" style="left:0;width:28.5%;background:linear-gradient(90deg,#34d399,#6ee7b7)">数据打通 + 最小可用版本</div></div>
+            </div>
+            <div class="gantt-row">
+              <span class="g-lbl c-blue">二期</span>
+              <div class="g-track"><div class="g-bar" style="left:28.5%;width:57.2%;background:linear-gradient(90deg,#38bdf8,#7dd3fc)">非结构化数据 + Agent 深化 + 首次 LoRA 微调</div></div>
+            </div>
+            <div class="gantt-row">
+              <span class="g-lbl c-ai">三期</span>
+              <div class="g-track"><div class="g-bar" style="left:71.4%;width:28.6%;background:linear-gradient(90deg,#a78bfa,#c4b5fd)">飞轮迭代 + 经营决策辅助</div></div>
+            </div>
+          </div>
+          <div class="grid g3">
+            <div class="phase phase-1">
+              <div class="phase-h"><b class="c-green">一期</b><span>1-2 个月 · 最小可用版本</span><span class="tag tag-green ml-auto">已完成</span></div>
+              <div class="phase-goal">目标：快速验证价值，先把数据飞轮流转机制跑通。<b>暂不做模型微调</b>，优先验证业务价值。</div>
+              <div class="task"><span class="tk-ico tk-ok">✓</span><div>打通 ERP 内部结构化数据（库存台账、采购/销售订单、应收台账、授信档案、票据）</div></div>
+              <div class="task"><span class="tk-ico tk-ok">✓</span><div>打通自有平台三个基础接口：<b>行情指数 API</b>、<b>失信检测 API</b></div></div>
+              <div class="task"><span class="tk-ico tk-ok">✓</span><div>完成<b>商家报价数据流接入</b>与时序数据存储（规格-区域-时间）</div></div>
+              <div class="task"><span class="tk-ico tk-ok">✓</span><div>完成钢材规格编码标准化映射（当前映射率 96.8%）</div></div>
+              <div class="task"><span class="tk-ico tk-ok">✓</span><div>上线库存风险预警、应收风险量化打分</div></div>
+              <div class="task"><span class="tk-ico tk-ok">✓</span><div>大模型依靠 RAG 推理输出风险解读与处置建议</div></div>
+              <div class="task"><span class="tk-ico tk-ok">✓</span><div>跑通风险推送 → 处置工单 → 业务结果回流完整闭环</div></div>
+              <div class="divider"></div>
+              <div class="grid g3" style="gap:8px">
+                <div class="center"><div class="fs10 t4">接入数据源</div><div class="mono b7 c-green">11</div></div>
+                <div class="center"><div class="fs10 t4">上线看板</div><div class="mono b7 c-green">3</div></div>
+                <div class="center"><div class="fs10 t4">闭环工单</div><div class="mono b7 c-green">412</div></div>
+              </div>
+            </div>
+
+            <div class="phase phase-2">
+              <div class="phase-h"><b class="c-blue">二期</b><span>3-6 个月 · 能力扩张</span><span class="tag tag-blue ml-auto">进行中 62%</span></div>
+              <div class="phase-goal">目标：接入非结构化数据开启隐性风险挖掘，把平台供需信号深度融入每一次风险研判，并完成第一次小参数微调。</div>
+              <div class="task"><span class="tk-ico tk-ok">✓</span><div>接入非结构化内部数据源：<b>聊天纪要</b>（已完成）</div></div>
+              <div class="task"><span class="tk-ico tk-wip">◐</span><div>接入<b>会议记录、合同文件</b>，开启隐性风险挖掘（进行中）</div></div>
+              <div class="task"><span class="tk-ico tk-ok">✓</span><div>完善三大 Agent 全部新增推理逻辑</div></div>
+              <div class="task"><span class="tk-ico tk-wip">◐</span><div>把平台商家挂牌货源的供需信号<b>深度融入每一次风险研判</b>（库存 Agent 已完成，应收/全局进行中）</div></div>
+              <div class="task"><span class="tk-ico tk-ok">✓</span><div>新增供应链风险预测子模型与上游供应商风险告警</div></div>
+              <div class="task"><span class="tk-ico tk-plan">○</span><div>沉淀足够自有业务案例 + 行业市场案例后，执行<b>第一次 LoRA 小参数微调</b>（计划 2026-09-30）</div></div>
+              <div class="divider"></div>
+              <div class="meter-row"><span class="lbl">非结构化数据接入</span><div class="bar"><i class="blue" style="width:58%"></i></div><span class="val">58%</span></div>
+              <div class="meter-row"><span class="lbl">Agent 推理逻辑完善</span><div class="bar"><i class="blue" style="width:78%"></i></div><span class="val">78%</span></div>
+              <div class="meter-row"><span class="lbl">微调数据集准备</span><div class="bar"><i class="ai" style="width:71%"></i></div><span class="val">71%</span></div>
+            </div>
+
+            <div class="phase phase-3">
+              <div class="phase-h"><b class="c-ai">三期</b><span>长期迭代</span><span class="tag tag-grey ml-auto">规划</span></div>
+              <div class="phase-goal">目标：持续运转数据飞轮，从单纯风险管控延伸到经营决策辅助。</div>
+              <div class="task"><span class="tk-ico tk-plan">○</span><div>持续运转数据飞轮，不断沉淀案例，定期迭代模型</div></div>
+              <div class="task"><span class="tk-ico tk-plan">○</span><div>进一步利用平台海量商户数据，延伸到<b>采购策略推演</b></div></div>
+              <div class="task"><span class="tk-ico tk-plan">○</span><div>延伸到<b>市场机会挖掘</b>：哪些品类值得建仓、哪些区域价差可套</div></div>
+              <div class="task"><span class="tk-ico tk-plan">○</span><div>从风险管控延伸到<b>经营决策辅助</b>：品类结构、客户结构、资金配置</div></div>
+              <div class="divider"></div>
+              <div class="fs11 t4 mb" style="margin-bottom:6px">能力延伸方向</div>
+              <div class="flex gap6 wrap">
+                <span class="chip">采购时机推演</span><span class="chip">区域价差套利</span><span class="chip">客户结构优化</span>
+                <span class="chip">品类建仓建议</span><span class="chip">资金占用优化</span><span class="chip">市场拐点预测</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 避坑要点 ===== -->
+      <div class="card">
+        <div class="card-hd"><h3>关键避坑要点</h3><span class="sub">与自有平台联动之后需要额外注意的四件事</span></div>
+        <div class="card-bd">
+          <div class="grid g4">
+            <div class="node">
+              <div class="node-t"><span class="tag tag-blue">01</span>区分定位</div>
+              <div class="node-b">AI 依然只是<b>决策辅助</b>，不自动下达业务指令，最终决策权留给人。系统的价值是：更早发现风险、提供更多维度信息、推演多套方案。</div>
+              <div class="divider" style="margin:9px 0"></div>
+              <div class="fs11 c-green">落地体现：所有工单必须由人填写采纳/否决与执行动作后才生效，系统不直接改价、不直接停发货。</div>
+            </div>
+            <div class="node" style="border-color:rgba(244,88,110,.34)">
+              <div class="node-t"><span class="tag tag-red">02</span>数据治理优先级</div>
+              <div class="node-b">必须先完成<b>钢材规格编码标准化</b>。内部 ERP 规格与平台商家上传规格口径不一样，若没有做标准化映射，海量商家报价数据无法正确匹配到自有库存 SKU，整个新增能力就无法生效 —— <b class="c-red">这是整个项目最关键的前置工作</b>。</div>
+              <div class="divider" style="margin:9px 0"></div>
+              <div class="fs11 c-green">落地体现：一期第一件事即建映射工作台，当前映射率 96.8%，待确认 37 条走人工审核。</div>
+            </div>
+            <div class="node">
+              <div class="node-t"><span class="tag tag-yellow">03</span>失信 API 调用策略</div>
+              <div class="node-b">不需要无限制高频全量轮询。采用「<b>常规客户定时巡检、高风险客户高频扫描</b>」策略，控制接口调用成本。</div>
+              <div class="divider" style="margin:9px 0"></div>
+              <div class="fs11 c-green">落地体现：高风险 4h / 中风险 1d / 低风险 7d / 上游商户 1d，日均调用 1,264 次，成本可控。</div>
+            </div>
+            <div class="node">
+              <div class="node-t"><span class="tag tag-green">04</span>不要一开始就训练专属大模型</div>
+              <div class="node-b">优先 <b>RAG + 提示词工程</b>快速落地，先跑通业务闭环，沉淀真实业务案例之后再微调，投入产出比最高。</div>
+              <div class="divider" style="margin:9px 0"></div>
+              <div class="fs11 c-green">落地体现：一期零训练成本上线；案例池达 3,186 条后于二期末执行首次 LoRA 微调。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/charts.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  const M = Mock;
+
+  /* ---- 飞轮 ---- */
+  const steps = [
+    { n: '01', t: 'AI 输出判断与建议', b: '内部数据 + 平台全域市场数据' },
+    { n: '02', t: '业务人员决策', b: '采纳 / 部分采纳 / 否决' },
+    { n: '03', t: '记录完整案例', b: 'AI 逻辑 + 市场快照 + 结果' },
+    { n: '04', t: '归档向量知识库', b: '失误场景 → 微调数据集' },
+    { n: '05', t: '定期迭代', b: '检索更新 + LoRA 微调' }
+  ];
+  const wheel = document.getElementById('wheel');
+  let html = `<svg style="position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 100 100">
+      <defs><marker id="ar" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+        <path d="M0 0 L6 3 L0 6 z" fill="#a78bfa"/></marker></defs>`;
+  for (let i = 0; i < 5; i++) {
+    const a1 = -90 + i * 72 + 16, a2 = -90 + (i + 1) * 72 - 16;
+    const r = 33.5;
+    const p = a => [50 + r * Math.cos(a * Math.PI / 180), 50 + r * Math.sin(a * Math.PI / 180)];
+    const [x1, y1] = p(a1), [x2, y2] = p(a2);
+    html += `<path d="M${x1} ${y1} A${r} ${r} 0 0 1 ${x2} ${y2}" fill="none" stroke="#a78bfa" stroke-opacity=".5" stroke-width="1" marker-end="url(#ar)"/>`;
+  }
+  html += `</svg>
+    <div class="wheel-core"><div><b class="c-ai">数据飞轮</b><span>越用越聪明</span><div class="fs10 mono t4" style="margin-top:3px">3,186 案例</div></div></div>`;
+  steps.forEach((s, i) => {
+    const a = (-90 + i * 72) * Math.PI / 180;
+    const x = 50 + 44 * Math.cos(a), y = 50 + 44 * Math.sin(a);
+    html += `<div class="wheel-node" style="left:${x}%;top:${y}%">
+      <div class="wn-n">STEP ${s.n}</div><div class="wn-t">${s.t}</div><div class="wn-b">${s.b}</div></div>`;
+  });
+  wheel.innerHTML = html;
+
+  /* ---- 案例池 ---- */
+  Chart.donut('#poolChart', {
+    inner: .58, centerVal: '3,186', centerLabel: '案例总数', unit: ' 条',
+    items: [
+      { label: '库存跌价处置案例', value: 1180, color: '#38bdf8' },
+      { label: '应收坏账处置案例', value: 862, color: '#a78bfa' },
+      { label: '采购拦截案例', value: 214, color: '#fb923c' },
+      { label: '平台行业价格波动案例', value: 704, color: '#2dd4bf' },
+      { label: '行业商户爆雷事件', value: 226, color: '#f4586e' }
+    ]
+  });
+
+  /* ---- 增长 ---- */
+  Chart.line('#growChart', {
+    xLabels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月'], y2: true, min: 0,
+    series: [
+      { name: '案例池累计', data: [420, 780, 1180, 1620, 2050, 2480, 2860, 3186], color: '#38bdf8', area: true, unit: ' 条' },
+      { name: '预警准确率', data: [64.2, 68.6, 72.1, 75.4, 78.8, 81.6, 84.1, 86.2], color: '#34d399', axis2: true, unit: ' %' }
+    ],
+    yFmt: v => v.toFixed(0), y2Fmt: v => v.toFixed(0)
+  });
+
+  /* ---- 微调样本 ---- */
+  Chart.rank('#fineChart', {
+    metric: '样本数', unit: ' 条', labelW: 138, fmt: v => v.toFixed(0),
+    items: [
+      { label: '区域供给收缩误判', value: 62, color: '#f4586e' },
+      { label: '短期情绪波动误判为趋势', value: 48, color: '#fb923c' },
+      { label: '小额官司严重度高估', value: 34, color: '#fbbf24' },
+      { label: '搭售可行性判断偏差', value: 29, color: '#a78bfa' },
+      { label: '长尾规格抛压误报', value: 23, color: '#38bdf8' },
+      { label: '关联方风险传导低估', value: 18, color: '#2dd4bf' }
+    ]
+  });
+
+})();
+</script>
+</body>
+</html>

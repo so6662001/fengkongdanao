@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>库存风险看板 · 钢铁行业 AI 风控大脑</title>
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body data-page="inv">
+<div class="app-bg"></div>
+<div class="layout">
+  <div class="main">
+    <div class="content">
+
+      <div class="page-head">
+        <div>
+          <h1>库存风险看板</h1>
+          <p>批次维度呆滞概率与浮亏测算，<b class="c-teal">新增「市场抛压指数」面板</b> —— 每一类滞销货品同步展示全平台货源挂牌热度曲线与同业价格曲线，直观看到外部市场佐证信号。</p>
+        </div>
+        <div class="ph-right">
+          <div class="seg" id="regSeg">
+            <button class="on" data-v="all">全部区域</button><button data-v="sh">上海</button><button data-v="hz">杭州</button><button data-v="wx">无锡</button>
+          </div>
+          <button class="btn btn-primary" onclick="window.__openAsk&&window.__openAsk()">问 AI：哪些库存会亏钱</button>
+        </div>
+      </div>
+
+      <div class="grid g5 mb">
+        <div class="card kpi"><div class="kpi-t">在库总量 / 货值</div><div class="kpi-v">15,490<small>吨</small></div><div class="kpi-d">6,086 万元 · 8 大品类</div><div class="kpi-spark" id="k1"></div></div>
+        <div class="card kpi"><div class="kpi-t">呆滞高风险货值</div><div class="kpi-v c-red">3,226<small>万元</small></div><div class="kpi-d up trend-up">环比 +18.4% · 占比 53.0%</div><div class="kpi-spark" id="k2"></div></div>
+        <div class="card kpi"><div class="kpi-t">当前浮亏敞口</div><div class="kpi-v c-orange">104.6<small>万元</small></div><div class="kpi-d up trend-up">6 个规格同业价已跌破成本</div><div class="kpi-spark" id="k3"></div></div>
+        <div class="card kpi"><div class="kpi-t">平均库龄</div><div class="kpi-v">39.8<small>天</small></div><div class="kpi-d up trend-up">较上月 +5.2 天</div><div class="kpi-spark" id="k4"></div></div>
+        <div class="card kpi"><div class="kpi-t">全平台市场抛压指数</div><div class="kpi-v c-yellow">78.4</div><div class="kpi-d up trend-up">环比 +12.6 · 抛压等级 L4</div><div class="kpi-spark" id="k5"></div></div>
+      </div>
+
+      <!-- ===== 市场抛压指数面板（新增） ===== -->
+      <div class="card mb accent-top">
+        <div class="card-hd">
+          <h3><span class="dot dot-orange pulse"></span>市场抛压指数面板 <span class="tag tag-teal">本次新增</span></h3>
+          <span class="sub">数据来源：自有资源平台 527 家商户挂牌数据流 + 平台行情指数 API</span>
+          <div class="hd-act">
+            <div class="seg" id="skuSeg"></div>
+          </div>
+        </div>
+        <div class="card-bd">
+          <div class="grid g-1-2" style="gap:14px">
+            <div>
+              <div class="chart h200" id="pGauge"></div>
+              <div class="divider" style="margin:8px 0"></div>
+              <div id="pKv"></div>
+            </div>
+            <div>
+              <div class="grid g2" style="gap:12px">
+                <div>
+                  <div class="fs11 b6 mb" style="margin-bottom:6px">全平台货源挂牌热度曲线 <span class="fs10 t4">（商户数 / 挂牌量）</span></div>
+                  <div class="chart h230" id="hotChart"></div>
+                </div>
+                <div>
+                  <div class="fs11 b6 mb" style="margin-bottom:6px">同业价格曲线 vs 我方库存成本线</div>
+                  <div class="chart h230" id="cmpPrice"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="ai-box" id="aiBox"></div>
+        </div>
+      </div>
+
+      <!-- ===== 库存批次清单 ===== -->
+      <div class="card mb">
+        <div class="card-hd">
+          <h3>库存批次风险清单</h3>
+          <span class="sub">呆滞概率 / 浮亏 / 市场抛压等级 / 行情情绪等级 —— 后两项为本次新增输出指标</span>
+          <div class="hd-act">
+            <div class="seg" id="lvSeg"><button class="on" data-v="all">全部</button><button data-v="high">高风险</button><button data-v="mid">中风险</button><button data-v="low">低风险</button></div>
+            <button class="btn btn-sm">导出</button>
+          </div>
+        </div>
+        <div class="tbl-wrap" style="max-height:none"><table class="tbl" id="invTbl"></table></div>
+        <div class="card-ft flex gap12 wrap">
+          <span>共 <b class="mono">8</b> 个品类批次</span>
+          <span>高风险 <b class="mono c-red">3</b></span>
+          <span>中风险 <b class="mono c-orange">3</b></span>
+          <span>低风险 <b class="mono c-green">2</b></span>
+          <span class="ml-auto t4">呆滞概率 = 量化模型输出；抛压等级 / 情绪等级 = 平台全域数据新增输出</span>
+        </div>
+      </div>
+
+      <div class="grid g3 mb">
+        <div class="card">
+          <div class="card-hd"><h3>库龄分布 × 呆滞概率</h3></div>
+          <div class="card-bd"><div class="chart h230" id="ageChart"></div></div>
+          <div class="card-ft">库龄 &gt; 60 天进入深度呆滞区间，当前 <b class="c-red">2</b> 个品类已突破</div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><h3>品类 × 区域 抛压热力</h3><span class="sub">全平台挂牌行为</span></div>
+          <div class="card-bd"><div class="chart h230" id="heat"></div></div>
+          <div class="card-ft">深红代表商户集中抛货区域，需优先处置对应库存</div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><h3>浮亏敞口构成</h3><span class="sub">同业价低于成本价部分</span></div>
+          <div class="card-bd"><div class="chart h230" id="lossChart"></div></div>
+          <div class="card-ft">合计 <b class="c-orange">104.6</b> 万元，其中螺纹钢 Φ20 占 51.3%</div>
+        </div>
+      </div>
+
+      <!-- ===== 处置建议 + 紧俏机会 ===== -->
+      <div class="grid g-2-1">
+        <div class="card red">
+          <div class="card-hd"><h3>AI 处置建议队列</h3><span class="sub">按风险敞口 × 处置紧迫度排序</span>
+            <div class="hd-act"><a class="btn btn-sm" href="agent-detail.html">查看推理链</a></div>
+          </div>
+          <div class="card-bd"><div class="grid g2" style="gap:11px" id="sugRow"></div></div>
+        </div>
+        <div class="card green">
+          <div class="card-hd"><h3>紧俏品类机会提示</h3><span class="sub">货源变少 + 报价抬升</span></div>
+          <div class="card-bd">
+            <div id="hotOpp"></div>
+            <div class="note green mt">
+              某类钢材平台上货源持续变少、报价稳步抬升 → 市场紧俏，<b>现有库存跌价风险下降</b>，且可作为搭售筹码或适度备货对象。
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/charts.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  const M = Mock, C = M.categories;
+
+  Chart.spark('#k1', { data: M.walk(11, 20, 14800, 320, 40), color: '#38bdf8' });
+  Chart.spark('#k2', { data: M.walk(12, 20, 2400, 130, 46), color: '#f4586e' });
+  Chart.spark('#k3', { data: M.walk(13, 20, 52, 7, 2.9), color: '#fb923c' });
+  Chart.spark('#k4', { data: M.walk(14, 20, 34, 1.2, .32), color: '#a78bfa' });
+  Chart.spark('#k5', { data: M.walk(15, 20, 58, 3, 1.05), color: '#fbbf24' });
+
+  /* ---- 抛压面板 ---- */
+  const segEl = document.getElementById('skuSeg');
+  segEl.innerHTML = C.slice(0, 5).map((c, i) =>
+    `<button class="${i === 0 ? 'on' : ''}" data-v="${i}">${c.name.split(' ')[0]}${c.code.split('-')[1] ? ' ' + c.code.split('-')[1] : ''}</button>`).join('');
+
+  const lvName = p => p >= 85 ? 'L5 极高' : p >= 70 ? 'L4 高' : p >= 50 ? 'L3 中' : p >= 30 ? 'L2 偏低' : 'L1 低';
+  const senName = s => s >= 60 ? '乐观' : s >= 45 ? '中性' : s >= 30 ? '偏悲观' : '悲观';
+
+  function drawPanel(i) {
+    const c = C[i];
+    Chart.gauge('#pGauge', {
+      value: c.pressure, min: 0, max: 100, digits: 0, label: '市场抛压指数 · ' + lvName(c.pressure),
+      segments: [{ to: .3, color: '#34d399' }, { to: .5, color: '#fbbf24' }, { to: .7, color: '#fb923c' }, { to: 1, color: '#f4586e' }]
+    });
+    document.getElementById('pKv').innerHTML = `
+      <div class="kv"><span>规格</span><b>${c.name}</b></div>
+      <div class="kv"><span>区域 / 钢厂</span><b>${c.region} · ${c.mill}</b></div>
+      <div class="kv"><span>我方库存</span><b>${c.stockTon.toLocaleString()} 吨 / ${c.stockAmt.toLocaleString()} 万元</b></div>
+      <div class="kv"><span>库龄</span><b class="${c.ageDays > 60 ? 'c-red' : c.ageDays > 40 ? 'c-orange' : ''}">${c.ageDays} 天</b></div>
+      <div class="kv"><span>库存成本价</span><b>${c.cost.toLocaleString()} 元/吨</b></div>
+      <div class="kv"><span>平台同业均价</span><b class="${c.platAvg < c.cost ? 'c-red' : 'c-green'}">${c.platAvg.toLocaleString()} 元/吨（${c.platAvg < c.cost ? '' : '+'}${c.platAvg - c.cost}）</b></div>
+      <div class="kv"><span>平台挂牌商户</span><b class="${c.listersDelta > 0 ? 'c-red' : 'c-green'}">${c.listers} 家（${c.listersDelta > 0 ? '+' : ''}${c.listersDelta}）</b></div>
+      <div class="kv"><span>呆滞概率</span><b class="${c.idleProb > 70 ? 'c-red' : c.idleProb > 45 ? 'c-orange' : 'c-green'}">${c.idleProb}%</b></div>
+      <div class="kv"><span>浮亏敞口</span><b class="${c.loss > 0 ? 'c-orange' : 'c-green'}">${c.loss > 0 ? c.loss + ' 万元' : '无'}</b></div>
+      <div class="kv"><span>行情情绪等级</span><b class="${c.sentiment < 35 ? 'c-red' : c.sentiment < 50 ? 'c-orange' : 'c-green'}">${senName(c.sentiment)}（${c.sentiment}）</b></div>`;
+
+    Chart.bar('#hotChart', {
+      xLabels: M.days(30), pad: { t: 12, r: 42, b: 24, l: 40 },
+      series: [{ name: '挂牌商户数', data: c.listSeries.map(v => Math.round(v)), color: c.pressure >= 70 ? '#f4586e' : '#fb923c', unit: ' 家' }],
+      lineSeries: [{ name: '挂牌总量', data: c.listSeries.map(v => Math.round(v * 92)), color: '#a78bfa', unit: ' 吨' }],
+      yFmt: v => v.toFixed(0)
+    });
+
+    Chart.line('#cmpPrice', {
+      xLabels: M.days(30), pad: { t: 12, r: 16, b: 24, l: 44 },
+      markLines: [{ value: c.cost, label: '成本 ' + c.cost.toLocaleString(), color: '#f472b6' }],
+      series: [
+        { name: '平台挂牌均价', data: c.priceSeries, color: '#fbbf24', area: true, dots: false, unit: ' 元/吨' },
+        { name: '平台最低报价', data: c.priceSeries.map((v, k) => +(v - 20 - (k % 5) * 4).toFixed(0)), color: '#f4586e', dashed: true, dots: false, unit: ' 元/吨' }
+      ],
+      yFmt: v => v.toFixed(0)
+    });
+
+    const risky = c.platAvg < c.cost;
+    document.getElementById('aiBox').innerHTML = `
+      <div class="ai-hd">库存风控智能体 · 对 ${c.name} 的研判 <span class="m">${risky ? '高风险' : '风险可控'} · 更新于 3 分钟前</span></div>
+      <div class="ai-txt">${risky
+        ? `平台近 3 日该规格挂牌商户由 ${c.listers - c.listersDelta} 家增至 <em>${c.listers} 家</em>（+${c.listersDelta}），挂牌均价 ${c.platAvg.toLocaleString()} 元/吨<em>已低于我方库存成本 ${c.cost.toLocaleString()}</em>，价差 ${c.platAvg - c.cost} 元/吨，按 ${c.stockTon.toLocaleString()} 吨计算浮亏敞口 <span class="hl-red">${c.loss} 万元</span>；${c.name.split(' ')[0]}行情指数持续下行、成交情绪 ${c.sentiment}（${senName(c.sentiment)}）。<br><b style="color:#fff">结论</b>：市场抛压正在累积（抛压等级 ${lvName(c.pressure)}），呆滞概率 <span class="hl-red">${c.idleProb}%</span>，建议<b>分批降价出清并暂停该品类新增采购</b>，同时搭配当前紧俏品类搭售以对冲毛利损失。`
+        : `平台该规格挂牌商户 ${c.listers} 家（${c.listersDelta > 0 ? '+' : ''}${c.listersDelta}），货源${c.listersDelta < 0 ? '持续减少' : '基本平稳'}，同业均价 ${c.platAvg.toLocaleString()} 元/吨<span class="hl-green">高于我方成本 ${c.cost.toLocaleString()}</span>（+${c.platAvg - c.cost} 元/吨），成交情绪 ${c.sentiment}（${senName(c.sentiment)}）。<br><b style="color:#fff">结论</b>：市场偏紧俏，现有库存跌价风险下降，呆滞概率 <span class="hl-green">${c.idleProb}%</span>，可<b>适度备货</b>，并作为滞销品类的搭售筹码。`}
+      </div>`;
+  }
+  drawPanel(0);
+  App.seg('#skuSeg', v => drawPanel(+v));
+
+  /* ---- 批次清单 ---- */
+  function drawTbl(f) {
+    const rows = C.filter(c => f === 'all' || c.level === f);
+    document.getElementById('invTbl').innerHTML = `
+      <thead><tr>
+        <th>品类 / 规格</th><th>区域</th><th>数量(吨)</th><th>货值(万)</th><th>库龄</th>
+        <th>成本价</th><th>平台同业均价</th><th>价差</th><th>呆滞概率</th><th>浮亏(万)</th>
+        <th>平台挂牌商户</th><th>抛压等级</th><th>情绪等级</th><th>建议</th>
+      </tr></thead>
+      <tbody>${rows.map(c => `
+        <tr>
+          <td class="t-main">${c.name}<div class="t-sub">${c.mill} · ${c.code}</div></td>
+          <td class="fs11 t3">${c.region}</td>
+          <td class="num">${c.stockTon.toLocaleString()}</td>
+          <td class="num">${c.stockAmt.toLocaleString()}</td>
+          <td class="num ${c.ageDays > 60 ? 'c-red' : c.ageDays > 40 ? 'c-orange' : ''}">${c.ageDays}天</td>
+          <td class="num">${c.cost.toLocaleString()}</td>
+          <td class="num ${c.platAvg < c.cost ? 'c-red' : 'c-green'}">${c.platAvg.toLocaleString()}</td>
+          <td class="num ${c.platAvg < c.cost ? 'c-red' : 'c-green'}">${c.platAvg - c.cost > 0 ? '+' : ''}${c.platAvg - c.cost}</td>
+          <td class="num">
+            <div class="flex items-c gap6"><div class="bar thin" style="width:44px"><i class="${c.idleProb > 70 ? 'red' : c.idleProb > 45 ? 'orange' : 'green'}" style="width:${c.idleProb}%"></i></div>
+            <span class="${c.idleProb > 70 ? 'c-red' : c.idleProb > 45 ? 'c-orange' : 'c-green'}">${c.idleProb}%</span></div>
+          </td>
+          <td class="num ${c.loss > 0 ? 'c-orange' : 't4'}">${c.loss > 0 ? c.loss : '—'}</td>
+          <td class="num ${c.listersDelta > 0 ? 'c-red' : 'c-green'}">${c.listers} <span class="fs10">(${c.listersDelta > 0 ? '+' : ''}${c.listersDelta})</span></td>
+          <td class="nowrap"><span class="tag ${c.pressure >= 70 ? 'tag-red' : c.pressure >= 50 ? 'tag-orange' : 'tag-green'}">${lvName(c.pressure)}</span></td>
+          <td class="nowrap"><span class="tag ${c.sentiment < 35 ? 'tag-red' : c.sentiment < 50 ? 'tag-orange' : 'tag-green'}">${senName(c.sentiment)}</span></td>
+          <td class="nowrap fs11">${c.level === 'high' ? '<span class="c-red b6">降价出清 + 停采</span>' : c.level === 'mid' ? '<span class="c-orange">搭售 / 观察</span>' : '<span class="c-green">可适度备货</span>'}</td>
+        </tr>`).join('')}</tbody>`;
+  }
+  drawTbl('all');
+  App.seg('#lvSeg', v => drawTbl(v));
+  App.seg('#regSeg');
+
+  /* ---- 库龄 × 呆滞 ---- */
+  Chart.bar('#ageChart', {
+    xLabels: C.map(c => c.name.split(' ')[0].slice(0, 3)),
+    series: [{ name: '库龄', data: C.map(c => c.ageDays), color: '#38bdf8', unit: ' 天' }],
+    lineSeries: [{ name: '呆滞概率', data: C.map(c => c.idleProb), color: '#f4586e', unit: ' %' }],
+    yFmt: v => v.toFixed(0)
+  });
+
+  Chart.heatmap('#heat', { rows: M.heat.rows, cols: M.heat.cols, data: M.heat.data, metric: '抛压指数', showVal: true, digits: 0, labelW: 62 });
+
+  Chart.donut('#lossChart', {
+    inner: .6, centerVal: '104.6', centerLabel: '浮亏合计（万元）',
+    items: C.filter(c => c.loss > 0).map((c, i) => ({
+      label: c.name.split(' ')[0] + ' ' + (c.code.split('-')[1] || ''), value: c.loss,
+      color: ['#f4586e', '#fb923c', '#fbbf24', '#a78bfa', '#38bdf8', '#2dd4bf'][i]
+    })), unit: ' 万元'
+  });
+
+  /* ---- 处置建议 ---- */
+  const sug = [
+    { t: '螺纹钢 HRB400E Φ20 · 4,260 吨', lv: 'high', urgency: '立即',
+      why: '83 家商户集中挂牌（+46），均价低于成本 126 元/吨，建材指数 7 日连跌',
+      plan: '5 日内分 3 批降价出清 60%（3,510 / 3,480 / 3,450 三档）', loss: '29.4 万', cash: '882 万' },
+    { t: '热轧卷板 Q235B 3.0×1250 · 2,980 吨', lv: 'high', urgency: '3 日内',
+      why: '61 家商户挂牌（+27），均价低于成本 57 元/吨，板材指数走弱',
+      plan: '清 40%（1,192 吨），挂 3,560 元/吨并对老客户搭售镀锌卷', loss: '11.8 万', cash: '424 万' },
+    { t: 'H型钢 Q235B 200×200 · 1,520 吨', lv: 'high', urgency: '立即',
+      why: '库龄 68 天已入深度呆滞区，47 家挂牌（+22），倒挂 92 元/吨',
+      plan: '分批阶梯出清 60%，搭配镀锌卷搭售', loss: '9.8 万', cash: '363 万' },
+    { t: '无缝管 20# 108×4.5 · 640 吨', lv: 'mid', urgency: '本周',
+      why: '库龄 55 天，抛压中等，倒挂 62 元/吨',
+      plan: '维持挂牌价，对管材类客户定向促销清 30%', loss: '2.4 万', cash: '111 万' }
+  ];
+  document.getElementById('sugRow').innerHTML = sug.map(s => `
+    <div class="plan ${s.lv === 'high' ? '' : ''}" style="${s.lv === 'high' ? 'border-color:rgba(244,88,110,.32)' : ''}">
+      <div class="plan-t">${App.lvTag(s.lv)} ${s.t}<span class="tag tag-yellow ml-auto">${s.urgency}</span></div>
+      <div class="fs11 t3" style="line-height:1.7;margin-bottom:7px"><b class="t2">依据：</b>${s.why}</div>
+      <div class="fs11" style="line-height:1.7;margin-bottom:7px"><b class="c-blue">建议：</b>${s.plan}</div>
+      <div class="plan-kv"><span>预估亏损</span><b class="c-orange">${s.loss}</b></div>
+      <div class="plan-kv"><span>释放资金</span><b class="c-green">${s.cash}</b></div>
+      <div class="flex gap6 mt"><button class="btn btn-sm btn-primary">生成处置工单</button><button class="btn btn-sm">查看推理链</button></div>
+    </div>`).join('');
+
+  /* ---- 紧俏机会 ---- */
+  document.getElementById('hotOpp').innerHTML = C.filter(c => c.platAvg > c.cost).map(c => `
+    <div class="node" style="margin-bottom:9px;border-color:rgba(52,211,153,.3);background:rgba(52,211,153,.05)">
+      <div class="node-t">${c.name}<span class="tag tag-green ml-auto">紧俏</span></div>
+      <div class="grid g2" style="gap:4px 12px;margin-top:5px">
+        <div class="plan-kv"><span>挂牌商户</span><b class="c-green">${c.listers} 家 (${c.listersDelta})</b></div>
+        <div class="plan-kv"><span>同业均价</span><b>${c.platAvg.toLocaleString()}</b></div>
+        <div class="plan-kv"><span>高于我方成本</span><b class="c-green">+${c.platAvg - c.cost} 元/吨</b></div>
+        <div class="plan-kv"><span>情绪指数</span><b class="c-green">${c.sentiment}</b></div>
+      </div>
+      <div class="fs11 t3" style="margin-top:6px">建议：可适度备货，并作为滞销品类的搭售筹码。</div>
+    </div>`).join('');
+})();
+</script>
+</body>
+</html>

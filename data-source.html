@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>数据接入层 · 钢铁行业 AI 风控大脑</title>
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body data-page="data">
+<div class="app-bg"></div>
+<div class="layout">
+  <div class="main">
+    <div class="content">
+
+      <div class="page-head">
+        <div>
+          <h1>第一层 · 数据接入层</h1>
+          <p>企业内部数据源 ＋ <b class="c-teal">自有平台外部数据源（本次核心增量）</b> ＋ 第三方补充数据源，统一经过 ETL 清洗、规格编码标准化后入湖，并构建向量知识库。</p>
+        </div>
+        <div class="ph-right">
+          <span class="blink-live"><i></i>数据流实时同步中</span>
+          <button class="btn">同步策略配置</button>
+        </div>
+      </div>
+
+      <div class="stat-strip mb">
+        <div><div class="ss-t">今日接入报价条数</div><div class="ss-v c-teal" id="qCount">41,628</div></div>
+        <div><div class="ss-t">在线商户</div><div class="ss-v">527 <span class="fs11 t4">/ 531</span></div></div>
+        <div><div class="ss-t">覆盖规格</div><div class="ss-v">2,846</div></div>
+        <div><div class="ss-t">规格映射率</div><div class="ss-v c-green">96.8%</div></div>
+        <div><div class="ss-t">待人工确认映射</div><div class="ss-v c-orange">37</div></div>
+        <div><div class="ss-t">失信 API 今日调用</div><div class="ss-v">1,264 <span class="fs11 t4">次</span></div></div>
+        <div><div class="ss-t">向量库文档数</div><div class="ss-v c-ai">18,742</div></div>
+      </div>
+
+      <!-- ===== 数据源清单 ===== -->
+      <div class="card mb">
+        <div class="card-hd"><h3>完整数据源清单</h3><span class="sub">14 类数据源 · 接入状态与同步频率</span>
+          <div class="hd-act">
+            <div class="seg" id="srcSeg">
+              <button class="on" data-v="all">全部</button>
+              <button data-v="in">企业内部</button>
+              <button data-v="plat">自有平台</button>
+              <button data-v="3rd">第三方</button>
+            </div>
+          </div>
+        </div>
+        <div class="tbl-wrap" style="max-height:none"><table class="tbl" id="srcTbl"></table></div>
+      </div>
+
+      <!-- ===== 500+ 商户报价流 ===== -->
+      <div class="grid g-2-1 mb">
+        <div class="card accent-top">
+          <div class="card-hd">
+            <h3><span class="dot dot-green pulse"></span>① 500+ 商家每日上传资源 & 价格数据流</h3>
+            <span class="sub">高频时序数据 · 按「规格-区域-时间」存储</span>
+            <div class="hd-act"><span class="tag tag-teal">热门规格小时级</span><span class="tag tag-grey">长尾规格日快照</span></div>
+          </div>
+          <div class="card-bd">
+            <div class="grid g2 mb" style="gap:12px">
+              <div>
+                <div class="fs11 t3 mb" style="margin-bottom:6px">螺纹钢 HRB400E Φ20（上海）· 全平台挂牌均价 vs 我方库存成本</div>
+                <div class="chart h200" id="priceChart"></div>
+              </div>
+              <div>
+                <div class="fs11 t3 mb" style="margin-bottom:6px">挂牌商户数 / 挂牌总量 / 撤牌速率</div>
+                <div class="chart h200" id="listChart"></div>
+              </div>
+            </div>
+            <div class="divider"></div>
+            <div class="flex items-c justify-b mb" style="margin-bottom:8px">
+              <div class="fs12 b6">实时挂牌动态流 <span class="fs10 t4">（命中我方在库 SKU 的报价自动高亮）</span></div>
+              <span class="blink-live"><i></i>每 5 秒推送</span>
+            </div>
+            <div class="tbl-wrap" style="max-height:300px"><table class="tbl" id="feedTbl"></table></div>
+          </div>
+        </div>
+
+        <div class="col" style="display:flex;flex-direction:column;gap:13px">
+          <div class="card">
+            <div class="card-hd"><h3>可挖掘的三类核心信号</h3></div>
+            <div class="card-bd">
+              <div class="node" style="border-color:rgba(244,88,110,.34);background:var(--red-dim);margin-bottom:9px">
+                <div class="node-t c-red">信号一 · 抛压变大</div>
+                <div class="node-b">某一类钢材平台上大量商家集中挂牌抛售、报价持续下探 → 市场抛压变大，<b>滞销、跌价风险提前预警</b>。</div>
+                <div class="fs10 t4 mono" style="margin-top:5px">当前触发：螺纹钢Φ20（83家/+46）、热卷3.0（61家/+27）、H型钢（47家/+22）</div>
+              </div>
+              <div class="node" style="border-color:rgba(52,211,153,.34);background:var(--green-dim);margin-bottom:9px">
+                <div class="node-t c-green">信号二 · 市场紧俏</div>
+                <div class="node-b">某类钢材货源持续变少、报价稳步抬升 → 市场紧俏，<b>现有库存跌价风险下降</b>，可适度备货。</div>
+                <div class="fs10 t4 mono" style="margin-top:5px">当前触发：镀锌卷DX51D（17家/-11，价格+2.9%）、中厚板Q345B（24家/-6）</div>
+              </div>
+              <div class="node" style="border-color:rgba(251,146,60,.34);background:var(--orange-dim)">
+                <div class="node-t c-orange">信号三 · 浮亏敞口即时测算</div>
+                <div class="node-b">同一规格同业普遍报价低于我方库存成本价 → <b>立刻测算浮亏敞口</b>。</div>
+                <div class="fs10 t4 mono" style="margin-top:5px">当前合计浮亏敞口：104.6 万元（涉及 6 个规格）</div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-hd"><h3>数据同步策略</h3><span class="sub">控制成本与时效平衡</span></div>
+            <div class="card-bd">
+              <div class="meter-row"><span class="lbl">热门规格（286个）</span><div class="bar"><i class="blue" style="width:92%"></i></div><span class="val">小时级</span></div>
+              <div class="meter-row"><span class="lbl">次热规格（742个）</span><div class="bar"><i class="blue" style="width:56%"></i></div><span class="val">4 小时</span></div>
+              <div class="meter-row"><span class="lbl">长尾规格（1,818个）</span><div class="bar"><i style="width:24%;background:var(--txt-4)"></i></div><span class="val">日快照</span></div>
+              <div class="divider"></div>
+              <div class="kv"><span>时序数据库</span><b>TDengine / InfluxDB</b></div>
+              <div class="kv"><span>时序点位总量</span><b>2.14 亿</b></div>
+              <div class="kv"><span>保留策略</span><b>明细 2 年 / 聚合 5 年</b></div>
+              <div class="kv"><span>今日同步成功率</span><b class="c-green">99.94%</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 行情指数 + 失信 API ===== -->
+      <div class="grid g2 mb">
+        <div class="card accent-top">
+          <div class="card-hd"><h3>② 平台行情指数 API</h3><span class="sub">行业情绪指标 · 核心先行指标，优先入模</span>
+            <div class="hd-act"><span class="tag tag-teal">优先级高于第三方行情</span></div>
+          </div>
+          <div class="card-bd">
+            <div class="chart h230" id="idxChart"></div>
+            <div class="legend mt" style="justify-content:center">
+              <span><i style="background:#f4586e"></i>建材综合</span>
+              <span><i style="background:#38bdf8"></i>板材综合</span>
+              <span><i style="background:#fb923c"></i>型材综合</span>
+              <span><i style="background:#34d399"></i>管材综合</span>
+              <span><i style="background:#a78bfa"></i>成交情绪指数</span>
+            </div>
+            <div class="divider"></div>
+            <div class="grid g3" style="gap:9px">
+              <div class="node"><div class="fs10 t4">分品类行情指数</div><div class="mono b7 c-red" style="font-size:17px">92.4 <span class="fs10 trend-down">-6.8%</span></div><div class="fs10 t4">建材综合 · 连续7日下行</div></div>
+              <div class="node"><div class="fs10 t4">区域热度指数</div><div class="mono b7 c-orange" style="font-size:17px">48.6 <span class="fs10 trend-down">-14.2%</span></div><div class="fs10 t4">上海地区 · 询盘转化走弱</div></div>
+              <div class="node"><div class="fs10 t4">成交情绪指数</div><div class="mono b7 c-red" style="font-size:17px">31.2 <span class="fs10 trend-down">-24.8</span></div><div class="fs10 t4">观望情绪浓，成交周期拉长</div></div>
+            </div>
+            <div class="note blue mt">
+              平台自有指数由 527 家商户真实挂牌与成交行为生成，<b>比单纯外部第三方行情更贴合本商圈真实交易情绪</b>，因此在预测模型中作为先行特征优先使用（权重合计 19.7%）。
+            </div>
+          </div>
+        </div>
+
+        <div class="card accent-top">
+          <div class="card-hd"><h3>③ 平台企业失信风险检测 API</h3><span class="sub">复用同一套接口，做两层场景调用</span>
+            <div class="hd-act"><span class="tag tag-yellow">巡检策略：常规定时 + 高风险高频</span></div>
+          </div>
+          <div class="card-bd">
+            <div class="grid g2 mb" style="gap:11px">
+              <div class="node">
+                <div class="node-t">场景一 · 下游赊销客户</div>
+                <div class="node-b">自动定时轮询检测司法、失信、变更、经营异常风险；出现新增风险事件<b>自动触发风险上调</b>。</div>
+                <div class="divider" style="margin:9px 0"></div>
+                <div class="kv"><span>纳入巡检客户</span><b>42 家</b></div>
+                <div class="kv"><span>本周新增风险事件</span><b class="c-red">9 起</b></div>
+                <div class="kv"><span>自动上调风险等级</span><b class="c-orange">5 家</b></div>
+              </div>
+              <div class="node">
+                <div class="node-t">场景二 · 平台入驻商户（上游）</div>
+                <div class="node-b">监控上游供货商风险，重要供应商失信异动可预警<b>断货、履约风险</b>，反向影响采购计划。</div>
+                <div class="divider" style="margin:9px 0"></div>
+                <div class="kv"><span>监控商户</span><b>527 家</b></div>
+                <div class="kv"><span>其中我方供货商</span><b>38 家</b></div>
+                <div class="kv"><span>本周风险异动</span><b class="c-red">3 家</b></div>
+              </div>
+            </div>
+
+            <div class="fs11 t4 mb" style="letter-spacing:.5px;margin-bottom:6px">调用策略与成本控制（避免无限制高频全量轮询）</div>
+            <table class="tbl mb">
+              <thead><tr><th>客户分层</th><th>数量</th><th>巡检频率</th><th>日调用量</th><th>触发升频条件</th></tr></thead>
+              <tbody>
+                <tr><td><span class="tag tag-red">高风险</span></td><td class="num">6</td><td>每 4 小时</td><td class="num">36</td><td class="fs11 t3">已有失信事件 / 逾期&gt;30天</td></tr>
+                <tr><td><span class="tag tag-orange">中风险</span></td><td class="num">11</td><td>每日 1 次</td><td class="num">11</td><td class="fs11 t3">新增逾期或授信使用率&gt;85%</td></tr>
+                <tr><td><span class="tag tag-green">低风险</span></td><td class="num">25</td><td>每周 1 次</td><td class="num">4</td><td class="fs11 t3">出现任一风险事件即升频</td></tr>
+                <tr><td><span class="tag tag-blue">上游商户</span></td><td class="num">38</td><td>每日 1 次</td><td class="num">38</td><td class="fs11 t3">在手订单&gt;500万者提至每 6 小时</td></tr>
+              </tbody>
+            </table>
+            <div class="chart h140" id="apiChart"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 规格编码标准化 ===== -->
+      <div class="card mb">
+        <div class="card-hd">
+          <h3>规格编码标准化映射工作台 <span class="tag tag-red">最关键前置工作</span></h3>
+          <span class="sub">ERP 钢材规格 ↔ 平台商家上传规格口径映射，未标准化则海量商家报价无法匹配自有库存 SKU</span>
+          <div class="hd-act"><span class="tag tag-green">已映射 2,754</span><span class="tag tag-orange">待确认 37</span><span class="tag tag-red">失败 55</span></div>
+        </div>
+        <div class="card-bd">
+          <div class="grid g-3-2" style="gap:13px">
+            <div class="tbl-wrap" style="max-height:340px"><table class="tbl" id="mapTbl"></table></div>
+            <div>
+              <div class="chart h170" id="mapChart"></div>
+              <div class="note mt">
+                <b>映射方法</b>：规则引擎（材质 + 规格数值 + 长度 + 钢厂）打底，命中率约 82%；剩余部分用<b>大模型语义归一</b>（处理「螺纹20 沙钢」「抗震螺纹HRB400E20」等自由文本），置信度低于 85% 转人工确认。人工确认结果回流规则库与向量库，映射率持续提升。
+              </div>
+              <div class="grid g3 mt" style="gap:9px">
+                <div class="node center"><div class="fs10 t4">规则命中</div><div class="mono b7 c-blue" style="font-size:17px">82.1%</div></div>
+                <div class="node center"><div class="fs10 t4">大模型归一</div><div class="mono b7 c-ai" style="font-size:17px">14.7%</div></div>
+                <div class="node center"><div class="fs10 t4">人工确认</div><div class="mono b7 c-orange" style="font-size:17px">3.2%</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 向量知识库 ===== -->
+      <div class="card">
+        <div class="card-hd"><h3>私有向量知识库 · 同步升级</h3><span class="sub">除自有历史风险案例外，新增平台沉淀的行业价格波动案例与商户爆雷历史事件</span>
+          <div class="hd-act"><span class="tag tag-ai">RAG 检索底座</span></div>
+        </div>
+        <div class="card-bd">
+          <div class="grid g-2-3" style="gap:13px">
+            <div class="chart h230" id="vecChart"></div>
+            <div>
+              <table class="tbl">
+                <thead><tr><th>知识分区</th><th>来源</th><th>文档数</th><th>切片数</th><th>主要用途</th></tr></thead>
+                <tbody>
+                  <tr><td class="t-main">自有风险处置案例</td><td><span class="tag tag-blue">内部</span></td><td class="num">3,186</td><td class="num">18,420</td><td class="fs11 t3">同类风险的历史处置方式与结果</td></tr>
+                  <tr><td class="t-main">业务员沟通纪要</td><td><span class="tag tag-blue">内部</span></td><td class="num">6,842</td><td class="num">41,260</td><td class="fs11 t3">隐性风险语义挖掘（拖延话术、口头承诺）</td></tr>
+                  <tr><td class="t-main">合同 / 谈判记录</td><td><span class="tag tag-blue">内部</span></td><td class="num">1,904</td><td class="num">22,180</td><td class="fs11 t3">账期、违约责任、担保条款比对</td></tr>
+                  <tr><td class="t-main">内部研判会议记录</td><td><span class="tag tag-blue">内部</span></td><td class="num">418</td><td class="num">6,340</td><td class="fs11 t3">公司经营风格与决策偏好学习</td></tr>
+                  <tr style="background:rgba(45,212,191,.05)"><td class="t-main c-teal">行业价格波动案例</td><td><span class="tag tag-teal">平台 NEW</span></td><td class="num">704</td><td class="num">9,860</td><td class="fs11 t3">历史抛压周期与拐点形态参考</td></tr>
+                  <tr style="background:rgba(45,212,191,.05)"><td class="t-main c-teal">商户爆雷历史事件</td><td><span class="tag tag-teal">平台 NEW</span></td><td class="num">226</td><td class="num">3,140</td><td class="fs11 t3">爆雷前的挂牌与征信前兆特征</td></tr>
+                  <tr><td class="t-main">行业舆情 / 钢厂调价</td><td><span class="tag tag-grey">第三方</span></td><td class="num">5,462</td><td class="num">24,880</td><td class="fs11 t3">宏观与供给端背景补充</td></tr>
+                </tbody>
+              </table>
+              <div class="note green mt">
+                长期运行之后，这套知识库不仅学习本公司做生意的经验，还会持续学习整个商圈几百家商家共同的市场行为规律 —— 这是独立第三方行情系统无法提供的独特优势。
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/charts.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  const M = Mock;
+
+  /* ---- 数据源清单 ---- */
+  const SRC = [
+    { g: 'in', n: 'ERP 库存台账', type: '结构化', proto: 'DB 直连（读库）', freq: '15 分钟', vol: '15,490 吨 / 8 品类', st: 'ok', use: '库龄、批次成本、在库水位' },
+    { g: 'in', n: '采购 / 销售订单', type: '结构化', proto: 'DB 直连', freq: '15 分钟', vol: '本月 1,284 单', st: 'ok', use: '周转率、在途量、采购节奏' },
+    { g: 'in', n: '应收台账', type: '结构化', proto: 'DB 直连', freq: '1 小时', vol: '2.36 亿 / 42 家', st: 'ok', use: '账龄、逾期、回款准时率' },
+    { g: 'in', n: '客户授信档案', type: '结构化', proto: 'DB 直连', freq: '1 小时', vol: '42 家', st: 'ok', use: '授信额度与使用率' },
+    { g: 'in', n: '财务票据数据', type: '结构化', proto: '文件 / 接口', freq: '每日', vol: '本月 862 张', st: 'ok', use: '实际结算与承兑风险' },
+    { g: 'in', n: '业务员沟通纪要', type: '非结构化', proto: '企微 / CRM 同步', freq: '每日', vol: '6,842 篇', st: 'ok', use: '隐性风险语义挖掘', phase: '二期' },
+    { g: 'in', n: '谈判记录 / 会议记录', type: '非结构化', proto: '录音转写 + 文档', freq: '每日', vol: '2,322 篇', st: 'wip', use: '决策偏好与承诺追踪', phase: '二期' },
+    { g: 'in', n: '合同扫描件', type: '非结构化', proto: 'OCR 解析', freq: '按需', vol: '1,904 份', st: 'wip', use: '账期与担保条款抽取', phase: '二期' },
+    { g: 'plat', n: '500+ 商家资源 & 价格数据流', type: '高频时序', proto: '平台 API + Kafka', freq: '热门小时级 / 长尾日快照', vol: '41,628 条/日', st: 'ok', use: '挂牌热度、同业报价、抛压指数', neu: true },
+    { g: 'plat', n: '平台行情指数 API', type: '指数时序', proto: 'REST API', freq: '每日 2 次', vol: '6 类指数 × 7 区域', st: 'ok', use: '行情趋势先行指标', neu: true },
+    { g: 'plat', n: '企业失信风险检测 API', type: '事件流', proto: 'REST API（分层轮询）', freq: '4h / 1d / 7d 分层', vol: '1,264 次/日', st: 'ok', use: '下游客户征信 + 上游商户风险', neu: true },
+    { g: '3rd', n: '外部钢厂调价', type: '结构化', proto: '第三方数据服务', freq: '每日', vol: '32 家钢厂', st: 'ok', use: '供给端成本锚' },
+    { g: '3rd', n: '下游开工数据', type: '结构化', proto: '第三方数据服务', freq: '每周', vol: '5 大下游行业', st: 'ok', use: '需求端景气度' },
+    { g: '3rd', n: '行业舆情资讯', type: '非结构化', proto: '爬虫 + 订阅', freq: '实时', vol: '5,462 篇', st: 'ok', use: '突发事件与政策信号' }
+  ];
+  const gName = { in: '<span class="tag tag-blue">企业内部</span>', plat: '<span class="tag tag-teal">自有平台</span>', '3rd': '<span class="tag tag-grey">第三方</span>' };
+  const stName = { ok: '<span class="tag tag-green">已接入</span>', wip: '<span class="tag tag-yellow">二期接入</span>' };
+  function drawSrc(f) {
+    const rows = SRC.filter(s => f === 'all' || s.g === f);
+    document.getElementById('srcTbl').innerHTML = `
+      <thead><tr><th>归属</th><th>数据源</th><th>类型</th><th>接入方式</th><th>同步频率</th><th>当前体量</th><th>核心用途</th><th>状态</th></tr></thead>
+      <tbody>${rows.map(s => `
+        <tr ${s.neu ? 'style="background:rgba(45,212,191,.055)"' : ''}>
+          <td class="nowrap">${gName[s.g]}</td>
+          <td class="t-main">${s.n} ${s.neu ? '<span class="tag tag-teal">NEW</span>' : ''}</td>
+          <td class="fs11 t3 nowrap">${s.type}</td>
+          <td class="fs11 t3 nowrap">${s.proto}</td>
+          <td class="fs11 nowrap mono">${s.freq}</td>
+          <td class="fs11 t2 nowrap">${s.vol}</td>
+          <td class="fs11 t3">${s.use}</td>
+          <td class="nowrap">${stName[s.st]}</td>
+        </tr>`).join('')}</tbody>`;
+  }
+  drawSrc('all');
+  App.seg('#srcSeg', v => drawSrc(v));
+
+  /* ---- 价格曲线 ---- */
+  const c0 = M.categories[0];
+  Chart.line('#priceChart', {
+    xLabels: M.days(30),
+    markLines: [{ value: c0.cost, label: '库存成本 3,598', color: '#f472b6' }],
+    series: [
+      { name: '平台挂牌均价', data: c0.priceSeries, color: '#fbbf24', area: true, unit: ' 元/吨', dots: false },
+      { name: '平台最低报价', data: c0.priceSeries.map(v => +(v - 22 - Math.random() * 16).toFixed(0)), color: '#f4586e', dashed: true, dots: false, unit: ' 元/吨' }
+    ],
+    yFmt: v => v.toFixed(0)
+  });
+
+  /* ---- 挂牌量 ---- */
+  Chart.bar('#listChart', {
+    xLabels: M.days(30),
+    series: [{ name: '挂牌商户数', data: c0.listSeries.map(v => Math.round(v)), color: '#f4586e', unit: ' 家' }],
+    lineSeries: [{ name: '撤牌速率', data: M.walk(91, 30, 18, 2.4, i => (i > 22 ? -.9 : .1), 2), color: '#34d399', unit: ' %' }],
+    yFmt: v => v.toFixed(0)
+  });
+
+  /* ---- 实时挂牌流 ---- */
+  function feedRow(q) {
+    return `<tr ${q.warn ? 'style="background:rgba(244,88,110,.07)"' : ''}>
+      <td class="mono fs11 t4 nowrap">${q.t}</td>
+      <td class="fs11 ${q.warn ? 'c-red b6' : 't-main'} nowrap">${q.m}${q.warn ? ' <span class="tag tag-red">关注商户</span>' : ''}</td>
+      <td class="fs11 nowrap">${q.sku}</td>
+      <td class="fs11 t3 nowrap">${q.reg}</td>
+      <td class="num nowrap">${q.price}</td>
+      <td class="num nowrap ${q.delta < 0 ? 'c-red' : 'c-green'}">${q.delta > 0 ? '+' : ''}${q.delta}</td>
+      <td class="num nowrap">${q.qty}</td>
+      <td class="nowrap"><span class="tag ${q.act === '新挂牌' ? 'tag-orange' : q.act === '撤牌' ? 'tag-green' : 'tag-grey'}">${q.act}</span></td>
+      <td class="nowrap">${q.hit ? '<span class="tag tag-blue">命中在库SKU</span>' : ''}</td>
+    </tr>`;
+  }
+  const feedTbl = document.getElementById('feedTbl');
+  feedTbl.innerHTML = `<thead><tr><th>时间</th><th>商户</th><th>规格（标准化后）</th><th>区域</th><th>挂牌价</th><th>较昨</th><th>余量(吨)</th><th>动作</th><th>匹配</th></tr></thead>
+    <tbody id="feedBody">${M.quoteFeed.map(feedRow).join('')}</tbody>`;
+
+  /* 模拟实时新增 */
+  const pool = M.quoteFeed;
+  let seq = 0;
+  setInterval(() => {
+    const base = pool[seq++ % pool.length];
+    const d = new Date(2026, 7, 16, 14, 52, 30 + seq * 7);
+    const p = n => String(n).padStart(2, '0');
+    const q = Object.assign({}, base, {
+      t: `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`,
+      price: base.price + Math.round((Math.random() - .6) * 12),
+      delta: base.delta + Math.round((Math.random() - .5) * 8)
+    });
+    const body = document.getElementById('feedBody');
+    body.insertAdjacentHTML('afterbegin', feedRow(q));
+    if (body.children.length > 24) body.removeChild(body.lastElementChild);
+    const el = document.getElementById('qCount');
+    el.textContent = (41628 + seq).toLocaleString();
+  }, 5000);
+
+  /* ---- 行情指数 ---- */
+  Chart.line('#idxChart', {
+    xLabels: M.indices.xLabels,
+    y2: true,
+    series: [
+      { name: '建材综合指数', data: M.indices.建材综合, color: '#f4586e', area: true, dots: false },
+      { name: '板材综合指数', data: M.indices.板材综合, color: '#38bdf8', dots: false },
+      { name: '型材综合指数', data: M.indices.型材综合, color: '#fb923c', dots: false },
+      { name: '管材综合指数', data: M.indices.管材综合, color: '#34d399', dots: false },
+      { name: '成交情绪指数', data: M.indices.成交情绪, color: '#a78bfa', axis2: true, dashed: true, dots: false }
+    ],
+    yFmt: v => v.toFixed(0), y2Fmt: v => v.toFixed(0)
+  });
+
+  /* ---- 失信 API 调用量 ---- */
+  Chart.bar('#apiChart', {
+    xLabels: ['08/10', '08/11', '08/12', '08/13', '08/14', '08/15', '08/16'],
+    stacked: true,
+    series: [
+      { name: '高风险客户高频扫描', data: [24, 24, 30, 36, 36, 36, 36], color: '#f4586e' },
+      { name: '常规客户定时巡检', data: [15, 15, 15, 15, 15, 15, 15], color: '#38bdf8' },
+      { name: '上游商户巡检', data: [38, 38, 38, 44, 44, 44, 38], color: '#2dd4bf' }
+    ],
+    yFmt: v => v.toFixed(0)
+  });
+
+  /* ---- 规格映射表 ---- */
+  const stM = { ok: '<span class="tag tag-green">已映射</span>', review: '<span class="tag tag-orange">待确认</span>', fail: '<span class="tag tag-red">映射失败</span>' };
+  document.getElementById('mapTbl').innerHTML = `
+    <thead><tr><th>内部 ERP 规格</th><th>平台商家上传口径（多写法）</th><th>标准编码</th><th>置信度</th><th>状态</th></tr></thead>
+    <tbody>${M.skuMap.map(s => `
+      <tr>
+        <td class="t-main fs11">${s.erp}</td>
+        <td class="fs11 t3">${s.plat.map(p => `<span class="src-pill" style="margin:1px 2px 1px 0;display:inline-block">${p}</span>`).join('')}</td>
+        <td class="mono fs11 ${s.state === 'fail' ? 'c-red' : 'c-teal'}">${s.std}</td>
+        <td class="num ${s.conf > 90 ? 'c-green' : s.conf > 70 ? 'c-orange' : 'c-red'}">${s.conf}%</td>
+        <td class="nowrap">${stM[s.state]}${s.state !== 'ok' ? ' <button class="btn btn-sm" style="margin-left:4px">人工确认</button>' : ''}</td>
+      </tr>`).join('')}</tbody>`;
+
+  Chart.donut('#mapChart', {
+    inner: .62, centerVal: '96.8%', centerLabel: '规格映射率',
+    items: [
+      { label: '规则引擎命中', value: 2261, color: '#38bdf8' },
+      { label: '大模型语义归一', value: 405, color: '#a78bfa' },
+      { label: '人工确认沉淀', value: 88, color: '#34d399' },
+      { label: '待确认', value: 37, color: '#fb923c' },
+      { label: '映射失败', value: 55, color: '#f4586e' }
+    ]
+  });
+
+  /* ---- 向量库 ---- */
+  Chart.rank('#vecChart', {
+    metric: '切片数', labelW: 120, unit: '',
+    items: [
+      { label: '沟通纪要', value: 41260, color: '#38bdf8' },
+      { label: '行业舆情', value: 24880, color: '#7f9cc0' },
+      { label: '合同/谈判', value: 22180, color: '#38bdf8' },
+      { label: '风险处置案例', value: 18420, color: '#a78bfa' },
+      { label: '行业价格波动案例', value: 9860, color: '#2dd4bf' },
+      { label: '研判会议记录', value: 6340, color: '#38bdf8' },
+      { label: '商户爆雷事件', value: 3140, color: '#2dd4bf' }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

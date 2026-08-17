@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>业务执行与预警 · 钢铁行业 AI 风控大脑</title>
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body data-page="flow">
+<div class="app-bg"></div>
+<div class="layout">
+  <div class="main">
+    <div class="content">
+
+      <div class="page-head">
+        <div>
+          <h1>第三层 · 业务执行与预警层</h1>
+          <p>把 AI 结论嵌进真实业务流程节点：<b>风险分级推送</b> → <b class="c-teal">采购审批风控增强</b> → <b>风险处置工单闭环</b> → <b class="c-teal">上游供应商风险告警</b>。AI 只提供建议，不自动下达业务指令。</p>
+        </div>
+        <div class="ph-right">
+          <div class="seg" id="tabSeg">
+            <button class="on" data-v="push">分级推送</button>
+            <button data-v="po">采购审批</button>
+            <button data-v="wo">处置工单</button>
+            <button data-v="sup">供应商告警</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-strip mb">
+        <div><div class="ss-t">今日推送预警</div><div class="ss-v">27 <span class="fs11 t4">条</span></div></div>
+        <div><div class="ss-t">高风险直达高管</div><div class="ss-v c-red">6 <span class="fs11 t4">条</span></div></div>
+        <div><div class="ss-t">进行中工单</div><div class="ss-v c-orange">9</div></div>
+        <div><div class="ss-t">本月已闭环</div><div class="ss-v c-green">34</div></div>
+        <div><div class="ss-t">AI 建议采纳率</div><div class="ss-v c-green">78.5%</div></div>
+        <div><div class="ss-t">本月拦截采购</div><div class="ss-v">3 <span class="fs11 t4">笔 / 4,200 吨</span></div></div>
+        <div><div class="ss-t">规避潜在损失</div><div class="ss-v c-green">62 <span class="fs11 t4">万元</span></div></div>
+      </div>
+
+      <!-- ============ 分级推送 ============ -->
+      <div data-panel="push" data-group="wf">
+        <div class="grid g-2-3 mb">
+          <div class="card">
+            <div class="card-hd"><h3>风险分级推送逻辑</h3><span class="sub">低中风险推送对应负责人，高风险直达高管</span></div>
+            <div class="card-bd">
+              <div class="chart h230" id="pushFlow"></div>
+              <div class="divider"></div>
+              <table class="tbl">
+                <thead><tr><th>风险等级</th><th>判定阈值</th><th>接收人</th><th>推送渠道</th><th>响应时限</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="tag tag-green">低风险</span></td><td class="fs11 t3">呆滞概率&lt;45% / 坏账&lt;30%</td><td class="fs11">业务员、客服</td><td class="fs11 t3">站内消息</td><td class="fs11 mono">3 个工作日</td></tr>
+                  <tr><td><span class="tag tag-orange">中风险</span></td><td class="fs11 t3">呆滞 45~70% / 坏账 30~60%</td><td class="fs11">现货部 / 销售部 / 采购部负责人</td><td class="fs11 t3">站内 + 企微</td><td class="fs11 mono">24 小时</td></tr>
+                  <tr style="background:rgba(244,88,110,.06)"><td><span class="tag tag-red">高风险</span></td><td class="fs11 t3">呆滞&gt;70% / 坏账&gt;60% / 重大失信事件</td><td class="fs11 b6">总经理 + 财务总监（同时抄送部门负责人）</td><td class="fs11 t3">站内 + 企微 + 短信</td><td class="fs11 mono c-red">4 小时</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-hd"><h3>今日推送记录</h3><span class="sub">含推送对象与响应状态</span>
+              <div class="hd-act"><span class="blink-live"><i></i>实时</span></div>
+            </div>
+            <div class="tbl-wrap" style="max-height:520px"><table class="tbl" id="pushTbl"></table></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 采购审批 ============ -->
+      <div data-panel="po" data-group="wf" style="display:none">
+        <div class="card mb accent-top">
+          <div class="card-hd">
+            <h3>采购审批节点风控能力增强 <span class="tag tag-teal">本次升级</span></h3>
+            <span class="sub">不仅看自有库存水位，同时拉取资源平台当前该品类整体挂牌货源体量、同业报价、行情指数</span>
+            <div class="hd-act"><span class="tag tag-grey">从源头减少积压库存</span></div>
+          </div>
+          <div class="card-bd">
+            <div class="flow-pipe mb">
+              <div class="fp-box"><div class="fp-t">业务提交采购申请</div><div class="fp-b">品类 / 数量 / 价格 / 供货商</div></div>
+              <div class="fp-arrow">→</div>
+              <div class="fp-box"><div class="fp-t">内部库存水位校验</div><div class="fp-b">在库 + 在途 + 已售未发</div></div>
+              <div class="fp-arrow">→</div>
+              <div class="fp-box" style="border-color:rgba(45,212,191,.45);background:rgba(45,212,191,.07)"><div class="fp-t c-teal">拉取平台挂牌货源体量</div><div class="fp-b">全平台该品类总挂牌量 / 商户数</div></div>
+              <div class="fp-arrow">→</div>
+              <div class="fp-box" style="border-color:rgba(45,212,191,.45);background:rgba(45,212,191,.07)"><div class="fp-t c-teal">同业报价 + 行情指数</div><div class="fp-b">申报价 vs 同业均价 / 指数斜率</div></div>
+              <div class="fp-arrow">→</div>
+              <div class="fp-box" style="border-color:rgba(45,212,191,.45);background:rgba(45,212,191,.07)"><div class="fp-t c-teal">上游供货商失信检测</div><div class="fp-b">履约与预付款风险</div></div>
+              <div class="fp-arrow">→</div>
+              <div class="fp-box" style="border-color:rgba(251,146,60,.45);background:rgba(251,146,60,.07)"><div class="fp-t c-orange">综合风险提示</div><div class="fp-b">建议采购量 / 建议价格 / 通过或驳回建议</div></div>
+            </div>
+
+            <div class="grid g2" style="gap:13px" id="poRow"></div>
+          </div>
+        </div>
+
+        <div class="grid g3">
+          <div class="card">
+            <div class="card-hd"><h3>采购拦截效果</h3><span class="sub">近 6 个月</span></div>
+            <div class="card-bd"><div class="chart h230" id="poChart"></div></div>
+            <div class="card-ft">累计拦截 14 笔、压缩采购量 1.87 万吨，规避潜在跌价损失约 <b class="c-green">284 万元</b></div>
+          </div>
+          <div class="card">
+            <div class="card-hd"><h3>品类采购建议</h3><span class="sub">基于平台货源体量与行情指数</span></div>
+            <div class="card-bd"><div id="poSug"></div></div>
+          </div>
+          <div class="card">
+            <div class="card-hd"><h3>市场货源体量 vs 建议采购强度</h3></div>
+            <div class="card-bd"><div class="chart h230" id="poBar"></div>
+              <div class="legend center mt" style="justify-content:center"><span><i class="sq" style="background:#f4586e"></i>平台挂牌量(百吨)</span><span><i style="background:#34d399"></i>建议采购强度</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 处置工单 ============ -->
+      <div data-panel="wo" data-group="wf" style="display:none">
+        <div class="card mb">
+          <div class="card-hd">
+            <h3>风险处置工单闭环</h3>
+            <span class="sub">AI 给出建议 → 业务人员填写采纳/否决、执行动作、最终业务结果 → 全部回流系统沉淀案例</span>
+            <div class="hd-act">
+              <div class="seg" id="woSeg"><button class="on" data-v="all">全部</button><button data-v="待决策">待决策</button><button data-v="执行中">执行中</button><button data-v="已闭环">已闭环</button></div>
+            </div>
+          </div>
+          <div class="tbl-wrap" style="max-height:none"><table class="tbl" id="woTbl"></table></div>
+          <div class="card-ft flex gap12 wrap">
+            <span>累计工单 <b class="mono">412</b></span>
+            <span>采纳 <b class="mono c-green">78.5%</b></span>
+            <span>部分采纳 <b class="mono c-yellow">13.1%</b></span>
+            <span>否决 <b class="mono c-red">8.4%</b></span>
+            <span class="ml-auto">否决且事后证明 AI 判断失误的场景已标记为微调样本：<b class="mono c-ai">214</b> 条</span>
+          </div>
+        </div>
+
+        <div class="grid g3">
+          <div class="card">
+            <div class="card-hd"><h3>工单闭环五步</h3></div>
+            <div class="card-bd">
+              <div class="tl">
+                <div class="tl-i blue"><div class="tl-t">① AI 输出风险判断与处置建议</div><div class="tl-b">结合内部数据 + 平台全域市场数据，附推理链与数据快照</div></div>
+                <div class="tl-i orange"><div class="tl-t">② 业务人员决策</div><div class="tl-b">工单记录采纳 / 部分采纳 / 否决，并填写实际执行动作</div></div>
+                <div class="tl-i orange"><div class="tl-t">③ 系统记录完整案例</div><div class="tl-b">当时 AI 判断逻辑（含平台市场数据快照）＋ 人的决策 ＋ 最终业务结果</div></div>
+                <div class="tl-i green"><div class="tl-t">④ 案例自动归档进私有向量库</div><div class="tl-b">高频判断失误场景标记为微调数据集</div></div>
+                <div class="tl-i green"><div class="tl-t">⑤ 定期迭代</div><div class="tl-b">知识库实时检索更新，周期性 LoRA 微调</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-hd"><h3>决策分布与结果</h3></div>
+            <div class="card-bd"><div class="chart h230" id="woChart"></div></div>
+            <div class="card-ft">采纳组风险处置成功率 <b class="c-green">83.6%</b>，否决组事后确认风险发生率 <b class="c-red">61.2%</b></div>
+          </div>
+          <div class="card">
+            <div class="card-hd"><h3>工单处置成效</h3><span class="sub">近 6 个月累计</span></div>
+            <div class="card-bd">
+              <div class="meter-row"><span class="lbl">减少滞销货值</span><div class="bar"><i class="green" style="width:86%"></i></div><span class="val">2,180万</span></div>
+              <div class="meter-row"><span class="lbl">减亏（跌价）</span><div class="bar"><i class="green" style="width:64%"></i></div><span class="val">316万</span></div>
+              <div class="meter-row"><span class="lbl">挽回逾期应收</span><div class="bar"><i class="green" style="width:72%"></i></div><span class="val">1,462万</span></div>
+              <div class="meter-row"><span class="lbl">规避采购踩坑</span><div class="bar"><i class="green" style="width:48%"></i></div><span class="val">284万</span></div>
+              <div class="meter-row"><span class="lbl">平均库龄下降</span><div class="bar"><i class="blue" style="width:41%"></i></div><span class="val">-8.6天</span></div>
+              <div class="divider"></div>
+              <div class="note green">
+                所有记录回流系统，持续沉淀案例，支撑模型迭代 —— 这是数据飞轮的燃料来源。
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 供应商告警 ============ -->
+      <div data-panel="sup" data-group="wf" style="display:none">
+        <div class="card mb red">
+          <div class="card-hd">
+            <h3><span class="dot dot-red pulse"></span>上游供应商风险告警 <span class="tag tag-teal">本次新增</span></h3>
+            <span class="sub">长期合作上游供货商一旦被失信 API 检测到重大风险事件，立即推送供应链风险预警给采购负责人</span>
+          </div>
+          <div class="card-bd">
+            <div class="grid g2" style="gap:13px" id="supRow"></div>
+          </div>
+        </div>
+
+        <div class="grid g3">
+          <div class="card">
+            <div class="card-hd"><h3>供货集中度</h3><span class="sub">采购占比</span></div>
+            <div class="card-bd"><div class="chart h230" id="supDonut"></div></div>
+            <div class="card-ft">华鑫钢贸占比 23.6% 且已出现重大风险事件，集中度偏高需分散</div>
+          </div>
+          <div class="card">
+            <div class="card-hd"><h3>备源切换方案</h3><span class="sub">AI 建议</span></div>
+            <div class="card-bd">
+              <table class="tbl">
+                <thead><tr><th>转移量</th><th>原供货商</th><th>建议备源</th><th>价格影响</th><th>切换周期</th></tr></thead>
+                <tbody>
+                  <tr><td class="num nowrap">3,200 吨</td><td class="c-red nowrap">华鑫钢贸</td><td class="c-green nowrap">中天钢铁销售公司</td><td class="num nowrap c-orange">+12 元/吨</td><td class="mono fs11 nowrap">2 个工作日</td></tr>
+                  <tr><td class="num nowrap">1,400 吨</td><td class="c-red nowrap">华鑫钢贸</td><td class="c-green nowrap">永钢集团华东</td><td class="num nowrap c-orange">+18 元/吨</td><td class="mono fs11 nowrap">3 个工作日</td></tr>
+                  <tr><td class="num nowrap">600 吨</td><td class="c-orange nowrap">恒昌物资</td><td class="c-green nowrap">鑫达金属材料</td><td class="num nowrap c-green">-6 元/吨</td><td class="mono fs11 nowrap">2 个工作日</td></tr>
+                </tbody>
+              </table>
+              <div class="note mt">
+                切换成本合计约 <b>6.4 万元</b>，对比在手订单 1,860 万元的履约与预付款风险敞口，<b class="c-green">建议立即执行</b>。
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-hd"><h3>上游抛货 → 采购踩坑提示</h3></div>
+            <div class="card-bd">
+              <div class="note red mb">
+                上游商家大规模抛货往往是清库回笼现金，此时<b>追高备货容易踩坑</b>。供应链风险子模型会把该信号反向作用于采购计划。
+              </div>
+              <div class="chart h170" id="supDump"></div>
+              <div class="fs10 t4 center">瑞泰钢材经营部（型材供货商）近 30 日挂牌量放量 +210%、报价持续下探</div>
+              <div class="divider"></div>
+              <div class="kv"><span>结论</span><b class="c-red">型材品类暂停备货</b></div>
+              <div class="kv"><span>若必须采购</span><b>要求现货现结并压价 ≥ 30 元/吨</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/charts.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  const M = Mock;
+
+  /* ---- 分级推送 ---- */
+  Chart.flow('#pushFlow', {
+    columns: [
+      { title: '风险来源', nodes: [
+        { id: 'a1', label: '库存呆滞/跌价', sub: '库存风控智能体', value: 1.6, color: '#38bdf8' },
+        { id: 'a2', label: '应收坏账', sub: '应收风控智能体', value: 1.6, color: '#a78bfa' },
+        { id: 'a3', label: '供应链风险', sub: '供应链子模型', value: 1.2, color: '#fbbf24' },
+        { id: 'a4', label: '系统性联动', sub: '全局风控中枢', value: 1.2, color: '#fb923c' }
+      ]},
+      { title: '风险分级', nodes: [
+        { id: 'b1', label: '高风险', sub: '6 条', value: 1.4, color: '#f4586e' },
+        { id: 'b2', label: '中风险', sub: '13 条', value: 1.8, color: '#fb923c' },
+        { id: 'b3', label: '低风险', sub: '8 条', value: 1.4, color: '#34d399' }
+      ]},
+      { title: '推送对象', nodes: [
+        { id: 'c1', label: '总经理/财务总监', sub: '4 小时响应', value: 1.4, color: '#f4586e' },
+        { id: 'c2', label: '部门负责人', sub: '24 小时响应', value: 1.8, color: '#fb923c' },
+        { id: 'c3', label: '业务员/客服', sub: '3 工作日', value: 1.4, color: '#34d399' }
+      ]},
+      { title: '闭环', nodes: [
+        { id: 'd1', label: '处置工单', sub: '决策 + 结果回填', value: 2.4, color: '#34d399' },
+        { id: 'd2', label: '案例归档', sub: '向量库 / 微调集', value: 2, color: '#a78bfa' }
+      ]}
+    ],
+    links: [
+      { from: 'a1', to: 'b1' }, { from: 'a1', to: 'b2' }, { from: 'a2', to: 'b1' }, { from: 'a2', to: 'b2' },
+      { from: 'a3', to: 'b1' }, { from: 'a3', to: 'b2' }, { from: 'a4', to: 'b2' }, { from: 'a1', to: 'b3' }, { from: 'a2', to: 'b3' },
+      { from: 'b1', to: 'c1', color: '#f4586e', width: 2.4 }, { from: 'b1', to: 'c2', color: '#f4586e', dashed: true },
+      { from: 'b2', to: 'c2', color: '#fb923c', width: 2.2 }, { from: 'b3', to: 'c3', color: '#34d399' },
+      { from: 'c1', to: 'd1' }, { from: 'c2', to: 'd1', width: 2.2 }, { from: 'c3', to: 'd1' }, { from: 'd1', to: 'd2', color: '#a78bfa', width: 2.4 }
+    ]
+  });
+
+  const PUSH = [
+    { t: '14:49', lv: 'high', c: '螺纹钢 Φ20 市场抛压指数升至 91', to: '陈总 / 张伟', ch: '站内+企微+短信', st: '已查看' },
+    { t: '14:34', lv: 'high', c: '宏基建设集团新增被执行 1,240 万', to: '陈总 / 李娜', ch: '站内+企微+短信', st: '已生成工单' },
+    { t: '14:10', lv: 'high', c: '上游华鑫钢贸失信 + 账户冻结', to: '陈总 / 王强', ch: '站内+企微+短信', st: '处置中' },
+    { t: '13:52', lv: 'mid', c: '建材抛货 → 7 家地产链客户批量预警', to: '销售总监 / 财务总监', ch: '站内+企微', st: '已查看' },
+    { t: '12:40', lv: 'mid', c: 'H型钢库龄突破 68 天', to: '张伟（现货部）', ch: '站内+企微', st: '已生成工单' },
+    { t: '11:26', lv: 'mid', c: '正弘工程经营异常 + 股权冻结', to: '李娜（销售一部）', ch: '站内+企微', st: '处置中' },
+    { t: '10:58', lv: 'low', c: '镀锌卷市场紧俏，可适度备货', to: '王强（采购部）', ch: '站内', st: '已查看' },
+    { t: '10:12', lv: 'mid', c: '恒力钢构平台异常抛售 +148%', to: '李娜（销售一部）', ch: '站内+企微', st: '待处理' },
+    { t: '09:40', lv: 'low', c: '瑞通贸易轻度逾期 12 天', to: '客服组', ch: '站内', st: '已催收' },
+    { t: '09:12', lv: 'high', c: '螺纹钢 Φ20 浮亏敞口扩大至 53.7 万', to: '陈总 / 张伟', ch: '站内+企微+短信', st: '待决策' },
+    { t: '08:50', lv: 'mid', c: '热轧卷 3.0 抛压指数 79', to: '张伟（现货部）', ch: '站内+企微', st: '已查看' },
+    { t: '08:20', lv: 'low', c: '中厚板 Q345B 货源减少，风险下降', to: '王强（采购部）', ch: '站内', st: '已查看' }
+  ];
+  document.getElementById('pushTbl').innerHTML = `
+    <thead><tr><th>时间</th><th>等级</th><th>预警内容</th><th>推送对象</th><th>渠道</th><th>状态</th></tr></thead>
+    <tbody>${PUSH.map(p => `
+      <tr>
+        <td class="mono fs11 t4">${p.t}</td>
+        <td class="nowrap">${App.lvTag(p.lv)}</td>
+        <td class="fs11 ${p.lv === 'high' ? 'b6' : ''}">${p.c}</td>
+        <td class="fs11 t3 nowrap">${p.to}</td>
+        <td class="fs10 t4 nowrap">${p.ch}</td>
+        <td class="nowrap"><span class="tag ${p.st === '待决策' || p.st === '待处理' ? 'tag-orange' : p.st === '处置中' ? 'tag-blue' : 'tag-green'}">${p.st}</span></td>
+      </tr>`).join('')}</tbody>`;
+
+  /* ---- 采购审批 ---- */
+  const PO = [
+    { id: 'PO-20260816-021', sku: '螺纹钢 HRB400E Φ20 · 沙钢', qty: 3000, price: 3520, sup: '华鑫钢贸', by: '王强',
+      verdict: 'reject', title: '不建议大批量采购',
+      inner: ['在库 4,260 吨（呆滞概率 82%）', '在途 800 吨', '已售未发 320 吨', '库存水位：偏高'],
+      market: ['平台该品类挂牌总量 5.62 万吨（+148%）', '挂牌商户 83 家（+46）', '同业均价 3,472 元/吨（低于申报价 48 元）', '建材行情指数 7 日 -6.8%，成交情绪 31'],
+      sup2: ['华鑫钢贸新增失信被执行 2,180 万', '账户被冻结', '在手未交付订单 1,860 万'],
+      ai: '现在整个市场货源泛滥（平台挂牌量环比 +148%，83 家商户集中抛售），同业均价已低于本次申报采购价 48 元/吨，且我方在库 4,260 吨呆滞概率已达 82%。同时该供货商刚出现失信被执行与账户冻结。<b>建议驳回本次采购</b>；若确有客户订单支撑，采购量压缩至 <b>800 吨以内</b>，价格压至 3,450 元/吨以下，并改为现货现结、更换供货商。' },
+    { id: 'PO-20260816-019', sku: '镀锌卷 DX51D 1.0×1000×C · 本钢', qty: 600, price: 4590, sup: '鑫达金属材料', by: '王强',
+      verdict: 'pass', title: '市场货源紧缺，可适度备货',
+      inner: ['在库 890 吨（呆滞概率 21%）', '在途 120 吨', '周转率 94%', '库存水位：偏低'],
+      market: ['平台该品类挂牌总量 0.86 万吨（-31%）', '挂牌商户 17 家（-11）', '同业均价 4,620 元/吨（高于申报价 30 元）', '板材指数走稳，情绪指数 69'],
+      sup2: ['鑫达金属无风险事件', '履约记录良好'],
+      ai: '当前市场该品类货源紧缺（挂牌商户 -11 家、挂牌量 -31%），同业均价 4,620 元/吨已高于申报采购价 4,590 元，我方库存水位偏低、周转率 94%。<b>建议通过</b>，可在 600 吨基础上适度上浮至 800 吨，同时该品类可作为滞销螺纹钢、H型钢的搭售筹码。' }
+  ];
+  document.getElementById('poRow').innerHTML = PO.map(p => `
+    <div class="card" style="border-color:${p.verdict === 'reject' ? 'rgba(244,88,110,.34)' : 'rgba(52,211,153,.34)'}">
+      <div class="card-hd" style="background:linear-gradient(90deg,${p.verdict === 'reject' ? 'rgba(244,88,110,.12)' : 'rgba(52,211,153,.1)'},transparent)">
+        <h3>${p.sku}</h3>
+        <span class="tag ${p.verdict === 'reject' ? 'tag-red' : 'tag-green'}">${p.title}</span>
+        <div class="hd-act mono fs10 t4">${p.id}</div>
+      </div>
+      <div class="card-bd">
+        <div class="grid g4 mb" style="gap:8px">
+          <div><div class="fs10 t4">申请数量</div><div class="mono b6">${p.qty.toLocaleString()} 吨</div></div>
+          <div><div class="fs10 t4">申报单价</div><div class="mono b6">${p.price.toLocaleString()}</div></div>
+          <div><div class="fs10 t4">供货商</div><div class="fs11 b6">${p.sup}</div></div>
+          <div><div class="fs10 t4">申请人</div><div class="fs11 b6">${p.by}</div></div>
+        </div>
+        <div class="grid g3" style="gap:9px">
+          <div class="node"><div class="node-t" style="font-size:11px">内部库存水位</div><ul class="node-ul">${p.inner.map(x => `<li>${x}</li>`).join('')}</ul></div>
+          <div class="node new"><div class="node-t" style="font-size:11px">平台市场供需</div><ul class="node-ul">${p.market.map(x => `<li>${x}</li>`).join('')}</ul></div>
+          <div class="node new"><div class="node-t" style="font-size:11px">上游供货商风险</div><ul class="node-ul">${p.sup2.map(x => `<li>${x}</li>`).join('')}</ul></div>
+        </div>
+        <div class="ai-box" style="margin-top:11px">
+          <div class="ai-hd">综合风险提示</div>
+          <div class="ai-txt">${p.ai}</div>
+        </div>
+        <div class="flex gap6 mt">
+          <button class="btn btn-sm ${p.verdict === 'reject' ? 'btn-danger' : 'btn-primary'}">${p.verdict === 'reject' ? '驳回申请' : '审批通过'}</button>
+          <button class="btn btn-sm">修改采购量</button>
+          <button class="btn btn-sm ml-auto">查看数据快照</button>
+        </div>
+      </div>
+    </div>`).join('');
+
+  Chart.bar('#poChart', {
+    xLabels: ['3月', '4月', '5月', '6月', '7月', '8月'],
+    series: [
+      { name: '提交采购申请', data: [26, 31, 28, 34, 29, 22], color: '#4c5c76', unit: ' 笔' },
+      { name: '风控提示压缩/驳回', data: [1, 2, 2, 3, 3, 3], color: '#f4586e', unit: ' 笔' }
+    ],
+    lineSeries: [{ name: '规避潜在损失', data: [18, 32, 26, 68, 78, 62], color: '#34d399', unit: ' 万元' }],
+    yFmt: v => v.toFixed(0)
+  });
+
+  document.getElementById('poSug').innerHTML = M.categories.map(c => {
+    const tight = c.listersDelta < 0;
+    return `<div class="flex items-c gap8" style="padding:6px 0;border-bottom:1px dashed rgba(125,158,214,.09)">
+      <span class="fs11 b6" style="flex:1">${c.name.split(' ')[0]} ${c.code.split('-')[1] || ''}</span>
+      <span class="fs10 t4 mono nowrap">${c.listers}家(${c.listersDelta > 0 ? '+' : ''}${c.listersDelta})</span>
+      <span class="tag ${tight ? 'tag-green' : c.pressure >= 70 ? 'tag-red' : 'tag-orange'} nowrap">${tight ? '可适度备货' : c.pressure >= 70 ? '暂停采购' : '谨慎小量'}</span>
+    </div>`;
+  }).join('');
+
+  Chart.bar('#poBar', {
+    xLabels: M.categories.map(c => c.name.split(' ')[0].slice(0, 3)),
+    series: [{ name: '平台挂牌量', data: M.categories.map(c => Math.round(c.listers * 92 / 100)), color: '#f4586e', unit: ' 百吨' }],
+    lineSeries: [{ name: '建议采购强度', data: M.categories.map(c => Math.max(5, 100 - c.pressure)), color: '#34d399', unit: ' 分' }],
+    yFmt: v => v.toFixed(0)
+  });
+
+  /* ---- 工单 ---- */
+  const stMap = { '待决策': 'tag-orange', '执行中': 'tag-blue', '已闭环': 'tag-green' };
+  function drawWo(f) {
+    const rows = M.tickets.filter(t => f === 'all' || t.status === f);
+    document.getElementById('woTbl').innerHTML = `
+      <thead><tr><th>工单号</th><th>类型</th><th>风险对象</th><th>负责人</th><th>创建时间</th><th>AI 建议</th><th>决策</th><th>最终业务结果</th><th>状态</th><th></th></tr></thead>
+      <tbody>${rows.map(t => `
+        <tr ${t.wrong ? 'style="background:rgba(167,139,250,.07)"' : ''}>
+          <td class="mono fs11 nowrap">${t.id}</td>
+          <td class="nowrap">${App.lvTag(t.level)} <span class="fs11">${t.type}</span></td>
+          <td class="t-main fs11">${t.target}</td>
+          <td class="fs11 t3 nowrap">${t.owner}</td>
+          <td class="mono fs10 t4 nowrap">${t.created}</td>
+          <td class="fs11 t3" style="min-width:200px">${t.aiPlan}</td>
+          <td class="nowrap">${t.decision ? `<span class="tag ${t.decision === '采纳' ? 'tag-green' : t.decision === '否决' ? 'tag-red' : 'tag-yellow'}">${t.decision}</span>` : '<span class="t4 fs11">待填写</span>'}</td>
+          <td class="fs11 ${t.wrong ? 'c-ai' : t.result ? 'c-green' : 't4'}" style="min-width:220px">${t.result || '未结案'}${t.wrong ? ' <span class="tag tag-ai">微调样本</span>' : ''}</td>
+          <td class="nowrap"><span class="tag ${stMap[t.status]}">${t.status}</span></td>
+          <td class="nowrap">${t.status === '待决策' ? '<button class="btn btn-sm btn-primary">填写决策</button>' : t.status === '执行中' ? '<button class="btn btn-sm">回填结果</button>' : '<button class="btn btn-sm">查看案例</button>'}</td>
+        </tr>`).join('')}</tbody>`;
+  }
+  drawWo('all');
+  App.seg('#woSeg', v => drawWo(v));
+
+  Chart.bar('#woChart', {
+    xLabels: ['采纳', '部分采纳', '否决'],
+    bandWidth: .5, stacked: true,
+    series: [
+      { name: '风险成功化解', data: [270, 43, 12], color: '#34d399', unit: ' 单' },
+      { name: '风险仍发生', data: [53, 11, 23], color: '#f4586e', unit: ' 单' }
+    ],
+    yFmt: v => v.toFixed(0)
+  });
+
+  /* ---- 供应商 ---- */
+  document.getElementById('supRow').innerHTML = M.suppliers.filter(s => s.level !== 'low').map(s => `
+    <div class="risk-card lv-${s.level === 'high' ? 'high' : 'mid'}">
+      <div class="rc-hd">
+        <div class="avatar-sm">${s.name.slice(0, 1)}</div>
+        <div><div class="fs12 b6">${s.name}</div><div class="fs10 t4">${s.role} · 平台入驻商户</div></div>
+        <div class="ml-auto right"><div class="mono b7" style="font-size:19px;color:${App.lvColor(s.level)}">${s.prob}%</div><div class="fs10 t4">供应链风险概率</div></div>
+      </div>
+      <div class="rc-bd">
+        <div class="grid g3 mb" style="gap:8px">
+          <div><div class="fs10 t4">采购占比</div><div class="mono b6 fs12">${s.share}%</div></div>
+          <div><div class="fs10 t4">在手未交付订单</div><div class="mono b6 fs12 c-orange">${s.openPo.toLocaleString()} 万</div></div>
+          <div><div class="fs10 t4">年采购量</div><div class="mono b6 fs12">${s.ton.toLocaleString()} 吨</div></div>
+        </div>
+        <div class="fs10 t4" style="letter-spacing:.5px;margin-bottom:5px">失信 API / 平台行为检测到的风险事件</div>
+        ${s.events.map(e => `<div class="flex items-c gap8 fs11" style="padding:4px 0;border-bottom:1px dashed rgba(125,158,214,.09)">
+          <span class="tag ${e.sev === 'high' ? 'tag-red' : 'tag-orange'}">${e.d}</span><span class="b6">${e.t}</span>
+          <span class="mono ml-auto ${e.sev === 'high' ? 'c-red' : 'c-orange'}">${e.amt}</span></div>`).join('')}
+        <div class="ai-box" style="margin-top:9px;padding:10px 12px">
+          <div class="ai-hd" style="font-size:11.5px;margin-bottom:6px">供应链风险子模型解读</div>
+          <div class="ai-txt" style="font-size:11.5px">${s.aiRead}</div>
+        </div>
+        <div class="fs10 t4" style="letter-spacing:.5px;margin:9px 0 4px">建议动作</div>
+        ${s.actions.map((a, i) => `<div class="fs11 t2" style="line-height:1.65">${i + 1}. ${a}</div>`).join('')}
+        <div class="flex gap6 mt"><button class="btn btn-sm btn-danger">推送采购负责人</button><button class="btn btn-sm">生成备源询价</button></div>
+      </div>
+    </div>`).join('');
+
+  Chart.donut('#supDonut', {
+    inner: .6, centerVal: '38', centerLabel: '合作供货商（家）', unit: '%',
+    items: M.suppliers.map(s => ({ label: s.name.slice(0, 6), value: s.share, color: s.level === 'high' ? '#f4586e' : s.level === 'mid' ? '#fb923c' : '#34d399' }))
+      .concat([{ label: '其他 33 家', value: 21.7, color: '#4c5c76' }])
+  });
+
+  Chart.bar('#supDump', {
+    xLabels: M.days(30), pad: { t: 10, r: 42, b: 22, l: 38 },
+    series: [{ name: '挂牌量', data: M.walk(601, 30, 220, 60, i => (i > 20 ? 90 : 3), 0).map(v => Math.round(v)), color: '#f4586e', unit: ' 吨' }],
+    lineSeries: [{ name: '挂牌均价', data: M.walk(602, 30, 4090, 22, i => (i > 20 ? -6 : -.8)).map(v => Math.round(v)), color: '#fbbf24', unit: ' 元/吨' }],
+    yFmt: v => v.toFixed(0)
+  });
+
+  /* ---- Tab 切换 ---- */
+  App.seg('#tabSeg', v => {
+    document.querySelectorAll('[data-panel][data-group="wf"]').forEach(p => p.style.display = p.dataset.panel === v ? '' : 'none');
+    window.dispatchEvent(new Event('resize'));
+  });
+})();
+</script>
+</body>
+</html>

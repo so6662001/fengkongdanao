@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>模型引擎层 · 钢铁行业 AI 风控大脑</title>
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body data-page="model">
+<div class="app-bg"></div>
+<div class="layout">
+  <div class="main">
+    <div class="content">
+
+      <div class="page-head">
+        <div>
+          <h1>第二层 · 模型引擎层（双引擎）</h1>
+          <p><b class="c-blue">量化预测模型</b>负责打分算概率，<b class="c-ai">大模型 Agent</b> 负责推理、拆解逻辑、输出可落地处置方案。三个智能体全部新增外部市场数据输入通道，决策逻辑大幅增强。</p>
+        </div>
+        <div class="ph-right">
+          <span class="tag tag-green lg">线上版本 v2.0.3</span>
+          <button class="btn">模型版本管理</button>
+        </div>
+      </div>
+
+      <!-- 双引擎总览 -->
+      <div class="grid g4 mb">
+        <div class="card kpi"><div class="kpi-t">库存呆滞 AUC</div><div class="kpi-v c-blue">0.913</div><div class="kpi-d down trend-down">较仅内部数据 0.780 提升 0.133</div><div class="kpi-spark" id="s1"></div></div>
+        <div class="card kpi"><div class="kpi-t">坏账预测 AUC</div><div class="kpi-v c-ai">0.926</div><div class="kpi-d down trend-down">较仅内部数据 0.810 提升 0.116</div><div class="kpi-spark" id="s2"></div></div>
+        <div class="card kpi"><div class="kpi-t">预警准确率</div><div class="kpi-v c-green">86.2<small>%</small></div><div class="kpi-d down trend-down">误报率 15.5% → 6.8%</div><div class="kpi-spark" id="s3"></div></div>
+        <div class="card kpi"><div class="kpi-t">平均预警提前量</div><div class="kpi-v c-orange">11.4<small>天</small></div><div class="kpi-d down trend-down">原 4.2 天，提前量 +7.2 天</div><div class="kpi-spark" id="s4"></div></div>
+      </div>
+
+      <!-- 引擎 A -->
+      <div class="card mb accent-top">
+        <div class="card-hd">
+          <h3>引擎 A · 量化预测模型（特征集大幅扩容，预测精度提升）</h3>
+          <span class="sub">LightGBM + 时序特征工程 · 每日 02:00 全量重算，命中事件即时增量重算</span>
+          <div class="hd-act">
+            <div class="tabs" data-group="mdl" id="mdlTabs" style="border:none;margin:0">
+              <button class="on" data-tab="inv">库存呆滞 & 跌价</button>
+              <button data-tab="ar">应收坏账概率</button>
+              <button data-tab="sc">供应链风险（新增）</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 库存模型 -->
+        <div class="card-bd" data-panel="inv" data-group="mdl">
+          <div class="grid g-2-3" style="gap:14px">
+            <div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">特征重要度 Top10（<span class="c-teal">青色为平台新增特征</span>，合计权重 <b class="c-teal">47.0%</b>）</div>
+              <div class="chart h300" id="fiInv"></div>
+            </div>
+            <div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">特征集扩容对照</div>
+              <table class="tbl mb">
+                <thead><tr><th>维度</th><th>原有（仅内部）</th><th>本次新增（平台全域）</th></tr></thead>
+                <tbody>
+                  <tr><td class="t-main">周转速度</td><td class="fs11 t3">内部出库历史、库龄、在库水位</td><td class="fs11 c-teal">平台同规格挂牌量环比变化、货源撤牌速率</td></tr>
+                  <tr><td class="t-main">价格</td><td class="fs11 t3">采购成本、内部成交均价</td><td class="fs11 c-teal">平台同业挂牌均价走势、与成本价价差</td></tr>
+                  <tr><td class="t-main">市场情绪</td><td class="fs11 t3">—（缺失）</td><td class="fs11 c-teal">平台行情指数波动率、成交情绪指数、区域热度</td></tr>
+                  <tr><td class="t-main">供给背景</td><td class="fs11 t3">钢厂调价、下游开工</td><td class="fs11 c-teal">全平台该品类挂牌总货源体量</td></tr>
+                </tbody>
+              </table>
+              <div class="note">
+                原来只能依靠自己内部出库历史判断周转速度，现在叠加整个商圈的供需挂牌热度，可以更早发现滞销苗头 ——
+                <b>很多时候市场已经开始抛货，内部出库数据还暂时没有体现出来</b>。
+              </div>
+              <div class="divider"></div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">输出指标升级</div>
+              <div class="grid g4" style="gap:9px">
+                <div class="node center"><div class="fs10 t4">批次呆滞概率</div><div class="mono b7 c-red" style="font-size:16px">82%</div><div class="fs10 t4">螺纹钢Φ20</div></div>
+                <div class="node center"><div class="fs10 t4">预估潜在浮亏</div><div class="mono b7 c-orange" style="font-size:16px">53.7万</div><div class="fs10 t4">同业价 - 成本价</div></div>
+                <div class="node center" style="border-color:rgba(45,212,191,.4)"><div class="fs10 t4 c-teal">市场抛压等级 NEW</div><div class="mono b7 c-red" style="font-size:16px">L4 极高</div><div class="fs10 t4">指数 91</div></div>
+                <div class="node center" style="border-color:rgba(45,212,191,.4)"><div class="fs10 t4 c-teal">行情情绪等级 NEW</div><div class="mono b7 c-red" style="font-size:16px">悲观</div><div class="fs10 t4">情绪指数 31</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 应收模型 -->
+        <div class="card-bd" data-panel="ar" data-group="mdl" style="display:none">
+          <div class="grid g-2-3" style="gap:14px">
+            <div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">特征重要度 Top9（<span class="c-teal">青色为新增特征</span>，合计权重 <b class="c-teal">48.5%</b>）</div>
+              <div class="chart h300" id="fiAr"></div>
+            </div>
+            <div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">新增特征说明</div>
+              <div class="node mb">
+                <div class="node-t">① 失信检测 API 实时风险事件</div>
+                <div class="node-b">大模型同时解读风险事件严重等级，区分不同风险量级 —— 这一步决定了风险上调幅度：</div>
+                <table class="tbl" style="margin-top:7px">
+                  <thead><tr><th>事件类型</th><th>大模型判定</th><th>概率增量</th></tr></thead>
+                  <tbody>
+                    <tr><td class="fs11">小额买卖合同纠纷（&lt;50万）</td><td><span class="tag tag-yellow">小额官司</span></td><td class="num c-yellow">+3~6%</td></tr>
+                    <tr><td class="fs11">劳动仲裁若干起</td><td><span class="tag tag-yellow">小额纠纷</span></td><td class="num c-yellow">+2~5%</td></tr>
+                    <tr><td class="fs11">工程款纠纷（数百万）</td><td><span class="tag tag-orange">传导型风险</span></td><td class="num c-orange">+10~16%</td></tr>
+                    <tr><td class="fs11">经营异常 / 股权冻结</td><td><span class="tag tag-orange">股东层风险</span></td><td class="num c-orange">+12~20%</td></tr>
+                    <tr><td class="fs11">大额被执行 / 账户冻结</td><td><span class="tag tag-red">资金链断裂</span></td><td class="num c-red">+20~30%</td></tr>
+                    <tr><td class="fs11">关联方大额失信</td><td><span class="tag tag-orange">风险传导</span></td><td class="num c-orange">+8~15%</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="node">
+                <div class="node-t">② 辅助维度：客户在平台的挂牌行为</div>
+                <div class="node-b">如果下游客户本身也在自有资源平台开店，可同步观察其挂牌行为变化 —— <b>突然大量抛售自有货物，往往也是资金紧张信号</b>，作为隐性风险特征。</div>
+                <div class="chart h140 mt" id="dumpChart"></div>
+                <div class="fs10 t4 center">宏基建设集团（既是赊销客户又是平台商户）近 30 日挂牌量 vs 挂牌折价</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 供应链模型 -->
+        <div class="card-bd" data-panel="sc" data-group="mdl" style="display:none">
+          <div class="note green mb">
+            <b>本次新增子模型</b>：监控上游核心供货商的失信风险，以及上游商家大规模抛货带来的采购踩坑风险，给采购决策增加一层上游风险提示。
+          </div>
+          <div class="grid g-3-2" style="gap:14px">
+            <div>
+              <table class="tbl" id="supTbl"></table>
+            </div>
+            <div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">供货集中度 × 风险敞口</div>
+              <div class="chart h230" id="supChart"></div>
+              <div class="note red mt">
+                <b>华鑫钢贸</b>占螺纹钢采购量 23.6%，在手未交付订单 1,860 万元，同时出现失信被执行与账户冻结 → 断货与预付款损失风险高，建议立即启动备源（中天钢铁有承接余量）。
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 引擎 B -->
+      <div class="card mb ai">
+        <div class="card-hd">
+          <h3>引擎 B · 三大 Agent 智能体集群（全部升级推理输入源）</h3>
+          <span class="sub">量化模型给出概率与分数 → Agent 拆解归因、检索案例、生成多套可执行方案</span>
+          <div class="hd-act"><a class="btn btn-sm btn-ai" href="agent-detail.html">查看完整推理实录</a></div>
+        </div>
+        <div class="card-bd">
+          <div class="grid g3" id="agentCards"></div>
+        </div>
+      </div>
+
+      <!-- 工具调用 + 选型路线 -->
+      <div class="grid g-3-2 mb">
+        <div class="card">
+          <div class="card-hd"><h3>Agent 可调用工具集（Function Calling）</h3><span class="sub">大模型通过工具访问真实数据，避免凭空生成</span></div>
+          <div class="tbl-wrap" style="max-height:none"><table class="tbl">
+            <thead><tr><th>工具名</th><th>数据来源</th><th>入参</th><th>用途</th><th>调用方</th></tr></thead>
+            <tbody>
+              <tr><td class="mono fs11 c-blue">get_inventory_batch</td><td><span class="tag tag-blue">ERP</span></td><td class="fs11 t3">sku / 批次号</td><td class="fs11 t3">批次库龄、成本、数量</td><td class="fs11 t3">库存 / 全局</td></tr>
+              <tr style="background:rgba(45,212,191,.05)"><td class="mono fs11 c-teal">query_platform_listings</td><td><span class="tag tag-teal">平台报价流</span></td><td class="fs11 t3">标准编码 / 区域 / 时间窗</td><td class="fs11 t3">挂牌商户数、均价、余量、撤牌率</td><td class="fs11 t3">库存 / 全局 / 采购</td></tr>
+              <tr style="background:rgba(45,212,191,.05)"><td class="mono fs11 c-teal">get_market_index</td><td><span class="tag tag-teal">行情指数API</span></td><td class="fs11 t3">品类 / 区域</td><td class="fs11 t3">行情指数、区域热度、成交情绪</td><td class="fs11 t3">全部</td></tr>
+              <tr style="background:rgba(45,212,191,.05)"><td class="mono fs11 c-teal">check_credit_risk</td><td><span class="tag tag-teal">失信检测API</span></td><td class="fs11 t3">企业名称 / 统一社会信用代码</td><td class="fs11 t3">司法、失信、变更、经营异常</td><td class="fs11 t3">应收 / 采购 / 全局</td></tr>
+              <tr style="background:rgba(45,212,191,.05)"><td class="mono fs11 c-teal">get_merchant_behavior</td><td><span class="tag tag-teal">平台商户档案</span></td><td class="fs11 t3">商户名称</td><td class="fs11 t3">该商户挂牌抛售行为异动</td><td class="fs11 t3">应收 / 采购</td></tr>
+              <tr><td class="mono fs11 c-blue">get_ar_ledger</td><td><span class="tag tag-blue">应收台账</span></td><td class="fs11 t3">客户 ID</td><td class="fs11 t3">账龄、逾期、回款记录</td><td class="fs11 t3">应收 / 全局</td></tr>
+              <tr><td class="mono fs11 c-ai">search_vector_kb</td><td><span class="tag tag-ai">向量知识库</span></td><td class="fs11 t3">自然语言 query</td><td class="fs11 t3">历史案例、纪要、行业爆雷事件</td><td class="fs11 t3">全部</td></tr>
+              <tr><td class="mono fs11 c-orange">simulate_disposal_plan</td><td><span class="tag tag-orange">测算引擎</span></td><td class="fs11 t3">批次 / 降价幅度 / 节奏</td><td class="fs11 t3">测算资金占用与预估亏损</td><td class="fs11 t3">库存 / 全局</td></tr>
+              <tr><td class="mono fs11 c-green">create_work_order</td><td><span class="tag tag-green">工单系统</span></td><td class="fs11 t3">风险对象 / 建议方案</td><td class="fs11 t3">生成处置工单（仅建议，不自动执行）</td><td class="fs11 t3">全部</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+
+        <div class="card">
+          <div class="card-hd"><h3>大模型选型与演进策略</h3><span class="sub">先 RAG 快速落地，沉淀足量案例后再微调</span></div>
+          <div class="card-bd">
+            <div class="chart h200" id="stageChart"></div>
+            <div class="divider"></div>
+            <div class="tl">
+              <div class="tl-i green">
+                <div class="tl-t">阶段一 · RAG 知识库 + Prompt 工程 <span class="tag tag-green">当前</span></div>
+                <div class="tl-b">通用大模型 + 私有向量库检索增强 + 结构化提示词模板，快速上线、零训练成本，业务闭环优先。</div>
+              </div>
+              <div class="tl-i blue">
+                <div class="tl-t">阶段二 · 首次 LoRA 小参数微调 <span class="tag tag-blue">二期</span></div>
+                <div class="tl-b">沉淀足量自有业务案例 + 平台行业市场案例（目标 ≥3,000 条，当前 3,186 条已达标）后执行，让模型适配本商圈市场特征与公司经营风格。</div>
+              </div>
+              <div class="tl-i">
+                <div class="tl-t">阶段三 · 周期性迭代 <span class="tag tag-grey">长期</span></div>
+                <div class="tl-b">知识库实时检索更新 + 周期性 LoRA 微调；高频判断失误场景优先纳入微调数据集。</div>
+              </div>
+            </div>
+            <div class="note blue mt">
+              不要一开始就直接训练专属大模型 —— 优先 RAG + 提示词工程快速落地，先跑通业务闭环，沉淀真实业务案例之后再微调，<b>投入产出比最高</b>。
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 模型效果 -->
+      <div class="grid g3">
+        <div class="card">
+          <div class="card-hd"><h3>模型效果提升对比</h3></div>
+          <div class="card-bd"><div class="chart h230" id="cmp"></div>
+            <div class="legend center mt" style="justify-content:center"><span><i class="sq" style="background:#4c5c76"></i>仅内部数据</span><span><i class="sq" style="background:#38bdf8"></i>＋平台全域数据</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><h3>预警提前量分布</h3><span class="sub">近 90 日命中事件</span></div>
+          <div class="card-bd"><div class="chart h230" id="lead"></div></div>
+          <div class="card-ft">超过 <b class="c-green">72%</b> 的风险在实际发生前 7 天以上被预警，为处置留出操作窗口</div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><h3>模型能力画像</h3></div>
+          <div class="card-bd"><div class="chart h230" id="radar"></div>
+            <div class="legend center mt" style="justify-content:center"><span><i class="sq" style="background:#4c5c76"></i>升级前</span><span><i class="sq" style="background:#a78bfa"></i>升级后</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/charts.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  const M = Mock, ic = App.icon;
+
+  Chart.spark('#s1', { data: M.walk(201, 18, .79, .012, .008), color: '#38bdf8' });
+  Chart.spark('#s2', { data: M.walk(202, 18, .82, .012, .007), color: '#a78bfa' });
+  Chart.spark('#s3', { data: M.walk(203, 18, 70, 1.6, 1.0), color: '#34d399' });
+  Chart.spark('#s4', { data: M.walk(204, 18, 5.1, .5, .38), color: '#fb923c' });
+
+  /* 特征重要度 */
+  const fi = a => ({
+    metric: '权重', unit: '%', labelW: 200, fmt: v => v.toFixed(1),
+    items: a.map(f => ({ label: f.label + (f.tagNew ? ' ●' : ''), value: f.value, color: f.color, note: f.tagNew ? '平台新增特征' : '原有特征' }))
+  });
+  Chart.rank('#fiInv', fi(M.featureImp.inventory));
+  Chart.rank('#fiAr', fi(M.featureImp.receivable));
+
+  /* 客户抛售行为 */
+  Chart.bar('#dumpChart', {
+    xLabels: M.days(30), pad: { t: 10, r: 40, b: 22, l: 38 },
+    series: [{ name: '平台挂牌量', data: M.walk(301, 30, 180, 60, i => (i > 23 ? 130 : 4), 0).map(v => Math.round(v)), color: '#f4586e', unit: ' 吨' }],
+    lineSeries: [{ name: '挂牌折价（低于市场均价）', data: M.walk(302, 30, 8, 4, i => (i > 23 ? 11 : .3), 0).map(v => Math.round(v)), color: '#fbbf24', unit: ' 元/吨' }],
+    yFmt: v => v.toFixed(0)
+  });
+
+  /* 供应商表 */
+  document.getElementById('supTbl').innerHTML = `
+    <thead><tr><th>上游供货商</th><th>角色</th><th>采购占比</th><th>在手订单</th><th>风险事件</th><th>风险概率</th><th>等级</th></tr></thead>
+    <tbody>${M.suppliers.map(s => `
+      <tr>
+        <td class="t-main">${s.name}<div class="t-sub">平台入驻商户</div></td>
+        <td class="fs11 t3 nowrap">${s.role}</td>
+        <td class="num">${s.share}%</td>
+        <td class="num">${s.openPo.toLocaleString()}万</td>
+        <td class="fs11">${s.events.length ? s.events.map(e => `<div class="nowrap"><span class="tag ${e.sev === 'high' ? 'tag-red' : 'tag-orange'}">${e.d}</span> ${e.t}${e.amt !== '—' ? ' ' + e.amt : ''}</div>`).join('') : '<span class="t4">无</span>'}</td>
+        <td class="num ${s.prob > 60 ? 'c-red' : s.prob > 35 ? 'c-orange' : 'c-green'}">${s.prob}%</td>
+        <td class="nowrap">${App.lvTag(s.level)}</td>
+      </tr>`).join('')}</tbody>`;
+
+  /* 供应商敞口 */
+  Chart.rank('#supChart', {
+    metric: '在手未交付订单', unit: '万元', labelW: 118, fmt: v => v.toLocaleString(),
+    items: M.suppliers.map(s => ({
+      label: s.name.slice(0, 6), value: s.openPo,
+      color: s.level === 'high' ? '#f4586e' : s.level === 'mid' ? '#fb923c' : '#34d399',
+      note: `采购占比 ${s.share}% · 风险 ${s.prob}%`
+    }))
+  });
+
+  /* Agent 卡片 */
+  const A = [
+    { n: '① 库存风控智能体', tag: '升级最大', c: '#38bdf8', ico: 'box',
+      read: ['ERP 批次库存与出库历史', '全平台同规格货源挂牌热度', '大量商户报价变化', '自有平台行情指数'],
+      logic: '不再只看自家库存和外部公开行情。当内部出库暂时平稳、库龄尚不算高时，若平台侧出现商户集中挂牌 + 均价跌破成本 + 行情指数连续下行，即判定抛压快速累积。',
+      out: '滞销与跌价风险判定 + 多套处置路径（分批降价出清 / 搭配热销货搭售 / 暂停新增采购），并分别测算资金占用与预估亏损。' },
+    { n: '② 客户应收风控智能体', tag: '新增征信通道', c: '#a78bfa', ico: 'wallet',
+      read: ['应收台账与授信档案', '内部聊天 / 纪要语义风险', '失信检测 API 定时全量扫描', '客户在平台的抛售货源行为'],
+      logic: '一旦抓取到新增立案、被执行等事件，大模型自动解读事件影响力并上调坏账风险等级；若客户同时是平台入驻商户，额外结合其抛售行为综合研判资金压力。',
+      out: '坏账风险等级调整 + 授信调整建议 + 回款跟进策略（对账、担保、分期、款到发货）。' },
+    { n: '③ 经营全局风控中枢', tag: '跨链条联动推演', c: '#fb923c', ico: 'globe',
+      read: ['库存 / 应收 / 采购全量数据', '平台全品类抛货全景', '区域热度与成交情绪', '行业舆情与下游开工'],
+      logic: '跨链条连锁推演：平台某类建材钢材大量商户抛售 → 判断下游地产类需求走弱 → 自动筛查客户清单中所有地产、工程类下游客户 → 批量上调这批客户坏账预警等级。',
+      out: '系统性应收风险提前预警 + 品类级采购与库存策略建议 + 全局风险总览与一句话问答。' }
+  ];
+  document.getElementById('agentCards').innerHTML = A.map(a => `
+    <div class="node" style="padding:14px">
+      <div class="node-t" style="font-size:13px">
+        <span style="width:24px;height:24px;border-radius:7px;display:grid;place-items:center;background:rgba(125,158,214,.1);color:${a.c}">${ic(a.ico, 14)}</span>
+        ${a.n}<span class="tag tag-teal ml-auto">${a.tag}</span>
+      </div>
+      <div class="fs10 t4" style="margin:9px 0 4px;letter-spacing:.5px">推理输入源（全部新增外部市场数据通道）</div>
+      <div class="flex gap4 wrap">${a.read.map(x => `<span class="src-pill ${/平台|失信|商户|行情/.test(x) ? 'plat' : 'erp'}">${x}</span>`).join('')}</div>
+      <div class="fs10 t4" style="margin:10px 0 4px;letter-spacing:.5px">决策逻辑增强点</div>
+      <div class="fs11 t2" style="line-height:1.8">${a.logic}</div>
+      <div class="fs10 t4" style="margin:10px 0 4px;letter-spacing:.5px">输出物</div>
+      <div class="fs11 t3" style="line-height:1.8">${a.out}</div>
+    </div>`).join('');
+
+  /* 阶段图 */
+  Chart.bar('#stageChart', {
+    xLabels: ['一期 RAG', '二期 微调', '三期 迭代'],
+    bandWidth: .5,
+    series: [
+      { name: '业务价值验证速度', data: [95, 70, 60], color: '#34d399' },
+      { name: '模型定制化程度', data: [40, 78, 94], color: '#a78bfa' },
+      { name: '投入成本', data: [20, 55, 72], color: '#4c5c76' }
+    ],
+    yFmt: v => v.toFixed(0)
+  });
+
+  /* 模型对比 */
+  Chart.bar('#cmp', {
+    xLabels: ['呆滞AUC', '坏账AUC', '预警准确', '低误报', '提前量'],
+    series: [
+      { name: '仅内部数据', data: M.modelCompare.before, color: '#4c5c76', fmt: v => v.toFixed(2) },
+      { name: '＋平台全域', data: M.modelCompare.after, color: '#38bdf8', fmt: v => v.toFixed(2) }
+    ], yFmt: v => v.toFixed(1)
+  });
+
+  /* 提前量分布 */
+  Chart.bar('#lead', {
+    xLabels: ['0-3天', '4-7天', '8-14天', '15-21天', '>21天'],
+    series: [{ name: '命中事件数', data: [14, 31, 58, 34, 19], color: '#fb923c', unit: ' 起' }],
+    yFmt: v => v.toFixed(0)
+  });
+
+  /* 雷达 */
+  Chart.radar('#radar', {
+    axes: ['滞销预判', '跌价测算', '坏账预警', '上游风险', '联动推演', '方案落地'],
+    max: 100,
+    series: [
+      { name: '升级前', data: [62, 48, 68, 20, 35, 55], color: '#4c5c76' },
+      { name: '升级后', data: [91, 88, 92, 84, 87, 86], color: '#a78bfa' }
+    ]
+  });
+
+  App.tabs('#mdlTabs');
+})();
+</script>
+</body>
+</html>
