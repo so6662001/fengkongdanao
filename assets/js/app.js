@@ -217,11 +217,11 @@
         <button class="icon-btn ml-auto" id="askClose">${icon('close', 15)}</button>
       </div>
       <div class="slide-bd" id="askBody">
-        <div class="fs11 t4 mb" style="letter-spacing:.5px">试试这样问 —— 管理层高频问题</div>
-        <div class="suggest" id="askSuggest">
+        <div class="ask-intro fs11 t4 mb" style="letter-spacing:.5px">试试这样问 —— 管理层高频问题</div>
+        <div class="ask-intro suggest" id="askSuggest">
           ${QA.map((x, i) => `<button data-i="${i}">${icon('right', 12)} ${x.q}</button>`).join('')}
         </div>
-        <div class="note blue" style="margin-top:14px">
+        <div class="ask-intro note blue" style="margin-top:14px">
           <b>说明</b>：AI 仅做决策辅助，不自动下达业务指令。所有结论均附带数据来源与推理链，最终决策权保留在业务与管理人员手中。
         </div>
       </div>
@@ -244,9 +244,7 @@
     const body = document.getElementById('askBody');
     function answer(i) {
       const item = QA[i] || QA[0];
-      const sg = document.getElementById('askSuggest');
-      if (sg) sg.parentElement.querySelectorAll('.note').forEach(n => n.remove()), sg.remove(),
-        body.querySelector('.fs11.t4') && body.querySelector('.fs11.t4').remove();
+      body.querySelectorAll('.ask-intro').forEach(n => n.remove());
       body.insertAdjacentHTML('beforeend', `<div class="q-bubble">${item.q}</div>`);
       const box = document.createElement('div');
       box.className = 'ai-box a-bubble'; box.style.marginBottom = '16px';
