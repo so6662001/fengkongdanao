@@ -29,7 +29,10 @@
     shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
     users: '<circle cx="9" cy="8" r="3.5"/><path d="M2 21c0-3.9 3.1-7 7-7s7 3.1 7 7"/><path d="M17 8.5a3.2 3.2 0 0 0 0-1M18 14c2.4.8 4 3.1 4 5.7"/>',
     truck: '<rect x="1" y="6" width="13" height="10" rx="1"/><path d="M14 9h4l4 4v3h-8z"/><circle cx="5.5" cy="18.5" r="2"/><circle cx="17.5" cy="18.5" r="2"/>',
-    file: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>'
+    file: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
+    plug: '<path d="M9 2v6M15 2v6"/><path d="M6 8h12v3a6 6 0 0 1-12 0z"/><path d="M12 17v5"/>',
+    link: '<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
+    copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>'
   };
   function icon(name, size, cls) {
     return `<svg class="ico ${cls || ''}" width="${size || 16}" height="${size || 16}" viewBox="0 0 24 24" fill="none"
@@ -63,10 +66,18 @@
         { k: 'flow', t: '业务执行与预警', h: 'workflow.html', i: 'flow' },
         { k: 'wheel', t: '数据飞轮与路线图', h: 'flywheel.html', i: 'refresh' }
       ]
+    },
+    {
+      g: '开放能力', items: [
+        { k: 'api', t: '开放 API 接口', h: 'open-api.html', i: 'plug', tag: 'NEW' },
+        { k: 'embed', t: 'ERP 嵌入场景', h: 'erp-embed.html', i: 'file', tag: 'NEW' }
+      ]
     }
   ];
 
   const TITLES = {
+    api: ['开放能力', '开放 API 接口 · ERP 双向集成'],
+    embed: ['开放能力', 'ERP 业务场景嵌入效果'],
     index: ['总览', '风控大脑总览'],
     arch: ['总览', '四层架构全景'],
     data: ['数据与模型', '第一层 · 数据接入层'],
@@ -353,6 +364,32 @@
     });
   }
 
-  global.App = { icon, renderShell, lvTag, lvColor, lvName, seg, tabs, QA };
+  /* ---------- JSON 语法高亮 ---------- */
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function json(obj, indent) {
+    const raw = typeof obj === 'string' ? obj : JSON.stringify(obj, null, indent || 2);
+    return esc(raw)
+      .replace(/("(?:\\.|[^"\\])*")(\s*:)/g, '<span class="k">$1</span><span class="p">$2</span>')
+      .replace(/:\s*("(?:\\.|[^"\\])*")/g, ': <span class="s">$1</span>')
+      .replace(/:\s*(-?\d+\.?\d*(?:[eE][+-]?\d+)?)/g, ': <span class="n">$1</span>')
+      .replace(/:\s*(true|false|null)/g, ': <span class="b">$1</span>')
+      .replace(/\/\/(.*)$/gm, '<span class="c">//$1</span>');
+  }
+  /* 代码块渲染：<div class="code-block" data-title="..."> */
+  function codeBlock(title, content, lang) {
+    return `<div class="code-hd">${icon(lang === 'http' ? 'link' : 'file', 12)} ${title}</div>
+      <pre class="code">${lang === 'raw' ? esc(content) : json(content)}</pre>`;
+  }
+  /* 接口卡片折叠 */
+  function collapsible(sel) {
+    document.querySelectorAll(sel + ' .api-hd').forEach(hd => {
+      hd.onclick = () => {
+        hd.parentElement.classList.toggle('open');
+        global.dispatchEvent(new Event('resize'));
+      };
+    });
+  }
+
+  global.App = { icon, renderShell, lvTag, lvColor, lvName, seg, tabs, QA, json, esc, codeBlock, collapsible };
   document.addEventListener('DOMContentLoaded', renderShell);
 })(window);

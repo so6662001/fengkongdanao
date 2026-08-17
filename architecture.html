@@ -33,6 +33,42 @@
         <div><div class="ss-t">风险预判提前量</div><div class="ss-v c-green">11.4 <span class="fs11 t4">天</span></div></div>
       </div>
 
+      <!-- ============ 能力输出层 ============ -->
+      <div class="arch-layer al-api">
+        <div class="al-hd">
+          <div class="al-n">API</div>
+          <div><div class="al-t">能力输出层 · 开放 API 与 ERP 双向集成 <span class="tag tag-teal">本次新增</span></div>
+            <div class="al-s">风险结论不止停在风控看板，还要回流到业务人员本来就在用的 ERP 界面上</div></div>
+          <div class="al-tags">
+            <a class="btn btn-sm" href="open-api.html">接口文档</a>
+            <a class="btn btn-sm" href="erp-embed.html">ERP 嵌入效果</a>
+          </div>
+        </div>
+        <div class="grid g4">
+          <div class="node new">
+            <div class="node-t"><span class="method m-get">PULL</span>实时查询 API</div>
+            <div class="node-b">ERP 页面加载或用户操作时同步调用，P95 142ms。用于报价风控校验、客户风险画像、市场对标价、采购风控校验、配货建议。</div>
+          </div>
+          <div class="node new">
+            <div class="node-t"><span class="method m-hook">PUSH</span>事件推送 Webhook</div>
+            <div class="node-b">客户风险等级变化、新增失信事件、库存抛压预警、供应商告警时主动推送 ERP，ERP 落库后列表页直接显示，无需每次实时查询。</div>
+          </div>
+          <div class="node new">
+            <div class="node-t"><span class="method m-sdk">EMBED</span>嵌入式组件 SDK</div>
+            <div class="node-b">一行 JS 标签在 ERP 页面渲染风险徽章与风险卡片，ERP 后端零改造，适合老系统快速上线。</div>
+          </div>
+          <div class="node new">
+            <div class="node-t"><span class="method m-post">WRITE</span>结果回写 API</div>
+            <div class="node-b">业务员在 ERP 里的采纳 / 否决与最终业务结果直接回写风控大脑，不用再登录风控系统补填，决策回写率由 41% 提升至 92.4%。</div>
+          </div>
+        </div>
+        <div class="note blue mt">
+          <b>四个落地场景</b>：销售员报价时看到客户风险与市场对标价；采购员采购配货时看到平台货源体量、同业报价与供货商风险；
+          财务查应收时每行直接带风险等级与失信事件；管理者看经营报表时同屏看到风险总览与行业市场风险，并能直接用大白话追问。
+        </div>
+      </div>
+      <div class="arch-down">▲ 风险能力以接口形式输出给 ERP 及其他业务系统</div>
+
       <!-- ============ 第四层 ============ -->
       <div class="arch-layer al-l4">
         <div class="al-hd">

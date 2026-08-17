@@ -447,6 +447,8 @@ img, svg { display: block; max-width: 100%; }
 .al-l2 { border-left: 3px solid var(--ai); }     .al-l2 .al-n { background: linear-gradient(140deg,#c4b5fd,#a78bfa); }
 .al-l3 { border-left: 3px solid var(--orange); } .al-l3 .al-n { background: linear-gradient(140deg,#fdba74,#fb923c); }
 .al-l4 { border-left: 3px solid var(--brand); }  .al-l4 .al-n { background: linear-gradient(140deg,#7dd3fc,#38bdf8); }
+.al-api { border-left: 3px solid var(--pink); }
+.al-api .al-n { background: linear-gradient(140deg,#f9a8d4,#f472b6); font-size: 9px; width: auto; padding: 0 7px; }
 
 .node {
   border: 1px solid var(--line); border-radius: 10px; padding: 10px 11px; background: rgba(125,158,214,.04);
@@ -628,6 +630,124 @@ img, svg { display: block; max-width: 100%; }
 
 .blink-live { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; color: var(--green); font-weight: 650; }
 .blink-live i { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 1.6s infinite; }
+
+/* ---------- 23. 代码块 / API 文档 ---------- */
+.code {
+  font-family: var(--mono); font-size: 11.5px; line-height: 1.72; color: #c3d3ee;
+  background: #060b14; border: 1px solid var(--line); border-radius: 9px;
+  padding: 10px 12px; overflow-x: auto; white-space: pre; tab-size: 2;
+}
+.code .k { color: #7dd3fc; }      /* key */
+.code .s { color: #86efac; }      /* string */
+.code .n { color: #fbbf24; }      /* number */
+.code .b { color: #c4b5fd; }      /* bool/null */
+.code .c { color: #55688a; }      /* comment */
+.code .p { color: #6b7d9c; }      /* punctuation */
+.code-hd { display: flex; align-items: center; gap: 7px; font-size: 10.5px; color: var(--txt-4); margin-bottom: 5px; letter-spacing: .4px; }
+.code-hd .cp { margin-left: auto; cursor: pointer; color: var(--txt-3); }
+.code-hd .cp:hover { color: var(--brand); }
+
+.method { font-family: var(--mono); font-size: 9.5px; font-weight: 800; padding: 2px 6px; border-radius: 4px; letter-spacing: .5px; flex: none; }
+.m-get  { background: rgba(52,211,153,.14);  color: #34d399; border: 1px solid rgba(52,211,153,.34); }
+.m-post { background: rgba(56,189,248,.14);  color: #38bdf8; border: 1px solid rgba(56,189,248,.34); }
+.m-hook { background: rgba(167,139,250,.14); color: #a78bfa; border: 1px solid rgba(167,139,250,.34); }
+.m-sdk  { background: rgba(251,146,60,.14);  color: #fb923c; border: 1px solid rgba(251,146,60,.34); }
+
+.api-item { border: 1px solid var(--line); border-radius: 10px; margin-bottom: 9px; overflow: hidden; background: rgba(125,158,214,.025); }
+.api-item.open { border-color: rgba(56,189,248,.34); }
+.api-hd { display: flex; align-items: center; gap: 9px; padding: 9px 12px; cursor: pointer; transition: background .14s; }
+.api-hd:hover { background: rgba(56,189,248,.06); }
+.api-hd .api-path { font-family: var(--mono); font-size: 12px; color: var(--txt); }
+.api-hd .api-desc { font-size: 11.5px; color: var(--txt-3); margin-left: 4px; }
+.api-hd .chev { margin-left: auto; color: var(--txt-4); transition: transform .18s; flex: none; }
+.api-item.open .chev { transform: rotate(90deg); }
+.api-bd { padding: 12px; border-top: 1px solid var(--line); display: none; }
+.api-item.open .api-bd { display: block; }
+.param-tbl td, .param-tbl th { padding: 6px 9px; }
+.req { color: var(--red); font-size: 10px; margin-left: 3px; }
+
+/* ---------- 24. ERP 界面模拟（浅色） ---------- */
+.erp-win {
+  border-radius: 12px; overflow: hidden; border: 1px solid rgba(125,158,214,.3);
+  background: #eef2f8; color: #1e293b; box-shadow: var(--shadow); font-size: 12px; line-height: 1.6;
+}
+.erp-top {
+  background: linear-gradient(90deg, #1e3a5f, #26527f); color: #dbeafe;
+  padding: 7px 14px; display: flex; align-items: center; gap: 10px; font-size: 12px;
+}
+.erp-top .erp-logo { font-weight: 700; letter-spacing: .5px; }
+.erp-top .erp-user { margin-left: auto; font-size: 11px; opacity: .85; }
+.erp-nav { background: #fff; border-bottom: 1px solid #dde5f0; display: flex; gap: 2px; padding: 0 10px; overflow-x: auto; }
+.erp-nav span { padding: 8px 12px; font-size: 12px; color: #64748b; white-space: nowrap; }
+.erp-nav span.on { color: #1d4ed8; border-bottom: 2px solid #1d4ed8; font-weight: 600; }
+.erp-body { padding: 13px; }
+.erp-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 11px; }
+.erp-card:last-child { margin-bottom: 0; }
+.erp-card-hd {
+  padding: 8px 12px; border-bottom: 1px solid #eef2f7; font-weight: 600; font-size: 12.5px;
+  color: #0f172a; display: flex; align-items: center; gap: 8px;
+}
+.erp-card-bd { padding: 12px; }
+.erp-grid { display: grid; gap: 10px; }
+.erp-f { display: flex; flex-direction: column; gap: 3px; }
+.erp-f label { font-size: 11px; color: #64748b; }
+.erp-input {
+  background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px;
+  padding: 5px 9px; font-size: 12px; color: #0f172a; min-height: 28px; display: flex; align-items: center;
+}
+.erp-input.ro { background: #f1f5f9; color: #334155; }
+.erp-tbl { width: 100%; font-size: 12px; border-collapse: collapse; }
+.erp-tbl th {
+  background: #f1f5f9; color: #475569; text-align: left; padding: 7px 10px;
+  font-weight: 600; border-bottom: 1px solid #e2e8f0; font-size: 11px; white-space: nowrap;
+}
+.erp-tbl td { padding: 7px 10px; border-bottom: 1px solid #f1f5f9; color: #1e293b; }
+.erp-tbl tr:last-child td { border-bottom: none; }
+.erp-tbl tbody tr:hover { background: #f8fbff; }
+.erp-tbl .num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.erp-btn {
+  display: inline-flex; align-items: center; gap: 5px; background: #1d4ed8; color: #fff;
+  padding: 5px 13px; border-radius: 6px; font-size: 12px; font-weight: 600; border: 1px solid #1d4ed8;
+}
+.erp-btn.ghost { background: #fff; color: #475569; border-color: #cbd5e1; }
+.erp-btn.danger { background: #dc2626; border-color: #dc2626; }
+.erp-btn.warn { background: #ea580c; border-color: #ea580c; }
+.erp-hint { font-size: 11px; color: #64748b; }
+
+/* 风控大脑注入区块 */
+.srb {
+  position: relative; border: 1px dashed #0ea5e9; border-radius: 8px;
+  background: linear-gradient(180deg, #f0f9ff, #ffffff);
+}
+.srb::after {
+  content: "风控大脑 API 注入"; position: absolute; top: -9px; right: 9px;
+  background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; font-size: 9px; font-weight: 700;
+  padding: 1px 8px; border-radius: 20px; letter-spacing: .3px; white-space: nowrap;
+}
+.srb.inline::after { content: "风控大脑"; }
+.srb-pad { padding: 11px 12px; }
+.erp-badge { font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.eb-red    { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+.eb-orange { background: #ffedd5; color: #c2410c; border: 1px solid #fed7aa; }
+.eb-yellow { background: #fef9c3; color: #a16207; border: 1px solid #fde68a; }
+.eb-green  { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+.eb-blue   { background: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; }
+.eb-grey   { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+.erp-alert { border-radius: 7px; padding: 9px 11px; font-size: 11.5px; line-height: 1.7; }
+.ea-red    { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+.ea-orange { background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; }
+.ea-green  { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+.ea-blue   { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+.erp-alert b { color: inherit; }
+.erp-bar { height: 5px; border-radius: 20px; background: #e2e8f0; overflow: hidden; }
+.erp-bar > i { display: block; height: 100%; border-radius: 20px; }
+.erp-kv { display: flex; justify-content: space-between; font-size: 11.5px; padding: 3px 0; color: #475569; }
+.erp-kv b { color: #0f172a; font-family: var(--mono); }
+.erp-mini { font-size: 10.5px; color: #94a3b8; }
+.erp-ask {
+  display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid #bae6fd;
+  border-radius: 8px; padding: 7px 10px; font-size: 12px; color: #64748b;
+}
 
 @media (max-width: 1024px) {
   .sidebar { position: fixed; transform: translateX(-100%); transition: transform .25s; }

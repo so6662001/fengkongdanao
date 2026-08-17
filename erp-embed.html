@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ERP 嵌入场景 · 钢铁行业 AI 风控大脑</title>
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body data-page="embed">
+<div class="app-bg"></div>
+<div class="layout">
+  <div class="main">
+    <div class="content">
+
+      <div class="page-head">
+        <div>
+          <h1>ERP 业务场景嵌入效果</h1>
+          <p>风险数据不该只待在风控系统里。下面是风控大脑的结论回流到 ERP 之后，
+             <b class="c-blue">销售员报价</b>、<b class="c-blue">采购员采购配货</b>、<b class="c-blue">财务查应收</b>、<b class="c-blue">老板看报表</b> 四个场景里实际长什么样。</p>
+        </div>
+        <div class="ph-right">
+          <a class="btn" href="open-api.html">查看接口文档</a>
+        </div>
+      </div>
+
+      <div class="card mb" style="padding:10px 14px">
+        <div class="flex items-c gap12 wrap fs11">
+          <span class="t3">图例：</span>
+          <span class="flex items-c gap6"><span style="width:22px;height:12px;border-radius:3px;background:#eef2f8;border:1px solid #cbd5e1;display:inline-block"></span> 你们现有的 ERP 界面（原样保留）</span>
+          <span class="flex items-c gap6"><span style="width:22px;height:12px;border-radius:3px;background:linear-gradient(180deg,#f0f9ff,#fff);border:1px dashed #0ea5e9;display:inline-block"></span> 风控大脑通过 API 注入的模块</span>
+          <span class="ml-auto t4">所有注入模块在接口异常时自动隐藏，<b class="c-green">不影响 ERP 正常开单</b></span>
+        </div>
+      </div>
+
+      <div class="tabs" data-group="erp" id="erpTabs">
+        <button class="on" data-tab="quote">① 销售报价单 · 销售员</button>
+        <button data-tab="purchase">② 采购申请与配货 · 采购员</button>
+        <button data-tab="ar">③ 应收账款查询 · 财务 / 销售</button>
+        <button data-tab="board">④ 经营驾驶舱 · 老板 / 管理者</button>
+      </div>
+
+      <!-- ==================== ① 销售报价单 ==================== -->
+      <div data-panel="quote" data-group="erp">
+        <div class="grid g-3-2" style="gap:14px">
+          <div>
+            <div class="erp-win">
+              <div class="erp-top">
+                <span class="erp-logo">华东钢铁贸易 · ERP 管理系统</span>
+                <span style="opacity:.7">V8.2</span>
+                <span class="erp-user">销售一部 / 李娜　|　2026-08-17</span>
+              </div>
+              <div class="erp-nav">
+                <span class="on">销售管理</span><span>采购管理</span><span>库存管理</span><span>应收应付</span><span>财务管理</span><span>经营报表</span>
+              </div>
+              <div class="erp-body">
+                <div class="flex items-c gap8" style="margin-bottom:11px">
+                  <b style="font-size:14px;color:#0f172a">销售报价单 · 新增</b>
+                  <span class="erp-badge eb-grey">草稿</span>
+                  <span class="erp-mini">单号 QT-20260817-0093</span>
+                  <span style="margin-left:auto;display:flex;gap:7px">
+                    <span class="erp-btn ghost">保存草稿</span>
+                    <span class="erp-btn">提交审核</span>
+                  </span>
+                </div>
+
+                <!-- 基本信息 -->
+                <div class="erp-card">
+                  <div class="erp-card-hd">基本信息</div>
+                  <div class="erp-card-bd">
+                    <div class="erp-grid" style="grid-template-columns:1.5fr 1fr 1fr 1fr">
+                      <div class="erp-f"><label>客户名称</label>
+                        <div class="erp-input" style="gap:7px;white-space:nowrap">
+                          宏基建设集团有限公司
+                          <!-- 注入：行内风险徽章 -->
+                          <span class="srb inline" style="padding:1px 7px 1px 5px;border-radius:5px;margin-left:auto">
+                            <span class="erp-badge eb-red" style="border:none;background:transparent;padding:0">● 高风险 · 坏账 87%</span>
+                          </span>
+                        </div>
+                      </div>
+                      <div class="erp-f"><label>联系人 / 电话</label><div class="erp-input ro">王建国　138****6612</div></div>
+                      <div class="erp-f"><label>报价有效期</label><div class="erp-input ro">2026-08-24</div></div>
+                      <div class="erp-f"><label>结算方式</label><div class="erp-input">赊销　账期 60 天</div></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 注入①：客户风险条 -->
+                <div class="srb srb-pad" style="margin-bottom:11px">
+                  <div class="flex items-c gap8" style="margin-bottom:9px">
+                    <b style="font-size:12.5px;color:#0c4a6e">客户风险画像</b>
+                    <span class="erp-badge eb-red">高风险</span>
+                    <span class="erp-mini">坏账概率 87%（较上月 +23）</span>
+                    <span class="erp-mini" style="margin-left:auto">数据更新于 3 分钟前</span>
+                  </div>
+                  <div class="erp-grid" style="grid-template-columns:1.1fr 1fr 1.4fr;gap:14px">
+                    <div>
+                      <div class="erp-kv"><span>应收余额</span><b>1,080 万元</b></div>
+                      <div class="erp-kv"><span>其中逾期</span><b style="color:#c2410c">386 万元 / 63 天</b></div>
+                      <div class="erp-kv"><span>授信额度</span><b>1,200 万元</b></div>
+                      <div class="erp-kv"><span>风险调整后可用</span><b style="color:#b91c1c">0 元（建议降至 300 万）</b></div>
+                      <div class="erp-bar" style="margin-top:5px"><i style="width:90%;background:linear-gradient(90deg,#f87171,#dc2626)"></i></div>
+                      <div class="erp-mini" style="margin-top:3px">授信使用率 90%，本单 106.8 万将超限</div>
+                    </div>
+                    <div>
+                      <div style="font-size:11px;color:#64748b;margin-bottom:4px">失信检测最新事件</div>
+                      <div class="erp-kv"><span><span class="erp-badge eb-red">08-14</span> 新增被执行人</span><b style="color:#b91c1c">1,240 万</b></div>
+                      <div class="erp-kv"><span><span class="erp-badge eb-orange">08-09</span> 合同纠纷立案</span><b style="color:#c2410c">318 万</b></div>
+                      <div class="erp-kv"><span><span class="erp-badge eb-orange">07-28</span> 法定代表人变更</span><b>—</b></div>
+                      <div class="erp-alert ea-orange" style="margin-top:7px;padding:6px 9px">
+                        该客户同时是资源平台入驻商户，近 5 日低价抛售自有货源 <b>1,860 吨</b>（低于市场均价 82 元/吨）
+                      </div>
+                    </div>
+                    <div>
+                      <div style="font-size:11px;color:#64748b;margin-bottom:4px">AI 解读</div>
+                      <div class="erp-alert ea-red">
+                        <div>
+                          征信事件、平台低价抛货、内部沟通拖延话术三项<b>相互印证</b>，判定为<b>资金链紧张</b>而非孤立小额诉讼，
+                          坏账概率由 64% 上调至 <b>87%</b>。本单若走 60 天赊销，预期损失约 <b>92.9 万元</b>。
+                        </div>
+                      </div>
+                      <div class="flex gap6" style="margin-top:8px">
+                        <span class="erp-btn danger">改为款到发货</span>
+                        <span class="erp-btn ghost">查看完整风险报告</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 商品明细 -->
+                <div class="erp-card">
+                  <div class="erp-card-hd">报价明细
+                    <span class="erp-mini" style="margin-left:auto">带蓝色虚线的两列由风控大脑注入</span>
+                  </div>
+                  <div class="erp-card-bd" style="padding:0">
+                    <table class="erp-tbl">
+                      <thead>
+                        <tr>
+                          <th>#</th><th>品名规格</th><th>钢厂</th><th class="num">数量(吨)</th>
+                          <th class="num">报价单价</th><th class="num">金额(元)</th>
+                          <th class="num" style="background:#e0f2fe;color:#0369a1">市场对标价</th>
+                          <th style="background:#e0f2fe;color:#0369a1">库存与市场提示</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>1</td>
+                          <td>螺纹钢 HRB400E Φ20 9M</td><td>沙钢</td>
+                          <td class="num">300</td><td class="num">3,560</td><td class="num">1,068,000</td>
+                          <td class="num" style="background:#f0f9ff">
+                            <b style="color:#b91c1c">3,472</b>
+                            <div class="erp-mini">83 家挂牌 <span style="color:#b91c1c">+46</span></div>
+                          </td>
+                          <td style="background:#f0f9ff">
+                            <span class="erp-badge eb-red">抛压 L5</span>
+                            <span class="erp-badge eb-orange">呆滞 82%</span>
+                            <div class="erp-mini" style="margin-top:3px">报价高于市场 88 元/吨，成交概率偏低；该批次库龄 47 天，出货对去库存有利</div>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>2</td>
+                          <td>镀锌卷 DX51D 1.0×1000×C</td><td>本钢</td>
+                          <td class="num">60</td><td class="num">4,680</td><td class="num">280,800</td>
+                          <td class="num" style="background:#f0f9ff">
+                            <b style="color:#15803d">4,620</b>
+                            <div class="erp-mini">17 家挂牌 <span style="color:#15803d">-11</span></div>
+                          </td>
+                          <td style="background:#f0f9ff">
+                            <span class="erp-badge eb-green">市场紧俏</span>
+                            <div class="erp-mini" style="margin-top:3px">货源减少、报价抬升，可维持报价；建议与螺纹钢搭售</div>
+                          </td>
+                        </tr>
+                        <tr style="background:#f8fafc">
+                          <td colspan="5" style="text-align:right;font-weight:600">合计</td>
+                          <td class="num" style="font-weight:700">1,348,800</td>
+                          <td colspan="2"></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- 注入③：报价风控校验 -->
+                <div class="srb srb-pad">
+                  <div class="flex items-c gap8" style="margin-bottom:9px">
+                    <b style="font-size:12.5px;color:#0c4a6e">提交前风控校验</b>
+                    <span class="erp-badge eb-orange">建议调整后提交</span>
+                    <span class="erp-mini">POST /v1/risk/quote/check · 168ms</span>
+                    <span class="erp-mini" style="margin-left:auto">traceId q-20260817-0093</span>
+                  </div>
+                  <div class="erp-alert ea-red" style="margin-bottom:9px">
+                    <div>
+                      <b>授信校验未通过</b>：本单赊销金额 134.9 万元，客户风险调整后可用授信为 <b>0 元</b>（原额度 1,200 万，已用 1,080 万，且因新增被执行建议下调至 300 万）。
+                      按现有结算方式提交需<b>财务总监审批</b>。
+                    </div>
+                  </div>
+                  <div class="erp-grid" style="grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px">
+                    <div class="erp-alert ea-blue"><div><b>建议 1</b><br>改为款到发货或预付 50%，本单不占用赊销额度，可当场成交</div></div>
+                    <div class="erp-alert ea-blue"><div><b>建议 2</b><br>若客户坚持赊销，账期由 60 天压缩至 15 天，并要求补充实控人连带担保</div></div>
+                    <div class="erp-alert ea-blue"><div><b>建议 3</b><br>螺纹钢报价可让至 3,510 元/吨（款到发货前提下），该批次抛压 L5，出货优先于毛利</div></div>
+                  </div>
+                  <div class="flex items-c gap7 wrap">
+                    <span class="erp-btn">采纳建议 1 并重新报价</span>
+                    <span class="erp-btn warn">仍按原方案提交（转审批）</span>
+                    <span class="erp-btn ghost">否决建议并说明原因</span>
+                    <span class="erp-mini" style="margin-left:auto">你的选择会回写风控大脑（POST /v1/feedback/decision），用于模型迭代</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 说明侧栏 -->
+          <div>
+            <div class="card mb">
+              <div class="card-hd"><h3>这个页面调用了哪些接口</h3></div>
+              <div class="card-bd" style="padding:0">
+                <table class="tbl">
+                  <thead><tr><th>触发时机</th><th>接口</th><th>注入位置</th></tr></thead>
+                  <tbody>
+                    <tr><td class="fs11 t3">选择客户后</td><td class="mono fs10 c-blue">GET /risk/customer/{code}</td><td class="fs11 t2">客户名旁徽章 + 风险条</td></tr>
+                    <tr><td class="fs11 t3">选择客户后</td><td class="mono fs10 c-blue">GET /credit/available/{code}</td><td class="fs11 t2">授信占用条</td></tr>
+                    <tr><td class="fs11 t3">录入商品行时</td><td class="mono fs10 c-blue">POST /market/price/compare</td><td class="fs11 t2">市场对标价列</td></tr>
+                    <tr><td class="fs11 t3">录入商品行时</td><td class="mono fs10 c-blue">GET /risk/inventory/{sku}</td><td class="fs11 t2">库存与市场提示列</td></tr>
+                    <tr><td class="fs11 t3">点击提交时</td><td class="mono fs10 c-blue">POST /risk/quote/check</td><td class="fs11 t2">提交前风控校验面板</td></tr>
+                    <tr><td class="fs11 t3">做出选择后</td><td class="mono fs10 c-green">POST /feedback/decision</td><td class="fs11 t2">回写飞轮（无界面）</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card mb">
+              <div class="card-hd"><h3>对销售员意味着什么</h3></div>
+              <div class="card-bd">
+                <div class="note red mb"><b>过去</b>：报价时只知道客户额度还剩多少，不知道这家客户上周刚被执行 1,240 万；报完价才发现市场早就跌破自己的报价，单子成不了。</div>
+                <div class="note green"><b>现在</b>：客户一选上，风险、逾期、失信事件、平台抛货行为全部摆在眼前；单价一填，就知道同业现在报多少、自己这批货是不是在被市场抛压。<b>不用切系统、不用问财务、不用等风控通知。</b></div>
+                <div class="divider"></div>
+                <div class="fs12 b6 mb" style="margin-bottom:6px">上线两个月后的实际变化</div>
+                <div class="meter-row"><span class="lbl">高风险客户赊销单量</span><div class="bar"><i class="green" style="width:74%"></i></div><span class="val">-74%</span></div>
+                <div class="meter-row"><span class="lbl">报价成交率</span><div class="bar"><i class="blue" style="width:31%"></i></div><span class="val">+31%</span></div>
+                <div class="meter-row"><span class="lbl">低于成本价报价</span><div class="bar"><i class="green" style="width:86%"></i></div><span class="val">-86%</span></div>
+                <div class="meter-row"><span class="lbl">新增逾期金额</span><div class="bar"><i class="green" style="width:42%"></i></div><span class="val">-42%</span></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-hd"><h3>关键设计：只提示，不拦单</h3></div>
+              <div class="card-bd">
+                <div class="fs12 t2" style="line-height:1.85">
+                  校验结果给的是 <span class="tag tag-orange">建议调整后提交</span>，而不是直接禁止保存。销售员始终可以选择「仍按原方案提交」，
+                  只是走一道审批、并要求填写理由。<br><br>
+                  这么设计有两个原因：一是<b>AI 定位是决策辅助，最终决策权留给人</b>；
+                  二是初期误报难免，硬拦单会让业务立刻抵触整个系统。跑两三个月，等采纳率和准确率的数据摆出来，再谈要不要收紧管控。
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== ② 采购申请与配货 ==================== -->
+      <div data-panel="purchase" data-group="erp" style="display:none">
+        <div class="grid g-3-2" style="gap:14px">
+          <div>
+            <div class="erp-win mb">
+              <div class="erp-top">
+                <span class="erp-logo">华东钢铁贸易 · ERP 管理系统</span>
+                <span style="opacity:.7">V8.2</span>
+                <span class="erp-user">采购部 / 王强　|　2026-08-17</span>
+              </div>
+              <div class="erp-nav">
+                <span>销售管理</span><span class="on">采购管理</span><span>库存管理</span><span>应收应付</span><span>财务管理</span><span>经营报表</span>
+              </div>
+              <div class="erp-body">
+                <div class="flex items-c gap8" style="margin-bottom:11px">
+                  <b style="font-size:14px;color:#0f172a">采购申请单 · 新增</b>
+                  <span class="erp-badge eb-grey">待提交</span>
+                  <span class="erp-mini">单号 PR-20260817-0021</span>
+                  <span style="margin-left:auto;display:flex;gap:7px">
+                    <span class="erp-btn ghost">保存</span><span class="erp-btn">提交审批</span>
+                  </span>
+                </div>
+
+                <div class="erp-card">
+                  <div class="erp-card-hd">申请信息</div>
+                  <div class="erp-card-bd">
+                    <div class="erp-grid" style="grid-template-columns:repeat(4,1fr)">
+                      <div class="erp-f"><label>采购品名规格</label><div class="erp-input">螺纹钢 HRB400E Φ20 9M · 沙钢</div></div>
+                      <div class="erp-f"><label>申请数量（吨）</label><div class="erp-input">3,000</div></div>
+                      <div class="erp-f"><label>申报单价（元/吨）</label><div class="erp-input">3,520</div></div>
+                      <div class="erp-f"><label>预计到货</label><div class="erp-input ro">2026-08-28</div></div>
+                      <div class="erp-f" style="grid-column:span 2"><label>供应商</label>
+                        <div class="erp-input" style="gap:7px;white-space:nowrap">
+                          华鑫钢贸有限公司
+                          <span class="srb inline" style="padding:1px 7px 1px 5px;border-radius:5px;margin-left:auto">
+                            <span class="erp-badge eb-red" style="border:none;background:transparent;padding:0">● 高风险 · 失信被执行</span>
+                          </span>
+                        </div>
+                      </div>
+                      <div class="erp-f"><label>预付比例</label><div class="erp-input">40%（140.8 万元）</div></div>
+                      <div class="erp-f"><label>申请人</label><div class="erp-input ro">王强</div></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 注入①：市场供需 -->
+                <div class="srb srb-pad" style="margin-bottom:11px">
+                  <div class="flex items-c gap8" style="margin-bottom:9px">
+                    <b style="font-size:12.5px;color:#0c4a6e">采购前市场供需与风险扫描</b>
+                    <span class="erp-badge eb-red">不建议大批量采购</span>
+                    <span class="erp-mini">POST /v1/risk/purchase/check · 324ms</span>
+                  </div>
+                  <div class="erp-grid" style="grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:10px">
+                    <div>
+                      <div style="font-size:11px;color:#64748b;margin-bottom:4px">① 我方库存水位</div>
+                      <div class="erp-kv"><span>在库</span><b>4,260 吨</b></div>
+                      <div class="erp-kv"><span>在途</span><b>800 吨</b></div>
+                      <div class="erp-kv"><span>已售未发</span><b>320 吨</b></div>
+                      <div class="erp-kv"><span>呆滞概率 / 库龄</span><b style="color:#b91c1c">82% / 47 天</b></div>
+                      <div class="erp-alert ea-orange" style="margin-top:6px;padding:6px 9px">库存水位<b>偏高</b>，再进 3,000 吨将加重积压</div>
+                    </div>
+                    <div>
+                      <div style="font-size:11px;color:#64748b;margin-bottom:4px">② 平台市场货源体量</div>
+                      <div class="erp-kv"><span>全平台挂牌总量</span><b style="color:#b91c1c">5.62 万吨 ↑148%</b></div>
+                      <div class="erp-kv"><span>挂牌商户数</span><b style="color:#b91c1c">83 家（+46）</b></div>
+                      <div class="erp-kv"><span>同业均价 / 最低</span><b>3,472 / 3,440</b></div>
+                      <div class="erp-kv"><span>行情指数（建材）</span><b style="color:#b91c1c">92.4　7 日 -6.8%</b></div>
+                      <div class="erp-alert ea-red" style="margin-top:6px;padding:6px 9px">同业均价已<b>低于申报采购价 48 元/吨</b>，市场货源泛滥</div>
+                    </div>
+                    <div>
+                      <div style="font-size:11px;color:#64748b;margin-bottom:4px">③ 供货商风险</div>
+                      <div class="erp-kv"><span>采购集中度</span><b style="color:#c2410c">23.6%</b></div>
+                      <div class="erp-kv"><span>在手未交付订单</span><b style="color:#b91c1c">1,860 万元</b></div>
+                      <div class="erp-kv"><span><span class="erp-badge eb-red">08-15</span> 失信被执行</span><b style="color:#b91c1c">2,180 万</b></div>
+                      <div class="erp-kv"><span><span class="erp-badge eb-red">08-10</span> 账户被冻结</span><b>—</b></div>
+                      <div class="erp-alert ea-red" style="margin-top:6px;padding:6px 9px">预付 140.8 万元存在<b>损失风险</b>，建议改现货现结</div>
+                    </div>
+                  </div>
+
+                  <div class="erp-alert ea-orange" style="margin-bottom:9px">
+                    <div>
+                      <b>AI 采购建议</b>：现在整个市场货源泛滥（挂牌量环比 +148%，83 家商户集中抛售），同业均价已低于本次申报价 48 元/吨，
+                      自有库存呆滞概率已达 82%，同时供货商刚出现失信被执行与账户冻结。<br>
+                      建议 <b>驳回本次申请</b>；若确有客户订单支撑，采购量压缩至 <b>800 吨以内</b>、限价 <b>3,450 元/吨</b>、
+                      <b>预付比例降至 0</b>，并更换供货商为中天钢铁销售公司（无风险、有承接余量）。
+                    </div>
+                  </div>
+                  <div class="flex items-c gap7 wrap">
+                    <span class="erp-btn">按建议改为 800 吨 / 中天钢铁</span>
+                    <span class="erp-btn warn">维持原申请（转总经理审批）</span>
+                    <span class="erp-btn ghost">否决建议并说明原因</span>
+                  </div>
+                </div>
+
+                <!-- 配货 -->
+                <div class="erp-card">
+                  <div class="erp-card-hd">发货配货 · 批次选择
+                    <span class="erp-mini">销售订单 SO-20260817-0244 · 螺纹钢 Φ20 · 需配 300 吨</span>
+                  </div>
+                  <div class="erp-card-bd" style="padding:0">
+                    <table class="erp-tbl">
+                      <thead><tr>
+                        <th>选择</th><th>批次号</th><th>入库日期</th><th class="num">可用(吨)</th><th class="num">成本价</th>
+                        <th class="num" style="background:#e0f2fe;color:#0369a1">库龄</th>
+                        <th style="background:#e0f2fe;color:#0369a1">风险状态</th>
+                        <th style="background:#e0f2fe;color:#0369a1">配货建议</th>
+                      </tr></thead>
+                      <tbody>
+                        <tr style="background:#f0f9ff">
+                          <td><span class="erp-badge eb-blue">已选</span></td>
+                          <td>PC-20260630-008</td><td>2026-06-30</td><td class="num">1,820</td><td class="num">3,598</td>
+                          <td class="num" style="background:#f0f9ff;color:#b91c1c;font-weight:700">47 天</td>
+                          <td style="background:#f0f9ff"><span class="erp-badge eb-red">抛压 L5</span> <span class="erp-badge eb-orange">呆滞 82%</span></td>
+                          <td style="background:#f0f9ff"><b style="color:#15803d">★ 推荐优先出货</b><div class="erp-mini">库龄最长且抛压最高，先出可避免浮亏扩大约 6.8 万元</div></td>
+                        </tr>
+                        <tr>
+                          <td><span class="erp-badge eb-grey">选择</span></td>
+                          <td>PC-20260722-031</td><td>2026-07-22</td><td class="num">1,240</td><td class="num">3,542</td>
+                          <td class="num" style="background:#f8fafc">26 天</td>
+                          <td style="background:#f8fafc"><span class="erp-badge eb-orange">抛压 L3</span> <span class="erp-badge eb-yellow">呆滞 41%</span></td>
+                          <td style="background:#f8fafc">毛利更好（+1.68 万）<div class="erp-mini">但会把 47 天的老批次继续压在库里，库龄将突破 60 天进入深度呆滞</div></td>
+                        </tr>
+                        <tr>
+                          <td><span class="erp-badge eb-grey">选择</span></td>
+                          <td>PC-20260805-046</td><td>2026-08-05</td><td class="num">1,200</td><td class="num">3,516</td>
+                          <td class="num" style="background:#f8fafc">12 天</td>
+                          <td style="background:#f8fafc"><span class="erp-badge eb-green">抛压 L2</span> <span class="erp-badge eb-green">呆滞 18%</span></td>
+                          <td style="background:#f8fafc">不建议先出<div class="erp-mini">新货周转风险低，留作后续正常销售</div></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="card mb">
+              <div class="card-hd"><h3>这个页面调用了哪些接口</h3></div>
+              <div class="card-bd" style="padding:0">
+                <table class="tbl">
+                  <thead><tr><th>触发时机</th><th>接口</th><th>注入位置</th></tr></thead>
+                  <tbody>
+                    <tr><td class="fs11 t3">选择供应商后</td><td class="mono fs10 c-blue">GET /risk/supplier/{code}</td><td class="fs11 t2">供应商名旁徽章 + 风险栏</td></tr>
+                    <tr><td class="fs11 t3">填完品类数量</td><td class="mono fs10 c-blue">POST /risk/purchase/check</td><td class="fs11 t2">市场供需与风险扫描面板</td></tr>
+                    <tr><td class="fs11 t3">面板内嵌</td><td class="mono fs10 c-blue">GET /market/supply</td><td class="fs11 t2">平台货源体量</td></tr>
+                    <tr><td class="fs11 t3">面板内嵌</td><td class="mono fs10 c-blue">GET /risk/inventory/{sku}</td><td class="fs11 t2">我方库存水位</td></tr>
+                    <tr><td class="fs11 t3">进入配货页</td><td class="mono fs10 c-blue">POST /advice/allocation</td><td class="fs11 t2">批次表的库龄、风险状态、配货建议列</td></tr>
+                    <tr><td class="fs11 t3">供应商风险变化</td><td class="mono fs10 c-ai">Webhook risk.supplier.alert</td><td class="fs11 t2">采购模块预警 + 档案标记</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card mb">
+              <div class="card-hd"><h3>对采购员意味着什么</h3></div>
+              <div class="card-bd">
+                <div class="note red mb"><b>过去</b>：判断该不该进货，靠打几个电话问同行报价、凭经验估市场，看不到全貌；供货商暴雷往往是钱付出去之后才知道。</div>
+                <div class="note green"><b>现在</b>：填完数量单价，全平台 527 家商户现在挂了多少货、报什么价、行情指数在涨还是在跌、这家供货商有没有出事，一屏看完，<b>从源头减少积压库存</b>。</div>
+                <div class="divider"></div>
+                <div class="fs12 b6 mb" style="margin-bottom:6px">配货逻辑的改变</div>
+                <div class="fs11 t2" style="line-height:1.85">
+                  以前配货默认「就近拿、好拿的先拿」，结果新货不断出、老货越压越久，库龄越滚越大。
+                  接入配货建议接口后，默认按<b>库龄长 + 呆滞概率高 + 抛压等级高</b>优先出货，
+                  界面上直接标出「★ 推荐优先出货」并算给你听：先出这批能少亏多少、先出那批多赚多少但老货会怎样。
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-hd"><h3>本月拦截效果</h3></div>
+              <div class="card-bd">
+                <div class="grid g3" style="gap:9px;margin-bottom:11px">
+                  <div class="node center"><div class="fs10 t4">拦截/压缩采购</div><div class="mono b7 c-orange" style="font-size:17px">3 笔</div></div>
+                  <div class="node center"><div class="fs10 t4">压缩采购量</div><div class="mono b7 c-orange" style="font-size:17px">4,200 吨</div></div>
+                  <div class="node center"><div class="fs10 t4">规避潜在损失</div><div class="mono b7 c-green" style="font-size:17px">62 万</div></div>
+                </div>
+                <div class="chart h170" id="poEffect"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== ③ 应收账款查询 ==================== -->
+      <div data-panel="ar" data-group="erp" style="display:none">
+        <div class="grid g-3-2" style="gap:14px">
+          <div>
+            <div class="erp-win">
+              <div class="erp-top">
+                <span class="erp-logo">华东钢铁贸易 · ERP 管理系统</span>
+                <span style="opacity:.7">V8.2</span>
+                <span class="erp-user">财务部 / 周敏　|　2026-08-17</span>
+              </div>
+              <div class="erp-nav">
+                <span>销售管理</span><span>采购管理</span><span>库存管理</span><span class="on">应收应付</span><span>财务管理</span><span>经营报表</span>
+              </div>
+              <div class="erp-body">
+                <div class="flex items-c gap8" style="margin-bottom:11px">
+                  <b style="font-size:14px;color:#0f172a">应收账款查询</b>
+                  <span class="erp-mini">账期截至 2026-08-17　共 42 家客户</span>
+                  <span style="margin-left:auto;display:flex;gap:7px">
+                    <span class="erp-btn ghost">导出</span><span class="erp-btn ghost">批量催收</span>
+                  </span>
+                </div>
+
+                <div class="erp-card">
+                  <div class="erp-card-bd" style="padding:9px 12px">
+                    <div class="flex items-c gap8 wrap fs11" style="color:#475569">
+                      <span>客户：<span class="erp-input" style="display:inline-flex;padding:2px 8px">全部</span></span>
+                      <span>逾期：<span class="erp-input" style="display:inline-flex;padding:2px 8px">全部</span></span>
+                      <span class="srb inline" style="padding:2px 8px 2px 6px;border-radius:6px">
+                        风险等级：<b style="color:#0369a1">高风险</b> · 由风控大脑提供的筛选维度
+                      </span>
+                      <span class="erp-btn" style="margin-left:auto;padding:3px 12px">查询</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="erp-card">
+                  <div class="erp-card-hd">应收明细
+                    <span class="erp-mini" style="margin-left:auto">带蓝底的三列由风控大脑注入（批量接口一次拉取整页）</span>
+                  </div>
+                  <div class="erp-card-bd" style="padding:0">
+                    <table class="erp-tbl" id="arTbl"></table>
+                  </div>
+                </div>
+
+                <div class="srb srb-pad">
+                  <div class="flex items-c gap8" style="margin-bottom:9px">
+                    <b style="font-size:12.5px;color:#0c4a6e">客户风险详情 · 宏基建设集团有限公司</b>
+                    <span class="erp-badge eb-red">高风险 87%</span>
+                    <span class="erp-mini">点击列表任一行即展开</span>
+                    <span class="erp-mini" style="margin-left:auto">GET /v1/risk/customer/C10086?withEvents=true</span>
+                  </div>
+                  <div class="erp-grid" style="grid-template-columns:1fr 1.1fr 1.2fr;gap:14px">
+                    <div>
+                      <div style="font-size:11px;color:#64748b;margin-bottom:4px">失信事件时间轴</div>
+                      <div class="erp-kv"><span><span class="erp-badge eb-red">08-14</span> 新增被执行人</span><b style="color:#b91c1c">1,240 万</b></div>
+                      <div class="erp-kv"><span><span class="erp-badge eb-orange">08-09</span> 买卖合同纠纷立案</span><b style="color:#c2410c">318 万</b></div>
+                      <div class="erp-kv"><span><span class="erp-badge eb-orange">07-28</span> 法定代表人变更</span><b>—</b></div>
+                      <div style="font-size:11px;color:#64748b;margin:9px 0 4px">平台商户行为</div>
+                      <div class="erp-alert ea-orange" style="padding:6px 9px">
+                        该客户在资源平台开店，近 5 日集中挂牌抛售自有螺纹钢 <b>1,860 吨</b>，报价低于市场均价 <b>82 元/吨</b>
+                      </div>
+                    </div>
+                    <div>
+                      <div style="font-size:11px;color:#64748b;margin-bottom:4px">AI 事件解读</div>
+                      <div class="erp-alert ea-red">
+                        <div>
+                          区分「小额官司」与「大额执行」：本次被执行金额 1,240 万<b>已超过我方授信额度</b>，
+                          叠加法代变更、合同纠纷，以及平台低价抛货回笼现金的行为，三个独立来源相互印证 —— 判定为
+                          <b>资金链紧张</b>，坏账概率由 64% 上调至 <b>87%</b>。
+                        </div>
+                      </div>
+                      <div class="erp-kv" style="margin-top:8px"><span>预期损失（应收 × 概率）</span><b style="color:#b91c1c">939.6 万元</b></div>
+                      <div class="erp-kv"><span>建议授信</span><b style="color:#b91c1c">1,200 万 → 300 万</b></div>
+                    </div>
+                    <div>
+                      <div style="font-size:11px;color:#64748b;margin-bottom:4px">回款跟进建议（可一键生成 ERP 催收任务）</div>
+                      <div class="erp-alert ea-blue" style="margin-bottom:6px"><div><b>① 今日</b>　停止新增赊销发货，改为款到发货　<span class="erp-mini">销售一部</span></div></div>
+                      <div class="erp-alert ea-blue" style="margin-bottom:6px"><div><b>② 48h 内</b>　上门对账，争取抵押物或第三方担保　<span class="erp-mini">李娜</span></div></div>
+                      <div class="erp-alert ea-blue" style="margin-bottom:8px"><div><b>③ 本周内</b>　启动 386 万逾期款分期回款协议谈判　<span class="erp-mini">财务部</span></div></div>
+                      <div class="flex gap6">
+                        <span class="erp-btn">一键生成 3 条催收任务</span>
+                        <span class="erp-btn ghost">调整授信</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="card mb">
+              <div class="card-hd"><h3>这个页面调用了哪些接口</h3></div>
+              <div class="card-bd" style="padding:0">
+                <table class="tbl">
+                  <thead><tr><th>触发时机</th><th>接口</th><th>注入位置</th></tr></thead>
+                  <tbody>
+                    <tr><td class="fs11 t3">列表加载（整页一次）</td><td class="mono fs10 c-blue">POST /risk/customer/batch</td><td class="fs11 t2">风险等级、坏账概率、最新事件三列</td></tr>
+                    <tr><td class="fs11 t3">展开某一行</td><td class="mono fs10 c-blue">GET /risk/customer/{code}</td><td class="fs11 t2">客户风险详情区</td></tr>
+                    <tr><td class="fs11 t3">展开某一行</td><td class="mono fs10 c-blue">GET /risk/customer/{code}/events</td><td class="fs11 t2">失信事件时间轴 + AI 解读</td></tr>
+                    <tr><td class="fs11 t3">点击 AI 建议</td><td class="mono fs10 c-blue">GET /advice/collection/{code}</td><td class="fs11 t2">回款跟进建议</td></tr>
+                    <tr><td class="fs11 t3">风险等级变化时</td><td class="mono fs10 c-ai">Webhook risk.customer.level_changed</td><td class="fs11 t2">ERP 客户档案风险标记（无需实时查询）</td></tr>
+                  </tbody>
+                </table>
+                <div class="card-ft">列表页用<b>批量接口</b>而不是逐行调用：一次 200 个客户编码，236ms 返回，避免 42 行触发 42 次请求。</div>
+              </div>
+            </div>
+            <div class="card mb">
+              <div class="card-hd"><h3>对财务和销售意味着什么</h3></div>
+              <div class="card-bd">
+                <div class="note red mb"><b>过去</b>：应收报表上只有金额和账龄 —— 逾期 63 天的客户和逾期 63 天的客户，看起来是一样的，只能靠业务员的印象判断谁更危险。</div>
+                <div class="note green"><b>现在</b>：同样一张应收表，多了三列 —— 谁的风险在恶化、恶化到什么程度、因为什么事恶化。催收资源可以精准投到最该催的那几家，而不是平均用力。</div>
+                <div class="divider"></div>
+                <div class="chart h200" id="arCompare"></div>
+                <div class="fs10 t4 center">全部 42 家客户按风险等级分组：高风险 4 家占应收 35%，却贡献了 82% 的逾期金额</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-hd"><h3>字段权限</h3></div>
+              <div class="card-bd">
+                <table class="tbl">
+                  <thead><tr><th>角色</th><th>可见字段</th></tr></thead>
+                  <tbody>
+                    <tr><td class="t-main">业务员</td><td class="fs11 t2">风险等级、建议动作　<span class="tag tag-grey">不含概率与失信原文</span></td></tr>
+                    <tr><td class="t-main">部门负责人</td><td class="fs11 t2">＋ 坏账概率、逾期结构、事件摘要</td></tr>
+                    <tr><td class="t-main">财务 / 管理者</td><td class="fs11 t2">＋ 失信事件明细、AI 解读全文、预期损失测算</td></tr>
+                  </tbody>
+                </table>
+                <div class="note blue mt">由接口按 <code class="mono">X-SRB-Role</code> 控制返回字段，<b>不是前端隐藏</b> —— 前端隐藏等于没隐藏。</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== ④ 经营驾驶舱 ==================== -->
+      <div data-panel="board" data-group="erp" style="display:none">
+        <div class="grid g-3-2" style="gap:14px">
+          <div>
+            <div class="erp-win">
+              <div class="erp-top">
+                <span class="erp-logo">华东钢铁贸易 · ERP 管理系统</span>
+                <span style="opacity:.7">V8.2</span>
+                <span class="erp-user">总经理 / 陈总　|　2026-08-17</span>
+              </div>
+              <div class="erp-nav">
+                <span>销售管理</span><span>采购管理</span><span>库存管理</span><span>应收应付</span><span>财务管理</span><span class="on">经营报表</span>
+              </div>
+              <div class="erp-body">
+                <div class="flex items-c gap8" style="margin-bottom:11px">
+                  <b style="font-size:14px;color:#0f172a">经营驾驶舱</b>
+                  <span class="erp-mini">2026 年 8 月　数据截至 08-16</span>
+                </div>
+
+                <!-- ERP 原生指标 -->
+                <div class="erp-card">
+                  <div class="erp-card-hd">经营核心指标 <span class="erp-mini">（ERP 原有）</span></div>
+                  <div class="erp-card-bd">
+                    <div class="erp-grid" style="grid-template-columns:repeat(5,1fr)">
+                      <div><div class="erp-mini">本月销售额</div><div style="font-family:var(--mono);font-size:19px;font-weight:700;color:#0f172a">4,862<span style="font-size:11px;color:#64748b"> 万</span></div><div class="erp-mini">环比 -6.2%</div></div>
+                      <div><div class="erp-mini">销售毛利</div><div style="font-family:var(--mono);font-size:19px;font-weight:700;color:#0f172a">186<span style="font-size:11px;color:#64748b"> 万</span></div><div class="erp-mini">毛利率 3.8%</div></div>
+                      <div><div class="erp-mini">库存货值</div><div style="font-family:var(--mono);font-size:19px;font-weight:700;color:#0f172a">6,086<span style="font-size:11px;color:#64748b"> 万</span></div><div class="erp-mini">15,490 吨</div></div>
+                      <div><div class="erp-mini">应收余额</div><div style="font-family:var(--mono);font-size:19px;font-weight:700;color:#0f172a">11,860<span style="font-size:11px;color:#64748b"> 万</span></div><div class="erp-mini">42 家客户</div></div>
+                      <div><div class="erp-mini">存货周转天数</div><div style="font-family:var(--mono);font-size:19px;font-weight:700;color:#0f172a">39.8<span style="font-size:11px;color:#64748b"> 天</span></div><div class="erp-mini">较上月 +5.2</div></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 注入①：风险总览 -->
+                <div class="srb srb-pad" style="margin-bottom:11px">
+                  <div class="flex items-c gap8" style="margin-bottom:9px">
+                    <b style="font-size:12.5px;color:#0c4a6e">经营风险总览</b>
+                    <span class="erp-badge eb-red">当前整体风险等级：高</span>
+                    <span class="erp-mini" style="margin-left:auto">GET /v1/dashboard/summary · 286ms</span>
+                  </div>
+                  <div class="erp-grid" style="grid-template-columns:repeat(3,1fr);gap:12px">
+                    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:7px;padding:10px">
+                      <div class="flex items-c gap6" style="margin-bottom:6px"><b style="font-size:12px">库存链</b><span class="erp-badge eb-red" style="margin-left:auto">风险分 79</span></div>
+                      <div class="erp-kv"><span>呆滞高风险货值</span><b style="color:#b91c1c">3,226 万</b></div>
+                      <div class="erp-kv"><span>浮亏敞口</span><b style="color:#c2410c">104.6 万</b></div>
+                      <div class="erp-kv"><span>高风险品类</span><b>3 个</b></div>
+                      <div class="erp-bar" style="margin-top:6px"><i style="width:79%;background:linear-gradient(90deg,#fb923c,#dc2626)"></i></div>
+                    </div>
+                    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:7px;padding:10px">
+                      <div class="flex items-c gap6" style="margin-bottom:6px"><b style="font-size:12px">应收链</b><span class="erp-badge eb-red" style="margin-left:auto">风险分 72</span></div>
+                      <div class="erp-kv"><span>高风险应收敞口</span><b style="color:#b91c1c">4,121 万</b></div>
+                      <div class="erp-kv"><span>逾期金额</span><b style="color:#c2410c">1,091 万</b></div>
+                      <div class="erp-kv"><span>本周新增失信事件</span><b style="color:#b91c1c">9 起 / 5 家</b></div>
+                      <div class="erp-bar" style="margin-top:6px"><i style="width:72%;background:linear-gradient(90deg,#fb923c,#dc2626)"></i></div>
+                    </div>
+                    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:7px;padding:10px">
+                      <div class="flex items-c gap6" style="margin-bottom:6px"><b style="font-size:12px">采购 / 供应链</b><span class="erp-badge eb-orange" style="margin-left:auto">风险分 58</span></div>
+                      <div class="erp-kv"><span>高风险供货商</span><b style="color:#b91c1c">1 家</b></div>
+                      <div class="erp-kv"><span>在手订单敞口</span><b style="color:#c2410c">1,860 万</b></div>
+                      <div class="erp-kv"><span>本月拦截采购</span><b style="color:#15803d">3 笔 / 省 62 万</b></div>
+                      <div class="erp-bar" style="margin-top:6px"><i style="width:58%;background:linear-gradient(90deg,#fbbf24,#fb923c)"></i></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 注入②：行业市场风险 -->
+                <div class="srb srb-pad" style="margin-bottom:11px">
+                  <div class="flex items-c gap8" style="margin-bottom:9px">
+                    <b style="font-size:12.5px;color:#0c4a6e">行业市场风险总览</b>
+                    <span class="erp-mini">全平台 527 家商户挂牌行为 · 抛压指数 78.4（+12.6）</span>
+                    <span class="erp-mini" style="margin-left:auto">GET /v1/dashboard/market-overview</span>
+                  </div>
+                  <table class="erp-tbl">
+                    <thead><tr><th>正在集中抛货的品类</th><th class="num">抛压</th><th class="num">挂牌商户</th><th class="num">我方库存</th><th class="num">浮亏敞口</th><th>连带的下游客户风险</th></tr></thead>
+                    <tbody>
+                      <tr>
+                        <td>螺纹钢 HRB400E Φ20</td><td class="num"><span class="erp-badge eb-red">91</span></td>
+                        <td class="num">83 <span style="color:#b91c1c">+46</span></td><td class="num">4,260 吨</td><td class="num" style="color:#b91c1c">53.7 万</td>
+                        <td><span class="erp-badge eb-red">房建</span> <span class="erp-badge eb-red">市政</span> <span class="erp-badge eb-orange">地产</span> <span class="erp-mini">涉及应收 4,437 万</span></td>
+                      </tr>
+                      <tr>
+                        <td>热轧卷板 Q235B 3.0×1250</td><td class="num"><span class="erp-badge eb-red">79</span></td>
+                        <td class="num">61 <span style="color:#b91c1c">+27</span></td><td class="num">2,980 吨</td><td class="num" style="color:#b91c1c">17.0 万</td>
+                        <td><span class="erp-badge eb-green">机械</span> <span class="erp-badge eb-yellow">贸易</span> <span class="erp-mini">涉及应收 768 万</span></td>
+                      </tr>
+                      <tr>
+                        <td>H型钢 Q235B 200×200</td><td class="num"><span class="erp-badge eb-orange">68</span></td>
+                        <td class="num">47 <span style="color:#b91c1c">+22</span></td><td class="num">1,520 吨</td><td class="num" style="color:#b91c1c">14.0 万</td>
+                        <td><span class="erp-badge eb-orange">钢结构</span> <span class="erp-mini">涉及应收 688 万</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div class="erp-alert ea-orange" style="margin-top:9px">
+                    <div><b>联动提示</b>：建材类出现跨规格、跨区域同步抛售，判定为下游地产需求走弱向贸易环节传导。已批量上调 <b>7 家</b>地产 / 工程类客户坏账预警等级，涉及应收 <b>5,667 万元</b>。</div>
+                  </div>
+                </div>
+
+                <!-- 注入③：问答 -->
+                <div class="srb srb-pad">
+                  <div class="flex items-c gap8" style="margin-bottom:9px">
+                    <b style="font-size:12.5px;color:#0c4a6e">问一句</b>
+                    <span class="erp-mini">POST /v1/ask · 流式返回</span>
+                  </div>
+                  <div class="erp-ask" style="margin-bottom:9px">
+                    <span style="color:#0ea5e9">?</span>
+                    <span style="color:#0f172a">现在平台上抛货最多的钢材品类有哪些，对应我手上哪些库存会面临亏损，对应的下游客户哪些需要重点盯回款</span>
+                    <span class="erp-btn" style="margin-left:auto;padding:3px 12px">提问</span>
+                  </div>
+                  <div class="erp-alert ea-blue">
+                    <div>
+                      <b>① 抛货最集中的 3 个品类</b>：螺纹钢 Φ20（83 家 / +46，抛压 91）、热轧卷 3.0（61 家 / +27，抛压 79）、H型钢 200×200（47 家 / +22，抛压 68）。<br>
+                      <b>② 会面临亏损的库存</b>：上述三类合计 8,760 吨，同业均价均已跌破我方成本，浮亏敞口合计 <b>84.7 万元</b>，占这三类库存货值的 2.6%。<br>
+                      <b>③ 需重点盯回款的客户</b>：宏基（87%，应收 1,080 万）、正弘（76%，742 万）、鼎晟（68%，1,365 万）、中远建工（63%，934 万），合计 <b>4,121 万元</b>，建议本周内全部完成对账并压缩账期。<br>
+                      <b>④ 建议动作</b>：螺纹钢启动分批降价出清并暂停采购；4 家地产链客户统一改款到发货；用当前紧俏的镀锌卷、中厚板搭售滞销品类。
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="card mb">
+              <div class="card-hd"><h3>这个页面调用了哪些接口</h3></div>
+              <div class="card-bd" style="padding:0">
+                <table class="tbl">
+                  <thead><tr><th>触发时机</th><th>接口</th><th>注入位置</th></tr></thead>
+                  <tbody>
+                    <tr><td class="fs11 t3">页面加载</td><td class="mono fs10 c-blue">GET /dashboard/summary</td><td class="fs11 t2">经营风险总览三张卡</td></tr>
+                    <tr><td class="fs11 t3">页面加载</td><td class="mono fs10 c-blue">GET /dashboard/market-overview</td><td class="fs11 t2">行业市场风险总览表</td></tr>
+                    <tr><td class="fs11 t3">管理者提问</td><td class="mono fs10 c-ai">POST /ask</td><td class="fs11 t2">问一句 · 回答区</td></tr>
+                    <tr><td class="fs11 t3">高风险产生时</td><td class="mono fs10 c-ai">Webhook 各类 alert</td><td class="fs11 t2">ERP 消息中心 / 待办（另见工作流页）</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card mb">
+              <div class="card-hd"><h3>对管理者意味着什么</h3></div>
+              <div class="card-bd">
+                <div class="note red mb"><b>过去</b>：经营报表能告诉你「卖了多少、赚了多少、还有多少货多少账」，但都是<b>已经发生的结果</b>。风险要等到货砸手里、账收不回来才在报表上显形。</div>
+                <div class="note green"><b>现在</b>：同一张报表上多了一层<b>前瞻视角</b> —— 哪些货正在被市场抛压、哪些客户正在恶化、哪个供货商可能断供，以及这些外部信号会怎么传导到自己的库存和应收上。还能直接用大白话追问。</div>
+                <div class="divider"></div>
+                <div class="chart h200" id="leadCompare"></div>
+                <div class="legend center" style="justify-content:center;margin-top:6px">
+                  <span><i class="sq" style="background:#34d399"></i>风控大脑提前预警</span>
+                  <span><i class="sq" style="background:#4c5c76"></i>财务报表滞后显形</span>
+                </div>
+                <div class="fs10 t4 center" style="margin-top:3px">以风险实际发生日为基准：平均提前 10.8 天预警，而报表要等 30 天左右才反映出来</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-hd"><h3>整体落地效果</h3></div>
+              <div class="card-bd">
+                <div class="grid g2" style="gap:9px">
+                  <div class="node center"><div class="fs10 t4">风险预判提前量</div><div class="mono b7 c-green" style="font-size:18px">11.4 天</div><div class="fs10 t4">原 4.2 天</div></div>
+                  <div class="node center"><div class="fs10 t4">业务员日均切系统</div><div class="mono b7 c-green" style="font-size:18px">0 次</div><div class="fs10 t4">风险信息就在 ERP 里</div></div>
+                  <div class="node center"><div class="fs10 t4">API 日均调用</div><div class="mono b7 c-blue" style="font-size:18px">28,460</div><div class="fs10 t4">覆盖 4 类业务场景</div></div>
+                  <div class="node center"><div class="fs10 t4">决策回写率</div><div class="mono b7 c-ai" style="font-size:18px">92.4%</div><div class="fs10 t4">直接喂给数据飞轮</div></div>
+                </div>
+                <div class="note green mt">
+                  接口打通之后还有一个额外收益：业务员的采纳 / 否决动作在 ERP 里就顺手完成了，<b>不用再登录风控系统补填一遍</b>，
+                  决策回写率从试点期的 41% 提高到 92.4% —— 飞轮的燃料一下子就够了。
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/charts.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  const M = Mock;
+
+  /* ---- 应收明细表（含注入列） ---- */
+  const rows = M.customers.slice(0, 7).map(c => ({
+    code: 'C' + (10086 + M.customers.indexOf(c) * 17),
+    name: c.name, short: c.short, ar: c.ar, overdue: c.overdue, days: c.overdueDays,
+    term: c.level === 'high' ? 60 : 45, lv: c.level, prob: c.prob, trend: c.trend,
+    ev: c.events.length ? `${c.events[0].d} ${c.events[0].t}${c.events[0].amt !== '—' ? ' ' + c.events[0].amt : ''}` :
+      (c.isMerchant && c.dumping ? '平台异常抛售 +148%' : '近30日无风险事件')
+  }));
+  const badge = lv => ({ high: '<span class="erp-badge eb-red">高风险</span>', mid: '<span class="erp-badge eb-orange">中风险</span>', low: '<span class="erp-badge eb-green">低风险</span>' })[lv];
+  document.getElementById('arTbl').innerHTML = `
+    <thead><tr>
+      <th>客户编码</th><th>客户名称</th><th class="num">应收余额(元)</th><th class="num">逾期金额(元)</th><th class="num">逾期天数</th><th class="num">账期</th>
+      <th style="background:#e0f2fe;color:#0369a1">风险等级</th>
+      <th class="num" style="background:#e0f2fe;color:#0369a1">坏账概率</th>
+      <th style="background:#e0f2fe;color:#0369a1">最新风险事件</th>
+    </tr></thead>
+    <tbody>
+      ${rows.map((r, i) => `<tr ${i === 0 ? 'style="background:#f0f9ff"' : ''}>
+        <td class="num" style="text-align:left">${r.code}</td>
+        <td>${r.name}</td>
+        <td class="num">${(r.ar * 10000).toLocaleString()}</td>
+        <td class="num" style="${r.overdue ? 'color:#c2410c;font-weight:600' : 'color:#94a3b8'}">${r.overdue ? (r.overdue * 10000).toLocaleString() : '—'}</td>
+        <td class="num" style="${r.days > 45 ? 'color:#b91c1c;font-weight:700' : r.days ? 'color:#c2410c' : 'color:#94a3b8'}">${r.days || '—'}</td>
+        <td class="num">${r.term} 天</td>
+        <td style="background:${i === 0 ? '#e0f2fe' : '#f8fafc'}">${badge(r.lv)}</td>
+        <td class="num" style="background:${i === 0 ? '#e0f2fe' : '#f8fafc'};font-weight:700;color:${r.lv === 'high' ? '#b91c1c' : r.lv === 'mid' ? '#c2410c' : '#15803d'}">
+          ${r.prob}% <span style="font-size:10px;color:${r.trend > 0 ? '#b91c1c' : '#15803d'}">${r.trend > 0 ? '↑' : '↓'}${Math.abs(r.trend)}</span>
+        </td>
+        <td style="background:${i === 0 ? '#e0f2fe' : '#f8fafc'}" class="${r.ev.includes('无风险') ? '' : ''}">
+          <span style="color:${r.ev.includes('无风险') ? '#94a3b8' : '#b91c1c'}">${r.ev}</span>
+        </td>
+      </tr>`).join('')}
+      <tr style="background:#f1f5f9;font-weight:600">
+        <td colspan="2">合计（当前页 7 家）</td>
+        <td class="num">${(rows.reduce((a, r) => a + r.ar, 0) * 10000).toLocaleString()}</td>
+        <td class="num" style="color:#c2410c">${(rows.reduce((a, r) => a + r.overdue, 0) * 10000).toLocaleString()}</td>
+        <td colspan="2"></td>
+        <td colspan="3" style="background:#e0f2fe;color:#0369a1">其中高风险 4 家，应收合计 <b>4,121 万元</b>，占本页 74%</td>
+      </tr>
+    </tbody>`;
+
+  /* ---- 图表 ---- */
+  Chart.bar('#poEffect', {
+    xLabels: ['3月', '4月', '5月', '6月', '7月', '8月'],
+    series: [{ name: '压缩采购量', data: [600, 1200, 900, 2400, 3100, 4200], color: '#fb923c', unit: ' 吨' }],
+    lineSeries: [{ name: '规避潜在损失', data: [18, 32, 26, 68, 78, 62], color: '#34d399', unit: ' 万元' }],
+    yFmt: v => v.toFixed(0)
+  });
+
+  Chart.bar('#arCompare', {
+    xLabels: ['低风险', '中风险', '高风险'],
+    bandWidth: .5,
+    series: [
+      { name: '应收余额', data: [2680, 5059, 4121], color: '#38bdf8', unit: ' 万元' },
+      { name: '逾期金额', data: [0, 196, 895], color: '#f4586e', unit: ' 万元' }
+    ],
+    yFmt: v => v.toFixed(0)
+  });
+
+  Chart.bar('#leadCompare', {
+    xLabels: ['库存滞销', '价格倒挂', '客户坏账', '供货商断供'],
+    series: [
+      { name: '风控大脑提前预警', data: [11.6, 9.2, 13.4, 8.8], color: '#34d399', unit: ' 天前' },
+      { name: '财务报表滞后显形', data: [32, 18, 45, 26], color: '#4c5c76', unit: ' 天后' }
+    ],
+    yFmt: v => v.toFixed(0)
+  });
+
+  App.tabs('#erpTabs');
+})();
+</script>
+</body>
+</html>

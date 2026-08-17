@@ -129,6 +129,48 @@
         </div>
       </div>
 
+      <!-- ===== 风险能力回流 ERP ===== -->
+      <div class="card mb accent-top">
+        <div class="card-hd">
+          <h3>风险能力回流 ERP <span class="tag tag-teal">开放 API</span></h3>
+          <span class="sub">数据从 ERP 来，风险结论再回到 ERP 去 —— 业务人员不用切系统，风险信息出现在他本来就在看的页面上</span>
+          <div class="hd-act">
+            <a class="btn btn-sm" href="open-api.html">接口文档</a>
+            <a class="btn btn-sm btn-primary" href="erp-embed.html">看 ERP 嵌入效果</a>
+          </div>
+        </div>
+        <div class="card-bd">
+          <div class="grid g4" style="gap:11px">
+            <div class="node new">
+              <div class="node-t">销售员报价时</div>
+              <div class="node-b">客户一选上就看到风险等级、逾期、失信事件与平台抛货行为；单价一填就知道同业现在报多少、这批货是否正被市场抛压。</div>
+              <div class="fs10 t4 mono" style="margin-top:6px">/risk/customer · /market/price/compare · /risk/quote/check</div>
+            </div>
+            <div class="node new">
+              <div class="node-t">采购员采购配货时</div>
+              <div class="node-b">申请单上直接显示平台该品类挂牌货源体量、同业报价、行情指数与供货商失信风险；配货页标出该优先出哪个批次。</div>
+              <div class="fs10 t4 mono" style="margin-top:6px">/risk/purchase/check · /risk/supplier · /advice/allocation</div>
+            </div>
+            <div class="node new">
+              <div class="node-t">财务查应收时</div>
+              <div class="node-b">同一张应收表多出三列：风险等级、坏账概率、最新失信事件。催收资源精准投到最该催的那几家。</div>
+              <div class="fs10 t4 mono" style="margin-top:6px">/risk/customer/batch · /advice/collection</div>
+            </div>
+            <div class="node new">
+              <div class="node-t">管理者看报表时</div>
+              <div class="node-b">经营驾驶舱同屏显示三条链风险总览与行业市场风险总览，并可直接用大白话追问。</div>
+              <div class="fs10 t4 mono" style="margin-top:6px">/dashboard/summary · /dashboard/market-overview · /ask</div>
+            </div>
+          </div>
+          <div class="flex items-c gap12 wrap mt fs11 t3">
+            <span>已开放 <b class="mono c-blue">16</b> 个 REST 接口 · <b class="mono c-ai">4</b> 类 Webhook 事件 · <b class="mono c-orange">5</b> 个嵌入式组件</span>
+            <span>日均调用 <b class="mono">28,460</b> 次</span>
+            <span>P95 延迟 <b class="mono c-green">142ms</b></span>
+            <span class="ml-auto">决策回写率 <b class="mono c-green">92.4%</b>（业务员在 ERP 里顺手完成，直接喂给数据飞轮）</span>
+          </div>
+        </div>
+      </div>
+
       <!-- ===== 预警流 + 工单 ===== -->
       <div class="grid g-1-2 mb">
         <div class="card red">
