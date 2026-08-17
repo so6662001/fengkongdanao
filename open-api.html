@@ -468,20 +468,32 @@ X-SRB-Role:      sales   <span class="c">// 角色决定返回字段范围</span
         req: { erpSkuCode: '螺纹钢HRB400E-20-沙钢-9M', region: '上海', qty: 3000, unitPrice: 3520 },
         resp: {
           stdCode: 'RB-400E-020-9000-SG', stage: 'accel_down', stageName: '加速下跌期',
-          stageDays: 6, score: 79.6, level: 'red', levelText: '红 · 强警示',
-          scoreDetail: [
-            { name: '7日涨跌幅', value: '-3.42%', band: 'accel', weight: 20, contrib: 14.8 },
-            { name: '加速度', value: '2.14', band: 'accel', weight: 18, contrib: 13.6 },
-            { name: '挂牌商户数环比', value: '+124%', band: 'accel', weight: 13, contrib: 13.0 }
-          ],
-          advice: {
-            action: '暂停采购', limitPrice: 3302, suggestQty: 0, exceedCap: true,
-            targetStockDays: 2, currentCoverDays: 186.5, prepayMaxRatio: 0,
-            paymentTerm: '必须现结或压价', lockPolicy: '严禁锁价',
-            priceGapVsLimit: 218, reasons: ['7日跌幅3.42%且3日均速为10日均速的2.14倍', '挂牌商户数3日环比+124%，撤牌率同步下降']
+          score: 65.1, level: 'red', levelText: '红 · 强警示',
+          market: {
+            spot: 3470, spot3d: -96, maxDaily: -42,
+            futCode: 'RB2610', fut: 3386, fut3d: -78, basis: 84, normalBasis: 40,
+            millAdj10d: -110, settle: -50, costFloor: 3380, costFloorName: '电炉平电成本'
           },
-          anchors: { marketMedian: 3472, marketP25: 3393, min30d: 3322, millPrice: 3480, costSupport: 3417, myCost: 3598 },
-          nextStageProb: { keep: 62, accel_down: 62, volatile: 31, other: 7 },
+          scoreDetail: [
+            { name: '3日累计涨跌', value: '-96 元/吨', band: 'accel', weight: 16, contrib: 12.2 },
+            { name: '主力合约3日涨跌', value: '-78 元/吨', band: 'online', weight: 14, contrib: 7.7 },
+            { name: '基差偏离常态值', value: '+44 元/吨', band: 'online', weight: 12, contrib: 6.2 },
+            { name: '挂牌商户数3日变化', value: '+124%', band: 'accel', weight: 10, contrib: 10.0 }
+          ],
+          limitBreakdown: {
+            stageBase: 3406, stageBaseFormula: '期货主力 3386 + 常态基差 40 − 安全垫 20',
+            specDiff: 0, gradePremium: 0, millPremium: 0, regionDiff: 0, limitPrice: 3406
+          },
+          advice: {
+            action: '暂停采购', limitPrice: 3406, suggestQty: 0, exceedCap: true,
+            targetStockDays: 5, currentCoverDays: 106.5, capQty: 96,
+            channel: '停止钢厂预订，只走市场现货', pricingWay: '一单一议压价，严禁锁价',
+            hedge: '库存卖出保值 30%~50%', prepayMaxRatio: 0,
+            priceGapVsLimit: 114,
+            reasons: ['3日累计跌96元/吨，越过80元加速门槛', '现货升水期货84元高于常态40元，基差修复方向是现货补跌',
+              '钢厂旬价累计下调110元并让利结算50元', '距电炉平电成本3380仅90元/吨，已接近成本地板可分批试探']
+          },
+          overrideHit: ['旺季 / 冬储窗口：距金九银十15天，备货天数由3天放宽至5天', '主产区限产落地：下跌判定扣减6分'],
           pushTo: ['采购主管', '总经理']
         }
       },
@@ -517,7 +529,7 @@ X-SRB-Role:      sales   <span class="c">// 角色决定返回字段范围</span
             tip: '断货与预付款损失风险高，建议暂停预付款采购并启动备源'
           },
           advice: {
-            suggestedQty: 800, suggestedMaxPrice: 3450, suggestedPrepayRatio: 0,
+            suggestedQty: 800, suggestedMaxPrice: 3406, suggestedPrepayRatio: 0,
             alternativeSuppliers: [{ name: '中天钢铁销售公司', riskLevel: 'low', capacity: '有承接余量' }],
             reasons: [
               '平台挂牌量环比 +148%、83 家商户集中抛售，后市大概率继续下探',
@@ -849,7 +861,7 @@ X-SRB-Role:      sales   <span class="c">// 角色决定返回字段范围</span
             from: 'volatile', to: 'accel_down', fromName: '波动期', toName: '加速下跌期',
             trigger: '7日跌幅由2.4%扩大至3.42%，加速度2.14突破阈值，挂牌商户数3日+124%',
             score: 79.6, confirmedPeriods: 2,
-            advice: { action: '暂停采购', limitPrice: 3302, prevLimitPrice: 3520, targetStockDays: 2, prepayMaxRatio: 0 },
+            advice: { action: '暂停采购', limitPrice: 3406, prevLimitPrice: 3460, targetStockDays: 5, prepayMaxRatio: 0 },
             affectedDraftOrders: ['PR-20260817-0021'],
             recommendedErpAction: 'refresh_limit_price_and_require_approval',
             pushTo: ['采购主管', '总经理']
