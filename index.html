@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>风控大脑总览 · 钢铁行业 AI 风控大脑</title>
-<link rel="stylesheet" href="assets/css/main.css">
+<link rel="stylesheet" href="assets/css/main.css?v=20260817">
 </head>
 <body data-page="index">
 <div class="app-bg"></div>
@@ -111,7 +111,9 @@
           </div>
         </div>
         <div class="card">
-          <div class="card-hd"><h3>品类市场抛压排名</h3><span class="sub">全平台 · 近3日</span></div>
+          <div class="card-hd"><h3>品类市场抛压排名</h3><span class="sub">全平台 · 近3日</span>
+            <div class="hd-act"><a class="btn btn-sm btn-primary" href="pricing-alert.html?v=20260817">采购定价预警</a></div>
+          </div>
           <div class="card-bd"><div class="chart h260" id="rankChart"></div></div>
           <div class="card-ft">抛压指数 = f(挂牌商户环比, 挂牌量环比, 报价下探幅度, 撤牌速率, 行情指数斜率)</div>
         </div>
@@ -148,8 +150,8 @@
             </div>
             <div class="node new">
               <div class="node-t">采购员采购配货时</div>
-              <div class="node-b">申请单上直接显示平台该品类挂牌货源体量、同业报价、行情指数与供货商失信风险；配货页标出该优先出哪个批次。</div>
-              <div class="fs10 t4 mono" style="margin-top:6px">/risk/purchase/check · /risk/supplier · /advice/allocation</div>
+              <div class="node-b">申请单上直接显示<a href="pricing-alert.html?v=20260817" class="c-blue">行情阶段与拆解后的限价</a>、平台挂牌货源体量、同业报价与供货商失信风险；配货页标出该优先出哪个批次。</div>
+              <div class="fs10 t4 mono" style="margin-top:6px">/pricing/stage · /risk/purchase/check · /advice/allocation</div>
             </div>
             <div class="node new">
               <div class="node-t">财务查应收时</div>
@@ -224,9 +226,9 @@
   </div>
 </div>
 
-<script src="assets/js/charts.js"></script>
-<script src="assets/js/data.js"></script>
-<script src="assets/js/app.js"></script>
+<script src="assets/js/charts.js?v=20260817"></script>
+<script src="assets/js/data.js?v=20260817"></script>
+<script src="assets/js/app.js?v=20260817"></script>
 <script>
 (function () {
   const M = Mock, K = M.kpi, ic = App.icon;
