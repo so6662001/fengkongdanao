@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent 推理实录 · 钢铁行业 AI 风控大脑</title>
+<link rel="stylesheet" href="assets/css/main.css?v=20260817">
+</head>
+<body data-page="agent">
+<div class="app-bg"></div>
+<div class="layout">
+  <div class="main">
+    <div class="content">
+
+      <div class="page-head">
+        <div>
+          <h1>Agent 智能体推理实录</h1>
+          <p>每一次风险研判都完整留痕：<b>触发条件 → 多源数据检索 → 归因推理 → 多套处置方案测算 → 人工决策回填</b>。推理链与数据快照一并归档，作为数据飞轮的案例素材。</p>
+        </div>
+        <div class="ph-right">
+          <span class="tag tag-ai lg">RAG + Prompt · 未微调</span>
+          <button class="btn">导出推理报告</button>
+        </div>
+      </div>
+
+      <div class="tabs" data-group="ag" id="agTabs">
+        <button class="on" data-tab="inv">① 库存风控智能体 · 型材抛压案例</button>
+        <button data-tab="ar">② 客户应收风控智能体 · 宏基建设案例</button>
+        <button data-tab="gl">③ 经营全局风控中枢 · 地产链联动推演</button>
+      </div>
+
+      <!-- ==================== 案例 1 ==================== -->
+      <div data-panel="inv" data-group="ag">
+        <div class="card mb red">
+          <div class="card-hd">
+            <h3><span class="dot dot-red pulse"></span>推理任务 #AG-INV-20260816-0031</h3>
+            <span class="sub">触发方式：平台挂牌热度异动自动触发（非定时任务）</span>
+            <div class="hd-act"><span class="tag tag-grey mono">耗时 6.8s</span><span class="tag tag-grey mono">调用工具 7 次</span><span class="tag tag-red">高风险</span></div>
+          </div>
+          <div class="card-bd">
+            <div class="grid g4 mb">
+              <div class="node"><div class="fs10 t4">风险对象</div><div class="fs12 b6">H型钢 Q235B 200×200</div><div class="fs10 t4">批次 PC-20260629-014 · 1,520 吨</div></div>
+              <div class="node"><div class="fs10 t4">库龄 / 内部出库</div><div class="fs12 b6">68 天 · 近期<span class="c-green">平稳</span></div><div class="fs10 t4">按内部数据尚未触发呆滞阈值</div></div>
+              <div class="node" style="border-color:rgba(244,88,110,.4)"><div class="fs10 t4 c-red">平台侧异动</div><div class="fs12 b6 c-red">近3日 80 家商户集中挂牌</div><div class="fs10 t4">环比 +22 家，挂牌量 +148%</div></div>
+              <div class="node" style="border-color:rgba(244,88,110,.4)"><div class="fs10 t4 c-red">价格倒挂</div><div class="fs12 b6 c-red">-92 元/吨</div><div class="fs10 t4">同业均价 3,980 &lt; 我方成本 4,072</div></div>
+            </div>
+
+            <div class="grid g-2-3" style="gap:16px">
+              <!-- 推理链 -->
+              <div>
+                <div class="fs12 b6 mb" style="margin-bottom:9px">多源数据检索与推理链</div>
+                <div class="chain">
+                  <div class="chain-step done">
+                    <div class="cs-t">Step 1 · 读取内部库存批次 <span class="tag tag-grey mono">0.4s</span></div>
+                    <div class="cs-b">批次 1,520 吨，加权成本 4,072 元/吨，库龄 68 天，近 30 日出库 186 吨（周转率 54%）。<b>按内部数据单看，出库平稳、尚未触发呆滞阈值。</b></div>
+                    <div class="cs-src"><span class="src-pill erp">get_inventory_batch</span><span class="src-pill erp">ERP 库存台账</span></div>
+                  </div>
+                  <div class="chain-step done">
+                    <div class="cs-t">Step 2 · 查询全平台同规格挂牌热度 <span class="tag tag-teal">平台数据</span></div>
+                    <div class="cs-b">标准编码 HB-Q235B-200200-MG，近 3 日挂牌商户由 25 家增至 <em>80 家</em>（+220%），挂牌总量由 3,100 吨增至 7,690 吨（+148%），撤牌速率由 18% 降至 6%（<b>挂了就撤不掉，说明没人接</b>）。</div>
+                    <div class="cs-src"><span class="src-pill plat">query_platform_listings</span><span class="src-pill plat">527 商户报价流</span></div>
+                  </div>
+                  <div class="chain-step done">
+                    <div class="cs-t">Step 3 · 比对同业报价与我方成本 <span class="tag tag-teal">平台数据</span></div>
+                    <div class="cs-b">同业挂牌均价 3,980 元/吨，最低报价 3,948 元/吨，均<em>低于我方库存成本 4,072</em>。按 1,520 吨计算，当前浮亏敞口 <span class="hl-red">14.0 万元</span>。</div>
+                    <div class="cs-src"><span class="src-pill plat">query_platform_listings</span></div>
+                  </div>
+                  <div class="chain-step done">
+                    <div class="cs-t">Step 4 · 拉取平台行情指数 <span class="tag tag-teal">平台数据</span></div>
+                    <div class="cs-b">型材综合行情指数连续 <em>7 日下行</em>（103.5 → 92.8），上海区域热度指数 -14.2%，成交情绪指数由 56 跌至 31（<b>观望情绪浓</b>）。</div>
+                    <div class="cs-src"><span class="src-pill plat">get_market_index</span></div>
+                  </div>
+                  <div class="chain-step done">
+                    <div class="cs-t">Step 5 · 检索历史相似案例 <span class="tag tag-ai">向量库</span></div>
+                    <div class="cs-b">命中 3 条高相似案例：<br>· 内部案例 CS-20251118（H型钢，同样「内部出库平稳但平台集中抛货」形态，未及时处置，21 日后浮亏由 12 万扩大至 47 万）<br>· <b class="c-teal">平台行业案例 MK-20250409</b>（型材抛压周期，从挂牌激增到价格见底约 18 个工作日，跌幅 3.4%）<br>· 内部案例 CS-20260312（及时分批降价 + 搭售，减亏 62%）</div>
+                    <div class="cs-src"><span class="src-pill">search_vector_kb</span><span class="src-pill plat">行业价格波动案例</span></div>
+                  </div>
+                  <div class="chain-step done">
+                    <div class="cs-t">Step 6 · 交叉验证下游需求 <span class="tag tag-grey">第三方</span></div>
+                    <div class="cs-b">钢结构工程开工率环比 -8.6%，同时我方客户中钢构类客户（恒力钢构）出现异常抛货 → 需求端确认走弱，<b>非短期情绪波动</b>。</div>
+                    <div class="cs-src"><span class="src-pill erp">下游开工数据</span><span class="src-pill plat">get_merchant_behavior</span></div>
+                  </div>
+                  <div class="chain-step">
+                    <div class="cs-t">Step 7 · 生成处置方案并测算 <span class="tag tag-orange">测算引擎</span></div>
+                    <div class="cs-b">调用测算引擎对 3 套方案分别计算资金占用、预估亏损、出货周期。</div>
+                    <div class="cs-src"><span class="src-pill">simulate_disposal_plan</span><span class="src-pill">create_work_order</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 结论 + 证据 -->
+              <div>
+                <div class="ai-box mb">
+                  <div class="ai-hd">大模型结论 <span class="m">DeepSeek-V3 / Qwen-Max · RAG 增强</span></div>
+                  <div class="ai-txt">
+                    这批 H型钢<strong>库龄尚不算高（68 天）、近期内部出库暂时平稳</strong>，若只看内部数据不会触发预警。但资源平台近 3 日内已有近 <em>80 家商户集中挂出同款型材</em>，挂牌均价 3,980 元/吨<em>已经低于我方库存成本 4,072 元/吨</em>，型材行情指数连续 7 日下行、成交情绪指数由 56 跌至 31。<br><br>
+                    结论：<span class="hl-red">市场抛压正在快速累积</span>，后续滞销、跌价风险快速上升。参考平台行业历史案例，此类抛压周期从挂牌激增到价格见底约 18 个工作日、平均跌幅 3.4%；若持续持有，浮亏敞口预计由当前 14.0 万扩大至 <span class="hl-red">约 34 万</span>，且库龄将突破 90 天进入深度呆滞区间。<br><br>
+                    建议：<span class="hl-green">立即启动分批降价出清并暂停该品类新增采购</span>，同时用当前紧俏的镀锌卷搭售对冲毛利损失。以下三套路径供决策：
+                  </div>
+                </div>
+                <div class="fs12 b6 mb" style="margin-bottom:7px">证据图表 · 平台挂牌热度 vs 同业价格 vs 我方成本</div>
+                <div class="chart h230" id="evChart"></div>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+            <div class="fs12 b6 mb" style="margin-bottom:9px">三套处置路径与测算（AI 仅提供建议，不自动执行）</div>
+            <div class="grid g3 mb" id="planRow"></div>
+
+            <!-- 人工决策 -->
+            <div class="card" style="background:rgba(52,211,153,.045);border-color:rgba(52,211,153,.28)">
+              <div class="card-hd" style="border-color:rgba(52,211,153,.2)">
+                <h3 class="c-green">人工决策回填（数据飞轮第 2、3 步）</h3>
+                <span class="sub">最终决策权保留在业务与管理人员手中</span>
+              </div>
+              <div class="card-bd">
+                <div class="grid g4" style="gap:12px">
+                  <div>
+                    <div class="fs10 t4 mb" style="margin-bottom:5px">① 采纳情况</div>
+                    <div class="seg" id="adoptSeg"><button data-v="y">采纳</button><button class="on" data-v="p">部分采纳</button><button data-v="n">否决</button></div>
+                  </div>
+                  <div>
+                    <div class="fs10 t4 mb" style="margin-bottom:5px">② 选定方案</div>
+                    <div class="seg" id="planSeg"><button data-v="A">方案A</button><button class="on" data-v="B">方案B</button><button data-v="C">方案C</button></div>
+                  </div>
+                  <div>
+                    <div class="fs10 t4 mb" style="margin-bottom:5px">③ 执行动作</div>
+                    <div class="ask-input"><input value="按方案B分批降价，首批挂 4,010 元/吨清 400 吨；同步暂停型材采购" style="font-size:11.5px"></div>
+                  </div>
+                  <div>
+                    <div class="fs10 t4 mb" style="margin-bottom:5px">④ 最终业务结果（结案时回填）</div>
+                    <div class="ask-input"><input placeholder="例如：8 日内出货 640 吨，实际减亏 42 万" style="font-size:11.5px"></div>
+                  </div>
+                </div>
+                <div class="flex items-c gap8 mt">
+                  <span class="fs11 t3">提交后将自动归档：<b>AI 判断逻辑 + 当时平台市场数据快照 + 人的决策 + 最终业务结果</b> → 私有向量知识库</span>
+                  <button class="btn btn-primary ml-auto">提交并生成工单</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 案例 2 ==================== -->
+      <div data-panel="ar" data-group="ag" style="display:none">
+        <div class="card mb red">
+          <div class="card-hd">
+            <h3><span class="dot dot-red pulse"></span>推理任务 #AG-AR-20260815-0126</h3>
+            <span class="sub">触发方式：失信检测 API 巡检发现新增风险事件，自动触发</span>
+            <div class="hd-act"><span class="tag tag-grey mono">耗时 5.2s</span><span class="tag tag-red">坏账概率 64% → 87%</span></div>
+          </div>
+          <div class="card-bd">
+            <div class="grid g-2-3" style="gap:16px">
+              <div>
+                <div class="fs12 b6 mb" style="margin-bottom:9px">推理链</div>
+                <div class="chain">
+                  <div class="chain-step done">
+                    <div class="cs-t">Step 1 · 失信 API 定时扫描命中 <span class="tag tag-teal">平台数据</span></div>
+                    <div class="cs-b">宏基建设集团新增：<em>被执行人 1,240 万元</em>（08-14）、买卖合同纠纷立案 318 万（08-09）、法定代表人变更（07-28）。</div>
+                    <div class="cs-src"><span class="src-pill risk">check_credit_risk</span></div>
+                  </div>
+                  <div class="chain-step done">
+                    <div class="cs-t">Step 2 · 大模型解读事件严重等级</div>
+                    <div class="cs-b">区分「小额官司」与「大额执行、资金链断裂」：本次 1,240 万被执行金额已超过其在我方授信额度（1,200 万），叠加法代变更与合同纠纷，判定为 <em>资金链紧张</em> 而非孤立小额诉讼。</div>
+                    <div class="cs-src"><span class="src-pill">大模型语义判定</span></div>
+                  </div>
+                  <div class="chain-step done">
+                    <div class="cs-t">Step 3 · 该客户同时是平台入驻商户 <span class="tag tag-teal">隐性信号</span></div>
+                    <div class="cs-b">查询其平台挂牌行为：近 5 日集中挂牌抛售自有螺纹钢 <em>1,860 吨</em>，挂牌价低于市场均价 82 元/吨 → <b>低价抛货回笼现金，典型资金紧张信号</b>。</div>
+                    <div class="cs-src"><span class="src-pill plat">get_merchant_behavior</span></div>
+                  </div>
+                  <div class="chain-step done">
+                    <div class="cs-t">Step 4 · 内部应收与沟通语义交叉验证</div>
+                    <div class="cs-b">应收 1,080 万，其中逾期 386 万 / 63 天；近 30 日沟通纪要中「资金在走审批」「下周一定安排」等拖延话术出现 14 次（历史均值 3 次）。</div>
+                    <div class="cs-src"><span class="src-pill erp">get_ar_ledger</span><span class="src-pill">search_vector_kb</span></div>
+                  </div>
+                  <div class="chain-step">
+                    <div class="cs-t">Step 5 · 三信号相互印证 → 上调风险并输出策略</div>
+                    <div class="cs-b">征信事件、平台抛货行为、内部沟通语义三个独立来源相互印证，坏账概率由 64% 上调至 <em>87%</em>。</div>
+                    <div class="cs-src"><span class="src-pill">create_work_order</span></div>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div class="ai-box mb">
+                  <div class="ai-hd">大模型结论与处置策略</div>
+                  <div class="ai-txt" id="arRead"></div>
+                </div>
+                <div class="grid g2" style="gap:12px">
+                  <div>
+                    <div class="fs12 b6 mb" style="margin-bottom:6px">失信事件时间轴</div>
+                    <div class="tl" id="arTl"></div>
+                  </div>
+                  <div>
+                    <div class="fs12 b6 mb" style="margin-bottom:6px">该客户平台抛售行为</div>
+                    <div class="chart h170" id="arDump"></div>
+                    <div class="fs10 t4 center">挂牌量（柱）与低于市场均价的折价幅度（线）同步走高</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="divider"></div>
+            <div class="grid g4" id="arActions"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 案例 3 ==================== -->
+      <div data-panel="gl" data-group="ag" style="display:none">
+        <div class="card mb accent-top">
+          <div class="card-hd">
+            <h3><span class="dot dot-orange pulse"></span>推理任务 #AG-GL-20260816-0008 · 跨链条连锁推演</h3>
+            <span class="sub">触发方式：平台品类级抛货异动 + 行情指数拐点，全局中枢自动发起</span>
+            <div class="hd-act"><span class="tag tag-grey mono">耗时 11.4s</span><span class="tag tag-orange">波及 7 家客户 / 5,667 万应收</span></div>
+          </div>
+          <div class="card-bd">
+            <div class="chart h230 mb" id="glFlow"></div>
+            <div class="grid g-2-3" style="gap:16px">
+              <div>
+                <div class="fs12 b6 mb" style="margin-bottom:9px">连锁推演链</div>
+                <div class="chain">
+                  <div class="chain-step done">
+                    <div class="cs-t">① 市场信号：建材类钢材集中抛售 <span class="tag tag-teal">平台数据</span></div>
+                    <div class="cs-b">螺纹钢 Φ20（83 家 / +46）、螺纹钢 Φ25（52 家 / +19）、热轧卷（61 家 / +27）三大建材品类同时出现商户集中挂牌抛售，建材综合指数 7 日跌 6.8%。</div>
+                    <div class="cs-src"><span class="src-pill plat">query_platform_listings</span><span class="src-pill plat">get_market_index</span></div>
+                  </div>
+                  <div class="chain-step done">
+                    <div class="cs-t">② 需求推断：下游地产类需求走弱</div>
+                    <div class="cs-b">建材品类抛货 + 区域热度 -14.2% + 房建开工率环比 -11.3% → 判断<em>下游地产、工程类需求实质性走弱</em>，而非贸易环节短期调仓。</div>
+                    <div class="cs-src"><span class="src-pill erp">下游开工数据</span><span class="src-pill">行业舆情</span></div>
+                  </div>
+                  <div class="chain-step done">
+                    <div class="cs-t">③ 客户筛查：自动筛出地产 / 工程类下游客户</div>
+                    <div class="cs-b">从 42 家赊销客户中筛出行业标签属地产开发、房建工程、市政工程、钢结构工程的客户共 <em>7 家</em>，合计应收 <b>5,667 万元</b>。</div>
+                    <div class="cs-src"><span class="src-pill erp">get_ar_ledger</span><span class="src-pill erp">客户授信档案</span></div>
+                  </div>
+                  <div class="chain-step done">
+                    <div class="cs-t">④ 批量上调坏账预警等级</div>
+                    <div class="cs-b">对 7 家客户统一施加行业系统性风险因子（+8~14%），其中 4 家跨过高风险阈值。同时对每家再叠加个体征信事件复核。</div>
+                    <div class="cs-src"><span class="src-pill risk">check_credit_risk</span></div>
+                  </div>
+                  <div class="chain-step">
+                    <div class="cs-t">⑤ 输出系统性应收风险预警</div>
+                    <div class="cs-b">推送至销售总监与财务总监，附带每家客户的账期压缩与回款跟进建议。</div>
+                    <div class="cs-src"><span class="src-pill">create_work_order</span></div>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div class="ai-box mb">
+                  <div class="ai-hd">全局中枢结论</div>
+                  <div class="ai-txt">
+                    平台上建材类钢材出现<strong>跨规格、跨区域的同步抛售</strong>，这不是单一商户调仓行为，而是<em>下游需求端走弱向贸易环节的传导</em>。<br><br>
+                    风险不会只停在库存端：建材需求走弱 → 地产、工程类客户自身回款受阻 → 我方应收账款回收周期拉长、坏账概率上升。因此本次预警<strong>同时覆盖库存与应收两条链</strong>：<br>
+                    · 库存侧：螺纹钢、热卷合计 7,240 吨面临跌价，浮亏敞口 70.7 万元；<br>
+                    · 应收侧：7 家地产 / 工程类客户合计 <span class="hl-red">5,667 万元</span>应收需重点盯防，其中宏基、正弘、鼎晟、中远建工 4 家已跨入高风险。<br><br>
+                    这就是<span class="hl-green">系统性应收风险的提前预警</span> —— 在客户还没有出现逾期之前，先从市场供需信号推断出风险。
+                  </div>
+                </div>
+                <div class="fs12 b6 mb" style="margin-bottom:7px">批量上调的客户清单</div>
+                <table class="tbl" id="glTbl"></table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/charts.js?v=20260817"></script>
+<script src="assets/js/data.js?v=20260817"></script>
+<script src="assets/js/app.js?v=20260817"></script>
+<script>
+(function () {
+  const M = Mock;
+  const h = M.categories.find(c => c.code === 'H-200*200');
+
+  /* 证据图 */
+  Chart.line('#evChart', {
+    xLabels: M.days(30), y2: true,
+    markLines: [{ value: h.cost, label: '我方成本 4,072', color: '#f472b6', axis2: true }],
+    bands: [{ from: 26, to: 29, label: '近3日集中挂牌', color: 'rgba(244,88,110,.1)' }],
+    series: [
+      { name: '平台挂牌商户数', data: h.listSeries.map(v => Math.round(v * 1.7)), color: '#f4586e', area: true, unit: ' 家' },
+      { name: '型材行情指数', data: h.idxSeries, color: '#a78bfa', dots: false },
+      { name: '同业挂牌均价', data: h.priceSeries, color: '#fbbf24', axis2: true, dots: false, unit: ' 元/吨' }
+    ],
+    yFmt: v => v.toFixed(0), y2Fmt: v => v.toFixed(0)
+  });
+
+  /* 三套方案 */
+  const plans = [
+    { n: '方案A · 快速出清', tag: '最快回笼', rec: false,
+      kv: [['挂牌价', '3,950 元/吨'], ['出清比例', '60%（912 吨）'], ['预计周期', '4 个工作日'], ['预估亏损', '15.6 万元'], ['释放资金', '360 万元'], ['库龄影响', '降至 41 天']],
+      note: '牺牲毛利换速度，适合判断后市继续下行且资金紧张时使用。' },
+    { n: '方案B · 分批阶梯出清', tag: 'AI 推荐', rec: true,
+      kv: [['挂牌价', '4,010 / 3,985 / 3,955 三档'], ['出清比例', '60%（912 吨）'], ['预计周期', '8 个工作日'], ['预估亏损', '9.8 万元'], ['释放资金', '363 万元'], ['库龄影响', '降至 43 天']],
+      note: '兼顾亏损控制与出货速度；若前两档成交不足，第三档自动触发。同时搭售镀锌卷可再对冲约 5 万毛利。' },
+    { n: '方案C · 搭售 + 暂停采购', tag: '毛利最优', rec: false,
+      kv: [['挂牌价', '维持 4,060 元/吨'], ['出清比例', '35%（532 吨）'], ['预计周期', '15 个工作日'], ['预估亏损', '4.2 万元'], ['释放资金', '216 万元'], ['库龄影响', '升至 78 天']],
+      note: '毛利损失最小，但周期长、库龄继续走高；若行情按历史形态再跌 3.4%，浮亏可能扩大至 34 万元。' }
+  ];
+  document.getElementById('planRow').innerHTML = plans.map(p => `
+    <div class="plan ${p.rec ? 'rec' : ''}">
+      <div class="plan-t">${p.n}<span class="tag ${p.rec ? 'tag-green' : 'tag-grey'} ml-auto">${p.tag}</span></div>
+      ${p.kv.map(k => `<div class="plan-kv"><span>${k[0]}</span><b>${k[1]}</b></div>`).join('')}
+      <div class="divider" style="margin:8px 0"></div>
+      <div class="fs11 t3" style="line-height:1.7">${p.note}</div>
+    </div>`).join('');
+
+  /* ---- 案例 2 ---- */
+  const cu = M.customers[0];
+  document.getElementById('arRead').innerHTML = cu.aiRead +
+    '<br><br><b style="color:#fff">处置策略</b><br>' + cu.actions.map((a, i) => `${i + 1}. ${a}`).join('<br>');
+  document.getElementById('arTl').innerHTML = cu.events.map(e => `
+    <div class="tl-i ${e.sev === 'high' ? 'red' : 'orange'}">
+      <div class="tl-t">${e.t}<span class="tl-time ml-auto">2026-${e.d}</span></div>
+      <div class="tl-b">涉及金额 <b class="mono ${e.sev === 'high' ? 'c-red' : 'c-orange'}">${e.amt}</b> · 来源 ${e.src}</div>
+    </div>`).join('') + `
+    <div class="tl-i red">
+      <div class="tl-t">平台低价抛售自有货源<span class="tl-time ml-auto">08-10 起</span></div>
+      <div class="tl-b">${cu.dumpNote}</div>
+    </div>`;
+  Chart.bar('#arDump', {
+    xLabels: M.days(30), pad: { t: 10, r: 40, b: 22, l: 38 },
+    series: [{ name: '挂牌量', data: M.walk(401, 30, 160, 55, i => (i > 24 ? 150 : 3), 0).map(v => Math.round(v)), color: '#f4586e', unit: ' 吨' }],
+    lineSeries: [{ name: '低于市场均价', data: M.walk(402, 30, 6, 3, i => (i > 24 ? 14 : .2), 0).map(v => Math.round(v)), color: '#fbbf24', unit: ' 元/吨' }],
+    yFmt: v => v.toFixed(0)
+  });
+  document.getElementById('arActions').innerHTML = cu.actions.map((a, i) => `
+    <div class="node"><div class="fs10 t4">建议动作 ${i + 1}</div><div class="fs12" style="line-height:1.7;margin-top:3px">${a}</div></div>`).join('');
+
+  /* ---- 案例 3 ---- */
+  Chart.flow('#glFlow', {
+    columns: [
+      { title: '平台市场信号', nodes: [
+        { id: 'a1', label: '螺纹钢Φ20', sub: '83家 +46', value: 1.6, color: '#f4586e' },
+        { id: 'a2', label: '螺纹钢Φ25', sub: '52家 +19', value: 1.2, color: '#f4586e' },
+        { id: 'a3', label: '热轧卷3.0', sub: '61家 +27', value: 1.4, color: '#f4586e' },
+        { id: 'a4', label: '建材综合指数', sub: '7日 -6.8%', value: 1.2, color: '#fb923c' }
+      ]},
+      { title: '需求端推断', nodes: [
+        { id: 'b1', label: '地产需求走弱', sub: '开工率 -11.3%', value: 2.4, color: '#fb923c' },
+        { id: 'b2', label: '工程需求走弱', sub: '区域热度 -14.2%', value: 1.8, color: '#fb923c' }
+      ]},
+      { title: '内部风险链条', nodes: [
+        { id: 'c1', label: '库存跌价风险', sub: '7,240吨 / 70.7万', value: 2, color: '#38bdf8' },
+        { id: 'c2', label: '应收坏账风险', sub: '7家 / 5,667万', value: 2.4, color: '#a78bfa' }
+      ]},
+      { title: '预警与动作', nodes: [
+        { id: 'd1', label: '降价出清 + 暂停采购', sub: '现货部 / 采购部', value: 1.8, color: '#34d399' },
+        { id: 'd2', label: '批量上调坏账等级', sub: '销售总监 / 财务总监', value: 1.8, color: '#34d399' },
+        { id: 'd3', label: '账期压缩 / 款到发货', sub: '销售一部', value: 1.6, color: '#34d399' }
+      ]}
+    ],
+    links: [
+      { from: 'a1', to: 'b1', width: 2.4 }, { from: 'a2', to: 'b1', width: 2 }, { from: 'a3', to: 'b2' }, { from: 'a4', to: 'b1' }, { from: 'a4', to: 'b2' },
+      { from: 'b1', to: 'c1', color: '#fb923c' }, { from: 'b1', to: 'c2', color: '#fb923c', width: 2.6 }, { from: 'b2', to: 'c2', color: '#fb923c' },
+      { from: 'c1', to: 'd1', color: '#38bdf8' }, { from: 'c2', to: 'd2', color: '#a78bfa', width: 2.4 }, { from: 'c2', to: 'd3', color: '#a78bfa' }
+    ]
+  });
+
+  const gl = M.customers.filter(c => /地产|房建|市政|钢结构/.test(c.industry));
+  document.getElementById('glTbl').innerHTML = `
+    <thead><tr><th>客户</th><th>下游行业</th><th>应收余额</th><th>原坏账概率</th><th>上调后</th><th>等级</th></tr></thead>
+    <tbody>${gl.map(c => `
+      <tr>
+        <td class="t-main fs11">${c.short}</td>
+        <td class="fs11 t3 nowrap">${c.industry}</td>
+        <td class="num">${c.ar.toLocaleString()}万</td>
+        <td class="num t3">${c.prob - c.trend}%</td>
+        <td class="num c-red b6">${c.prob}% <span class="fs10">+${c.trend}</span></td>
+        <td class="nowrap">${App.lvTag(c.level)}</td>
+      </tr>`).join('')}
+      <tr style="background:rgba(244,88,110,.06)">
+        <td class="b7">合计</td><td></td>
+        <td class="num b7 c-red">${gl.reduce((a, c) => a + c.ar, 0).toLocaleString()}万</td>
+        <td></td><td class="fs11 t3">4 家跨入高风险</td><td></td>
+      </tr>
+    </tbody>`;
+
+  App.tabs('#agTabs');
+  App.seg('#adoptSeg'); App.seg('#planSeg');
+})();
+</script>
+</body>
+</html>

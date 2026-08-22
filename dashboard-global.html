@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>全局经营风控总看板 · 钢铁行业 AI 风控大脑</title>
+<link rel="stylesheet" href="assets/css/main.css?v=20260817">
+</head>
+<body data-page="global">
+<div class="app-bg"></div>
+<div class="layout">
+  <div class="main">
+    <div class="content">
+
+      <div class="page-head">
+        <div>
+          <h1>全局经营风控总看板</h1>
+          <p>库存 · 应收 · 采购三条链统一视图，<b class="c-teal">新增「行业市场风险总览」</b>：展示当前全平台哪些品类正在出现集中抛货，提示接下来一段时间需重点警惕的库存品类，以及对应的下游行业客户坏账潜在风险。</p>
+        </div>
+        <div class="ph-right">
+          <span class="tag tag-red lg">当前经营风险等级：高</span>
+          <button class="btn btn-primary" onclick="window.__openAsk&&window.__openAsk()">一句话问 AI</button>
+        </div>
+      </div>
+
+      <!-- 三线总览 -->
+      <div class="grid g3 mb">
+        <div class="card red">
+          <div class="card-hd"><h3>库存链风险</h3><span class="sub">滞销 + 跌价</span><div class="hd-act"><a class="btn btn-sm" href="dashboard-inventory.html">详情</a></div></div>
+          <div class="card-bd">
+            <div class="flex items-c gap12 mb">
+              <div class="chart h140" style="width:132px;flex:none" id="g1"></div>
+              <div style="flex:1">
+                <div class="kv"><span>在库货值</span><b>6,086 万元</b></div>
+                <div class="kv"><span>呆滞高风险货值</span><b class="c-red">3,226 万元</b></div>
+                <div class="kv"><span>浮亏敞口</span><b class="c-orange">104.6 万元</b></div>
+                <div class="kv"><span>平均库龄</span><b>39.8 天</b></div>
+                <div class="kv"><span>高风险品类</span><b class="c-red">3 个</b></div>
+              </div>
+            </div>
+            <div class="bar"><i class="red" style="width:53%"></i></div>
+            <div class="flex justify-b fs10 t4" style="margin-top:4px"><span>高风险货值占比 53.0%</span><span>环比 +18.4%</span></div>
+          </div>
+        </div>
+        <div class="card red">
+          <div class="card-hd"><h3>应收链风险</h3><span class="sub">欠款 + 坏账</span><div class="hd-act"><a class="btn btn-sm" href="dashboard-receivable.html">详情</a></div></div>
+          <div class="card-bd">
+            <div class="flex items-c gap12 mb">
+              <div class="chart h140" style="width:132px;flex:none" id="g2"></div>
+              <div style="flex:1">
+                <div class="kv"><span>应收余额</span><b>11,860 万元</b></div>
+                <div class="kv"><span>逾期金额</span><b class="c-orange">1,091 万元</b></div>
+                <div class="kv"><span>高风险应收敞口</span><b class="c-red">4,121 万元</b></div>
+                <div class="kv"><span>新增失信事件</span><b class="c-red">9 起 / 5 家</b></div>
+                <div class="kv"><span>高风险客户</span><b class="c-red">4 家</b></div>
+              </div>
+            </div>
+            <div class="bar"><i class="red" style="width:35%"></i></div>
+            <div class="flex justify-b fs10 t4" style="margin-top:4px"><span>高风险应收占比 34.7%</span><span>环比 +9.2%</span></div>
+          </div>
+        </div>
+        <div class="card accent-top">
+          <div class="card-hd"><h3>采购 / 供应链风险</h3><span class="sub">上游履约 + 采购踩坑</span><div class="hd-act"><a class="btn btn-sm" href="workflow.html">详情</a></div></div>
+          <div class="card-bd">
+            <div class="flex items-c gap12 mb">
+              <div class="chart h140" style="width:132px;flex:none" id="g3"></div>
+              <div style="flex:1">
+                <div class="kv"><span>在手未交付订单</span><b>6,040 万元</b></div>
+                <div class="kv"><span>高风险供货商</span><b class="c-red">1 家（华鑫钢贸）</b></div>
+                <div class="kv"><span>风险敞口</span><b class="c-red">1,860 万元</b></div>
+                <div class="kv"><span>本月拦截采购申请</span><b class="c-green">3 笔 / 4,200 吨</b></div>
+                <div class="kv"><span>规避潜在损失</span><b class="c-green">约 62 万元</b></div>
+              </div>
+            </div>
+            <div class="bar"><i class="orange" style="width:31%"></i></div>
+            <div class="flex justify-b fs10 t4" style="margin-top:4px"><span>高风险订单占比 30.8%</span><span>较上月 +12.4%</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 行业市场风险总览（新增） -->
+      <div class="card mb accent-top">
+        <div class="card-hd">
+          <h3><span class="dot dot-orange pulse"></span>行业市场风险总览 <span class="tag tag-teal">本次新增</span></h3>
+          <span class="sub">数据来源：自有资源平台 527 家商户挂牌行为 + 分品类行情指数 + 区域热度 / 成交情绪</span>
+          <div class="hd-act"><span class="tag tag-grey mono">更新于 3 分钟前</span></div>
+        </div>
+        <div class="card-bd">
+          <div class="grid g-2-3 mb" style="gap:14px">
+            <div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">正在出现集中抛货的品类（抛压指数 ≥ 50）</div>
+              <div class="chart h230" id="dumpRank"></div>
+              <div class="note red mt">
+                建材类（螺纹钢、热轧卷）出现<b>跨规格、跨区域同步抛售</b>，判定为下游需求走弱向贸易环节传导，而非单一商户调仓。
+              </div>
+            </div>
+            <div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">品类 × 区域 抛压热力全景</div>
+              <div class="chart h230" id="heat"></div>
+              <div class="grid g4 mt" style="gap:9px">
+                <div class="node center"><div class="fs10 t4">全平台抛压指数</div><div class="mono b7 c-red" style="font-size:17px">78.4</div></div>
+                <div class="node center"><div class="fs10 t4">建材综合指数</div><div class="mono b7 c-red" style="font-size:17px">92.4</div></div>
+                <div class="node center"><div class="fs10 t4">成交情绪指数</div><div class="mono b7 c-red" style="font-size:17px">31.2</div></div>
+                <div class="node center"><div class="fs10 t4">今日挂牌总量</div><div class="mono b7" style="font-size:17px">18.6<span class="fs10">万吨</span></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+          <div class="fs12 b6 mb" style="margin-bottom:8px">接下来一段时间需重点警惕的库存品类 ↔ 对应下游行业客户坏账潜在风险</div>
+          <div class="tbl-wrap" style="max-height:none"><table class="tbl" id="linkTbl"></table></div>
+        </div>
+      </div>
+
+      <!-- 联动推演 -->
+      <div class="grid g-3-2 mb">
+        <div class="card ai">
+          <div class="card-hd"><h3>全局中枢跨链条联动推演</h3><span class="sub">市场信号 → 需求推断 → 内部风险链 → 预警动作</span>
+            <div class="hd-act"><a class="btn btn-sm btn-ai" href="agent-detail.html">完整推理链</a></div>
+          </div>
+          <div class="card-bd">
+            <div class="chart h260" id="flow"></div>
+            <div class="ai-box mt">
+              <div class="ai-hd">推演结论</div>
+              <div class="ai-txt">
+                平台建材类钢材集中抛售 → 判断下游地产类需求走弱 → 自动筛查客户清单中所有地产、工程类下游客户 → 批量上调这批客户坏账预警等级，
+                <strong>提前预警系统性应收风险</strong>。本次波及 <em>7 家</em>客户、合计应收 <span class="hl-red">5,667 万元</span>，其中 4 家跨入高风险。
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><h3>风险敞口趋势</h3><span class="sub">近 30 日</span></div>
+          <div class="card-bd">
+            <div class="chart h260" id="trend"></div>
+            <div class="legend center mt" style="justify-content:center">
+              <span><i style="background:#f4586e"></i>库存呆滞货值(万)</span>
+              <span><i style="background:#a78bfa"></i>高风险应收(万)</span>
+              <span><i style="background:#fbbf24"></i>全平台抛压指数</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NL 问答 + 预警 -->
+      <div class="grid g-2-1">
+        <div class="card">
+          <div class="card-hd"><h3>自然语言问答（能力升级）</h3><span class="sub">管理人员一句话提问，大模型一次性整合内部经营数据与平台全域市场数据</span></div>
+          <div class="card-bd">
+            <div class="q-bubble" style="margin-left:0;max-width:100%">现在平台上抛货最多的钢材品类有哪些，对应我手上哪些库存会面临亏损，对应的下游客户哪些需要重点盯回款</div>
+            <div class="ai-box" id="qaBox"></div>
+            <div class="fs11 t4 mt" style="margin-bottom:6px">继续追问</div>
+            <div class="flex gap6 wrap">
+              <button class="chip" onclick="window.__openAsk&&window.__openAsk()">螺纹钢这批货到底要不要降价，降多少合适</button>
+              <button class="chip" onclick="window.__openAsk&&window.__openAsk()">上游有哪些供货商现在有风险，会不会断货</button>
+              <button class="chip" onclick="window.__openAsk&&window.__openAsk()">本月哪些客户可以提额，哪些必须收紧</button>
+            </div>
+          </div>
+        </div>
+        <div class="card red">
+          <div class="card-hd"><h3><span class="dot dot-red pulse"></span>高风险预警（直达高管）</h3>
+            <div class="hd-act"><button class="btn btn-sm" onclick="document.getElementById('bellBtn').click()">全部</button></div>
+          </div>
+          <div class="card-bd" style="max-height:440px;overflow-y:auto"><div class="tl" id="alertTl"></div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/charts.js?v=20260817"></script>
+<script src="assets/js/data.js?v=20260817"></script>
+<script src="assets/js/app.js?v=20260817"></script>
+<script>
+(function () {
+  const M = Mock;
+
+  const gOpt = { min: 0, max: 100, digits: 0, thickness: 11,
+    segments: [{ to: .3, color: '#34d399' }, { to: .55, color: '#fbbf24' }, { to: .75, color: '#fb923c' }, { to: 1, color: '#f4586e' }] };
+  Chart.gauge('#g1', Object.assign({ value: 79, label: '库存风险分' }, gOpt));
+  Chart.gauge('#g2', Object.assign({ value: 72, label: '应收风险分' }, gOpt));
+  Chart.gauge('#g3', Object.assign({ value: 58, label: '采购风险分' }, gOpt));
+
+  /* 抛货排名 */
+  Chart.rank('#dumpRank', {
+    metric: '抛压指数', labelW: 138, fmt: v => v.toFixed(0),
+    items: M.categories.filter(c => c.pressure >= 50).sort((a, b) => b.pressure - a.pressure).map(c => ({
+      label: c.name.split(' ')[0] + ' ' + (c.code.split('-')[1] || ''),
+      value: c.pressure,
+      color: c.pressure >= 75 ? '#f4586e' : '#fb923c',
+      note: `挂牌 ${c.listers} 家（${c.listersDelta > 0 ? '+' : ''}${c.listersDelta}） · 均价 ${c.platAvg}`
+    }))
+  });
+
+  Chart.heatmap('#heat', { rows: M.heat.rows, cols: M.heat.cols, data: M.heat.data, metric: '抛压指数', showVal: true, digits: 0, labelW: 62 });
+
+  /* 品类 ↔ 客户联动表 */
+  const LINK = [
+    { cat: '螺纹钢 HRB400E Φ20', press: 91, stock: '4,260 吨 / 1,533 万', loss: '53.7 万', down: '房建工程、市政工程、地产开发',
+      cus: ['宏基(87%)', '正弘(76%)', '鼎晟(68%)', '中远建工(63%)', '泰隆市政(44%)'], ar: 4437, act: '降价出清 + 停采；对应客户款到发货' },
+    { cat: '螺纹钢 HRB400 Φ25', press: 74, stock: '1,870 吨 / 664 万', loss: '11.6 万', down: '房建工程、市政工程',
+      cus: ['宏基(87%)', '正弘(76%)', '泰隆市政(44%)'], ar: 2308, act: '清 40% + 账期压缩至 30 天' },
+    { cat: '热轧卷板 Q235B 3.0', press: 79, stock: '2,980 吨 / 1,074 万', loss: '17.0 万', down: '机械制造、钢材贸易',
+      cus: ['江南机械(22%)', '瑞通(38%)'], ar: 768, act: '搭售出清；客户端风险可控' },
+    { cat: 'H型钢 Q235B 200×200', press: 68, stock: '1,520 吨 / 619 万', loss: '14.0 万', down: '钢结构工程',
+      cus: ['恒力钢构(51%)'], ar: 688, act: '分批出清；恒力异常抛售需盯防' },
+    { cat: '冷轧卷 SPCC 1.0', press: 57, stock: '1,120 吨 / 517 万', loss: '4.3 万', down: '精密制造、家电',
+      cus: ['安泰精密(15%)'], ar: 268, act: '观察；客户端低风险' },
+    { cat: '无缝管 20# 108×4.5', press: 52, stock: '640 吨 / 372 万', loss: '4.0 万', down: '机械制造',
+      cus: ['江南机械(22%)'], ar: 412, act: '定向促销清 30%' }
+  ];
+  document.getElementById('linkTbl').innerHTML = `
+    <thead><tr><th>需警惕的库存品类</th><th>抛压指数</th><th>我方库存</th><th>浮亏敞口</th><th>主要下游行业</th><th>对应下游客户（坏账概率）</th><th>涉及应收</th><th>联动动作建议</th></tr></thead>
+    <tbody>${LINK.map(l => `
+      <tr>
+        <td class="t-main">${l.cat}</td>
+        <td class="num"><span class="tag ${l.press >= 75 ? 'tag-red' : 'tag-orange'}">${l.press}</span></td>
+        <td class="fs11 t2 nowrap">${l.stock}</td>
+        <td class="num c-orange">${l.loss}</td>
+        <td class="fs11 t3">${l.down}</td>
+        <td class="fs11">${l.cus.map(c => {
+          const p = +c.match(/\((\d+)%\)/)[1];
+          return `<span class="tag ${p >= 60 ? 'tag-red' : p >= 40 ? 'tag-orange' : 'tag-green'}" style="margin:1px 2px 1px 0">${c}</span>`;
+        }).join('')}</td>
+        <td class="num">${l.ar.toLocaleString()}万</td>
+        <td class="fs11 t2">${l.act}</td>
+      </tr>`).join('')}</tbody>`;
+
+  /* 联动流向 */
+  Chart.flow('#flow', {
+    columns: [
+      { title: '平台市场信号', nodes: [
+        { id: 'a1', label: '建材集中抛售', sub: '3品类 / +92家', value: 2.2, color: '#f4586e' },
+        { id: 'a2', label: '型材抛压上升', sub: '47家 / +22', value: 1.4, color: '#fb923c' },
+        { id: 'a3', label: '板材紧俏', sub: '17家 / -11', value: 1.2, color: '#34d399' }
+      ]},
+      { title: '需求端推断', nodes: [
+        { id: 'b1', label: '地产需求走弱', sub: '开工 -11.3%', value: 2.2, color: '#fb923c' },
+        { id: 'b2', label: '钢构需求走弱', sub: '开工 -8.6%', value: 1.4, color: '#fb923c' },
+        { id: 'b3', label: '制造需求平稳', sub: '开工 +1.2%', value: 1.2, color: '#34d399' }
+      ]},
+      { title: '内部风险链条', nodes: [
+        { id: 'c1', label: '库存跌价', sub: '104.6万浮亏', value: 1.8, color: '#38bdf8' },
+        { id: 'c2', label: '应收坏账', sub: '7家 / 5,667万', value: 2.2, color: '#a78bfa' },
+        { id: 'c3', label: '采购踩坑', sub: '上游抛货压价', value: 1.4, color: '#fbbf24' }
+      ]},
+      { title: '预警与动作', nodes: [
+        { id: 'd1', label: '降价出清', sub: '现货部', value: 1.4, color: '#34d399' },
+        { id: 'd2', label: '暂停采购', sub: '采购部', value: 1.2, color: '#34d399' },
+        { id: 'd3', label: '批量上调坏账等级', sub: '销售/财务总监', value: 1.8, color: '#34d399' },
+        { id: 'd4', label: '账期压缩/款到发货', sub: '销售一部', value: 1.4, color: '#34d399' }
+      ]}
+    ],
+    links: [
+      { from: 'a1', to: 'b1', width: 2.6 }, { from: 'a2', to: 'b2' }, { from: 'a3', to: 'b3', color: '#34d399' },
+      { from: 'b1', to: 'c1', color: '#fb923c' }, { from: 'b1', to: 'c2', color: '#fb923c', width: 2.6 },
+      { from: 'b2', to: 'c1', color: '#fb923c' }, { from: 'b2', to: 'c2', color: '#fb923c' }, { from: 'b1', to: 'c3', color: '#fb923c', dashed: true },
+      { from: 'c1', to: 'd1', color: '#38bdf8' }, { from: 'c3', to: 'd2', color: '#fbbf24' },
+      { from: 'c2', to: 'd3', color: '#a78bfa', width: 2.4 }, { from: 'c2', to: 'd4', color: '#a78bfa' }
+    ]
+  });
+
+  /* 趋势 */
+  Chart.line('#trend', {
+    xLabels: M.days(30), y2: true,
+    series: [
+      { name: '库存呆滞货值', data: M.walk(501, 30, 2360, 70, i => (i > 18 ? 42 : 6)).map(v => Math.round(v)), color: '#f4586e', area: true, unit: ' 万元' },
+      { name: '高风险应收', data: M.walk(502, 30, 3480, 60, i => (i > 20 ? 46 : 5)).map(v => Math.round(v)), color: '#a78bfa', dots: false, unit: ' 万元' },
+      { name: '全平台抛压指数', data: M.walk(503, 30, 56, 2.4, i => (i > 17 ? 1.5 : .1)), color: '#fbbf24', axis2: true, dots: false }
+    ],
+    yFmt: v => (v / 1000).toFixed(1) + 'k', y2Fmt: v => v.toFixed(0)
+  });
+
+  /* QA */
+  document.getElementById('qaBox').innerHTML = App.QA[0].a;
+
+  /* 预警 */
+  document.getElementById('alertTl').innerHTML = M.alerts.map(a => `
+    <div class="tl-i ${a.lv === 'high' ? 'red' : a.lv === 'mid' ? 'orange' : 'green'}">
+      <div class="tl-t">${a.t}<span class="tl-time ml-auto">${a.time}</span></div>
+      <div class="tl-b">${a.b}</div>
+      <div class="flex gap6 wrap" style="margin-top:5px"><span class="tag tag-ai">${a.src}</span><span class="tag tag-grey">→ ${a.to}</span></div>
+    </div>`).join('');
+})();
+</script>
+</body>
+</html>

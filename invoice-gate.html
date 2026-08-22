@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>发票风控闸口与证据链 · 钢铁行业 AI 风控大脑</title>
+<link rel="stylesheet" href="assets/css/main.css?v=20260822">
+</head>
+<body data-page="gate">
+<div class="app-bg"></div>
+<div class="layout">
+  <div class="main">
+    <div class="content">
+
+      <div class="page-head">
+        <div>
+          <h1>发票风控闸口与证据链</h1>
+          <p>风险必须卡在业务节点上，否则就是一个没人看的看板。四道闸口分别嵌在<b>供应商准入、付款前、勾选抵扣前、销项开票前</b>，
+             <b class="c-teal">四道全部开放 API 给 ERP 调用</b>；按贵方要求统一为<b class="c-yellow">「提示 + 转审批」</b>，不强阻断，并保留申诉与补材料通道。</p>
+        </div>
+        <div class="ph-right">
+          <a class="btn" href="invoice-risk.html?v=20260822">发票风险看板</a>
+          <a class="btn btn-primary" href="#config">基线配置</a>
+        </div>
+      </div>
+
+      <div class="stat-strip mb" id="kpiStrip"></div>
+
+      <!-- ============ 四道闸口 ============ -->
+      <div class="card mb accent-top">
+        <div class="card-hd">
+          <h3>四道风控闸口</h3>
+          <span class="sub">每道闸口独立 API，ERP 可按需调用；返回结构统一，便于 ERP 侧统一渲染</span>
+          <div class="hd-act"><span class="tag tag-yellow">闸口强度：提示 + 转审批（强阻断开关未启用）</span></div>
+        </div>
+        <div class="card-bd">
+          <div class="flow-pipe mb" id="gatePipe"></div>
+          <div class="grid g4 mb" id="gateCards"></div>
+          <div class="note blue">
+            <b>为什么付款前是最关键的一道</b>：款一旦付出去，向已经出问题的供应商追偿难度陡增；而此时发票通常尚未申报抵扣，
+            <b>止损窗口最大</b>。所以闸口二的校验项最全，也是唯一会触发到财务总监审批的一道。
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 闸口 API ============ -->
+      <div class="card mb">
+        <div class="card-hd">
+          <h3>闸口开放接口</h3>
+          <span class="sub">点击展开查看参数与请求响应示例 · 统一鉴权与限流策略见开放 API 页</span>
+          <div class="hd-act">
+            <button class="btn btn-sm" id="expandAll">展开全部</button>
+            <a class="btn btn-sm" href="open-api.html?v=20260822">完整接口文档</a>
+          </div>
+        </div>
+        <div class="card-bd"><div id="apiList"></div></div>
+      </div>
+
+      <!-- ============ ERP 嵌入 ============ -->
+      <div class="card mb">
+        <div class="card-hd">
+          <h3>ERP 嵌入效果 · 付款申请单</h3>
+          <span class="sub">浅色为现有 ERP 界面，蓝色虚线框为风控大脑注入的模块</span>
+          <div class="hd-act"><span class="tag tag-grey mono">POST /v1/invoice/gate/pre-payment · 268ms</span></div>
+        </div>
+        <div class="card-bd">
+          <div class="erp-win">
+            <div class="erp-top">
+              <span class="erp-logo">华东钢铁贸易 · ERP 管理系统</span><span style="opacity:.7">V8.2</span>
+              <span class="erp-user">财务部 / 周敏　|　2026-08-22</span>
+            </div>
+            <div class="erp-nav">
+              <span>销售管理</span><span>采购管理</span><span>库存管理</span><span>应收应付</span><span class="on">财务管理</span><span>经营报表</span>
+            </div>
+            <div class="erp-body">
+              <div class="flex items-c gap8" style="margin-bottom:11px">
+                <b style="font-size:14px;color:#0f172a">付款申请单 · 审核</b>
+                <span class="erp-badge eb-orange">待审批</span>
+                <span class="erp-mini">单号 PA-20260822-0117</span>
+                <span style="margin-left:auto;display:flex;gap:7px">
+                  <span class="erp-btn ghost">退回</span><span class="erp-btn">提交审批</span>
+                </span>
+              </div>
+
+              <div class="erp-card">
+                <div class="erp-card-hd">付款信息</div>
+                <div class="erp-card-bd">
+                  <div class="erp-grid" style="grid-template-columns:1.4fr 1fr 1fr 1fr">
+                    <div class="erp-f"><label>收款方</label>
+                      <div class="erp-input" style="gap:7px;white-space:nowrap">华鑫钢贸有限公司
+                        <span class="srb inline" style="padding:1px 7px 1px 5px;border-radius:5px;margin-left:auto">
+                          <span class="erp-badge eb-red" style="border:none;background:transparent;padding:0">● 走逃失联预警</span></span>
+                      </div>
+                    </div>
+                    <div class="erp-f"><label>付款金额</label><div class="erp-input">1,296,361.76</div></div>
+                    <div class="erp-f"><label>关联发票</label><div class="erp-input ro">2431…8842317</div></div>
+                    <div class="erp-f"><label>业务单号</label><div class="erp-input ro">PO-20260814-0033</div></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="srb srb-pad">
+                <div class="flex items-c gap8" style="margin-bottom:9px">
+                  <b style="font-size:12.5px;color:#0c4a6e">付款前发票风控校验</b>
+                  <span class="erp-badge eb-red">红色 · 建议转财务总监审批</span>
+                  <span class="erp-mini" style="margin-left:auto">traceId ivg-20260822-0117</span>
+                </div>
+                <div class="erp-grid" style="grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:10px">
+                  <div>
+                    <div style="font-size:11px;color:#64748b;margin-bottom:4px">① 发票合规</div>
+                    <div class="erp-kv"><span>数电票查验</span><b style="color:#15803d">通过</b></div>
+                    <div class="erp-kv"><span>抬头四要素</span><b style="color:#15803d">一致</b></div>
+                    <div class="erp-kv"><span>跨主体查重</span><b style="color:#15803d">无重复</b></div>
+                    <div class="erp-kv"><span>红冲状态</span><b style="color:#15803d">正常</b></div>
+                  </div>
+                  <div>
+                    <div style="font-size:11px;color:#64748b;margin-bottom:4px">② 四流勾稽（匹配率 83%）</div>
+                    <div class="erp-kv"><span>采购合同 / 订单</span><b style="color:#15803d">齐备</b></div>
+                    <div class="erp-kv"><span>过磅单</span><b style="color:#b91c1c">缺失</b></div>
+                    <div class="erp-kv"><span>WMS 入库单</span><b style="color:#15803d">354.2 吨</b></div>
+                    <div class="erp-kv"><span>票量 vs 磅量</span><b style="color:#15803d">-1.6%（容差内）</b></div>
+                  </div>
+                  <div>
+                    <div style="font-size:11px;color:#64748b;margin-bottom:4px">③ 销方实时复查</div>
+                    <div class="erp-kv"><span>失信被执行</span><b style="color:#b91c1c">08-15 新增 2,180 万</b></div>
+                    <div class="erp-kv"><span>经营异常名录</span><b style="color:#b91c1c">08-18 列入</b></div>
+                    <div class="erp-kv"><span>纳税信用</span><b style="color:#c2410c">C 级（由 B 下调）</b></div>
+                    <div class="erp-kv"><span>进项集中度</span><b style="color:#c2410c">23.6%</b></div>
+                  </div>
+                </div>
+                <div class="erp-alert ea-red" style="margin-bottom:9px">
+                  <b>风控结论</b>：销方出现走逃失联征兆（失信被执行 + 账户冻结 + 经营异常名录 + 信用等级下调），且本笔业务过磅单缺失。
+                  该笔款项<b>尚未支付</b>，是止损窗口最大的时点。建议：暂停付款转财务总监审批；同时对该销方已确认抵扣的
+                  <b>14.91 万元进项暂缓申报</b>，并立即固化全套证据链以备善意取得举证。
+                </div>
+                <div class="flex items-c gap7 wrap">
+                  <span class="erp-btn danger">转财务总监审批</span>
+                  <span class="erp-btn ghost">补充过磅单后重新校验</span>
+                  <span class="erp-btn ghost">申诉：说明理由并继续</span>
+                  <span class="erp-mini" style="margin-left:auto">系统不强阻断，最终决策权在审批人</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 证据链 ============ -->
+      <div class="card mb green">
+        <div class="card-hd">
+          <h3>证据链一键归档</h3>
+          <span class="sub">善意取得抗辩的核心，是能证明「我付款那天查过，他当时是正常纳税人」</span>
+          <div class="hd-act">
+            <span class="tag tag-green">已归档 1,284 个业务包</span>
+            <button class="btn btn-sm btn-primary">导出证据包 PDF</button>
+          </div>
+        </div>
+        <div class="card-bd">
+          <div class="grid g-3-2" style="gap:14px">
+            <div>
+              <div class="flex items-c gap8 mb">
+                <span class="tag tag-blue mono" id="evBiz"></span>
+                <span class="fs11 t3" id="evSeller"></span>
+                <span class="fs11 t3 ml-auto">金额 <b class="mono" id="evAmt"></b> 万元</span>
+              </div>
+              <table class="tbl" id="evTbl"></table>
+            </div>
+            <div>
+              <div class="note green mb" id="evNote"></div>
+              <div class="grid g2 mb" style="gap:9px">
+                <div class="node center"><div class="fs10 t4">累计归档业务包</div><div class="mono b7 c-green" style="font-size:18px">1,284</div></div>
+                <div class="node center"><div class="fs10 t4">自动归档率</div><div class="mono b7 c-green" style="font-size:18px">96.2%</div></div>
+                <div class="node center"><div class="fs10 t4">本月新增</div><div class="mono b7" style="font-size:18px">186</div></div>
+                <div class="node center"><div class="fs10 t4">高危票源覆盖</div><div class="mono b7 c-green" style="font-size:18px">100%</div></div>
+              </div>
+              <div class="fs12 b6 mb" style="margin-bottom:6px">快照机制</div>
+              <div class="tl">
+                <div class="tl-i blue"><div class="tl-t">付款当日快照</div><div class="tl-b">营业执照、纳税信用等级、失信查询结果、四道闸口校验结论，全部按<b>当日状态</b>固化，带时间戳与查询流水号</div></div>
+                <div class="tl-i green"><div class="tl-t">物理痕迹优先</div><div class="tl-b">过磅单原始照片（含车牌、毛皮净重）、地磅流水号、WMS 出入库记录 —— 这些是钢贸最难伪造、也最有证明力的材料</div></div>
+                <div class="tl-i orange"><div class="tl-t">资金闭环</div><div class="tl-b">银企直联原始回单，证明收款方与开票方一致、无第三方代收</div></div>
+                <div class="tl-i"><div class="tl-t">一键导出</div><div class="tl-b">生成带目录的 PDF + 原始附件压缩包，可直接提交稽查或作为申诉材料</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 异常凭证应急处置 ============ -->
+      <div class="card mb red">
+        <div class="card-hd">
+          <h3><span class="dot dot-red pulse"></span>异常凭证应急处置</h3>
+          <span class="sub">收到异常扣税凭证或销方走逃失联公告时自动启动</span>
+          <div class="hd-act"><span class="tag tag-red">进行中 1 例 · 华鑫钢贸</span></div>
+        </div>
+        <div class="card-bd">
+          <div class="grid g-2-3" style="gap:14px">
+            <div>
+              <div class="grid g3 mb" style="gap:9px" id="emgKpi"></div>
+              <div class="ai-box">
+                <div class="ai-hd">处置建议</div>
+                <div class="ai-txt" id="emgAdvice"></div>
+              </div>
+              <div class="note mt">
+                <b>钢贸的现实</b>：善意取得能否成立，取决于四流是否齐备、以及付款当日是否留存了供应商正常状态的证明。
+                事后再去查，供应商早已失联，什么都证明不了 —— 这也是证据链快照机制存在的全部意义。
+              </div>
+            </div>
+            <div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">七步处置流程</div>
+              <div class="tl" id="emgTl"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 基线配置 ============ -->
+      <div class="card" id="config">
+        <div class="card-hd">
+          <h3>基线配置（租户级）</h3>
+          <span class="sub">钢贸的阈值不能照搬通用行业 —— 这些都做成企业可配置项，按主体、按品类分别设置</span>
+          <div class="hd-act">
+            <span class="tag tag-teal">多主体模式已启用 · 3 个主体</span>
+            <button class="btn btn-sm">保存配置</button>
+          </div>
+        </div>
+        <div class="card-bd">
+          <div class="grid g4 mb" style="gap:9px" id="entRow"></div>
+          <div class="tabs" data-group="cf" id="cfTabs"></div>
+          <div id="cfPanels"></div>
+          <div class="grid g3 mt" style="gap:12px">
+            <div class="note red">
+              <b>税负率必须钢贸化</b>：钢贸低毛利高流水，增值税税负率正常就在 0.3%~0.8%，而通用预警阈值常设在 2%~3%。
+              拿制造业的尺子量钢贸，结果是全量报警、模型作废。真正有意义的是<b>环比波动</b>与<b>和毛利率的匹配关系</b>。
+            </div>
+            <div class="note">
+              <b>红冲率要建基线不设死阈值</b>：过磅差、质量异议、退货在钢贸是常态，红冲本身是正常业务动作；
+              但异常高的红冲率又确实是虚开手法。所以按品类历史红冲率 ±2σ 判异常。
+            </div>
+            <div class="note blue">
+              <b>票货容差按品种设</b>：螺纹钢理计与磅计差 1.5%~3%，若要求数量严格相等，每一笔都会报警。
+              棒材 ±3%、板卷 ±1.5%、型材 ±2.5%、管材 ±2%。
+            </div>
+          </div>
+          <div class="note green mt">
+            <b>无票采购单独归为「票源缺口」台账，不判风险</b>：废钢、个体运输车队本来就开不出票，把它简单判为业务真实性风险没有意义。
+            当前票源缺口 268.4 万元，应作为税务筹划议题管理，而不是混进风险清单里干扰判断。
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/charts.js?v=20260822"></script>
+<script src="assets/js/data.js?v=20260822"></script>
+<script src="assets/js/invoice.js?v=20260822"></script>
+<script src="assets/js/app.js?v=20260822"></script>
+<script>
+(function () {
+  const I = Invoice, esc = App.esc;
+
+  /* ---------- KPI ---------- */
+  const tot = I.GATES.reduce((a, g) => ({
+    today: a.today + g.stat.today, pass: a.pass + g.stat.pass,
+    review: a.review + g.stat.review, reject: a.reject + g.stat.reject
+  }), { today: 0, pass: 0, review: 0, reject: 0 });
+  document.getElementById('kpiStrip').innerHTML = `
+    <div><div class="ss-t">今日闸口调用</div><div class="ss-v">${tot.today}</div></div>
+    <div><div class="ss-t">直接通过</div><div class="ss-v c-green">${tot.pass}</div></div>
+    <div><div class="ss-t">转审批</div><div class="ss-v c-orange">${tot.review}</div></div>
+    <div><div class="ss-t">建议不予通过</div><div class="ss-v c-red">${tot.reject}</div></div>
+    <div><div class="ss-t">拦截前止损金额</div><div class="ss-v c-green">129.6 <span class="fs11 t4">万元</span></div></div>
+    <div><div class="ss-t">暂缓抵扣进项税</div><div class="ss-v c-orange">14.9 <span class="fs11 t4">万元</span></div></div>
+    <div><div class="ss-t">证据链归档率</div><div class="ss-v c-green">96.2%</div></div>`;
+
+  /* ---------- 闸口 ---------- */
+  document.getElementById('gatePipe').innerHTML = I.GATES.map((g, i) =>
+    `${i ? '<div class="fp-arrow">→</div>' : ''}
+     <div class="fp-box" style="border-color:${g.color}55;background:${g.color}0f">
+       <div class="fp-t" style="color:${g.color}">${g.name.split(' · ')[1]}</div>
+       <div class="fp-b">${g.when}</div>
+     </div>`).join('');
+
+  document.getElementById('gateCards').innerHTML = I.GATES.map(g => `
+    <div class="node" style="border-color:${g.color}44;background:linear-gradient(160deg,${g.color}12,rgba(11,18,31,.6));padding:13px 14px">
+      <div class="node-t" style="font-size:12.5px">
+        <span class="dot" style="background:${g.color};box-shadow:0 0 8px ${g.color}"></span>${g.name}
+        ${g.key ? '<span class="tag tag-red ml-auto">最关键</span>' : ''}
+      </div>
+      <div class="fs10 t4" style="margin:3px 0 7px">${g.when}</div>
+      <div class="mono fs10" style="color:${g.color};margin-bottom:7px">${g.api}</div>
+      <div class="fs10 t4" style="letter-spacing:.4px;margin-bottom:3px">校验项</div>
+      <ul class="node-ul">${g.checks.map(c => `<li>${c}</li>`).join('')}</ul>
+      <div class="fs10 t4" style="letter-spacing:.4px;margin:8px 0 3px">处置</div>
+      <div class="fs11 t2" style="line-height:1.75">${g.action}</div>
+      ${g.why ? `<div class="fs11 t3" style="line-height:1.75;margin-top:6px">${g.why}</div>` : ''}
+      <div class="divider" style="margin:9px 0"></div>
+      <div class="flex gap10">
+        <div><div class="fs10 t4">今日</div><div class="mono b7 fs12">${g.stat.today}</div></div>
+        <div><div class="fs10 t4">通过</div><div class="mono b7 fs12 c-green">${g.stat.pass}</div></div>
+        <div><div class="fs10 t4">转审批</div><div class="mono b7 fs12 c-orange">${g.stat.review}</div></div>
+        <div><div class="fs10 t4">不予通过</div><div class="mono b7 fs12 c-red">${g.stat.reject}</div></div>
+      </div>
+      <div class="fs10 t4" style="margin-top:8px;line-height:1.6">${g.erp}</div>
+    </div>`).join('');
+
+  /* ---------- 闸口 API ---------- */
+  const API = [
+    {
+      g: I.GATES[0],
+      params: [
+        ['supplierName', 'string', 1, '供应商工商全称'],
+        ['taxNo', 'string', 1, '统一社会信用代码 —— 所有票税能力的匹配键'],
+        ['entityCode', 'string', 1, '我方主体编码（多主体模式必填）'],
+        ['expectedAmount', 'number', 0, '预计年度采购额，用于集中度预判']
+      ],
+      req: { supplierName: '瑞晟金属材料有限公司', taxNo: '91310115MA1EEEE55E', entityCode: 'E01', expectedAmount: 12000000 },
+      resp: {
+        traceId: 'ivg1-20260822-0044', decision: 'review', decisionText: '建议转税务经理审批后有条件准入',
+        shellScore: 81, shellLevel: 'high', threshold: { warn: 60, high: 75 },
+        profile: {
+          setupMonths: 11, paidCapital: 0, insuredCount: 4, addressType: 'cluster',
+          relatedCompanies: 4, taxCreditLevel: 'M', inTaxHavenPark: true,
+          scopeMatch: true, legalPersonChanges12m: 1
+        },
+        signals: [
+          { code: 'FR-06', name: '变名开票', detail: '进项以煤炭、矿产品为主，销项全为钢材', severity: 'high' },
+          { code: 'FR-07', name: '集群注册地址', detail: '同一地址注册企业 27 家', severity: 'mid' },
+          { code: 'FR-12', name: '月末集中顶额开票', detail: '额度使用率 74%，68% 集中在月末三日', severity: 'mid' }
+        ],
+        conditions: ['单笔限额 50 万元', '款到发货，不予赊销', '每笔必须提供过磅单与运单'],
+        appealable: true
+      }
+    },
+    {
+      g: I.GATES[1],
+      params: [
+        ['paymentNo', 'string', 1, 'ERP 付款申请单号'],
+        ['entityCode', 'string', 1, '付款主体编码'],
+        ['payeeTaxNo', 'string', 1, '收款方税号（用于与开票方一致性校验）'],
+        ['amount', 'number', 1, '付款金额（元）'],
+        ['invoiceNos', 'array', 1, '关联数电发票号码（20 位）'],
+        ['bizNos', 'array', 1, '关联业务单号，用于四流勾稽']
+      ],
+      req: {
+        paymentNo: 'PA-20260822-0117', entityCode: 'E01', payeeTaxNo: '91320500MA1DDDD44D',
+        amount: 1296361.76, invoiceNos: ['24310000000018842317'], bizNos: ['PO-20260814-0033']
+      },
+      resp: {
+        traceId: 'ivg2-20260822-0117', decision: 'red', decisionText: '建议转财务总监审批',
+        blocked: false, approver: '财务总监', appealable: true,
+        compliance: { verifyResult: 'pass', titleMatch: true, crossEntityDuplicate: false, redLetterStatus: 'normal', taxRateCorrect: true },
+        fourFlow: {
+          matchRate: 0.83,
+          docs: { contract: 'ok', order: 'ok', weighNote: 'missing', wmsInbound: 'ok', bankReceipt: 'pending', invoice: 'ok' },
+          qtyCheck: { invoiceQty: 360, weighQty: null, wmsQty: 354.2, deviation: -0.016, tolerance: 0.03, pass: true },
+          payeeMatchSeller: true
+        },
+        sellerRisk: {
+          shellScore: 34, runawayWarning: true,
+          events: [
+            { date: '2026-08-15', type: '失信被执行', amount: 21800000 },
+            { date: '2026-08-18', type: '列入经营异常名录' }
+          ],
+          taxCreditLevel: 'C', taxCreditDowngraded: true, inputShare: 0.236
+        },
+        impact: { unpaidAmount: 1296361.76, deductedInputTax: 149138.96, potentialTransferOut: 149138.96 },
+        suggestions: [
+          '暂停付款转财务总监审批 —— 款未付是止损窗口最大的时点',
+          '该销方已确认抵扣的 14.91 万元进项暂缓申报',
+          '立即固化全套证据链以备善意取得举证',
+          '补齐 PO-20260814-0033 的过磅单后可重新提交校验'
+        ]
+      }
+    },
+    {
+      g: I.GATES[2],
+      params: [
+        ['entityCode', 'string', 1, '申报主体编码'],
+        ['period', 'string', 1, '所属期，格式 YYYY-MM'],
+        ['invoiceNos', 'array', 1, '拟勾选确认的数电发票号码，单次上限 500'],
+        ['simulate', 'boolean', 0, '是否返回税负率影响测算，默认 true']
+      ],
+      req: { entityCode: 'E01', period: '2026-08', invoiceNos: ['24310000000018842317', '24310000000018836042', '24310000000018798320'], simulate: true },
+      resp: {
+        traceId: 'ivg3-20260822-0006', total: 3, recommendConfirm: 1, recommendHold: 2,
+        holdList: [
+          { invoiceNo: '24310000000018842317', seller: '华鑫钢贸有限公司', inputTax: 149138.96, reason: '销方走逃失联预警 + 经营异常名录', level: 'red' },
+          { invoiceNo: '24310000000018836042', seller: '瑞晟金属材料有限公司', inputTax: 111454.98, reason: '空壳画像 81 分 + 变名开票特征', level: 'red' }
+        ],
+        simulation: {
+          ifConfirmAll: { vatRate: 0.38, inputTaxTotal: 2860412 },
+          ifHoldRecommended: { vatRate: 0.47, inputTaxTotal: 2599818, extraVatPayable: 260594 },
+          transferOutRiskIfConfirmed: 260593.94, lateFeeRatePerDay: 0.0005
+        },
+        note: '暂缓确认会使当期应纳增值税增加 26.06 万元，但可避免后续被要求转出并加收滞纳金；建议由税务经理权衡后决策'
+      }
+    },
+    {
+      g: I.GATES[3],
+      params: [
+        ['entityCode', 'string', 1, '开票主体编码'],
+        ['buyerTaxNo', 'string', 1, '购方税号'],
+        ['lines[].goodsName', 'string', 1, '商品名称'],
+        ['lines[].taxClassCode', 'string', 1, '税收分类编码'],
+        ['lines[].taxRate', 'number', 1, '税率'],
+        ['lines[].unit', 'string', 1, '计量单位'],
+        ['lines[].qty', 'number', 1, '数量'],
+        ['remark', 'string', 0, '备注栏（货物运输发票必填起讫地与车牌）']
+      ],
+      req: {
+        entityCode: 'E01', buyerTaxNo: '91310000MA1XXXXX8N',
+        lines: [
+          { goodsName: '螺纹钢 HRB400E Φ20', taxClassCode: '1080405020000000000', taxRate: 0.13, unit: '吨', qty: 300 },
+          { goodsName: '运输费', taxClassCode: '1080405020000000000', taxRate: 0.13, unit: '吨', qty: 300 }
+        ]
+      },
+      resp: {
+        traceId: 'ivg4-20260822-0082', decision: 'review', decisionText: '存在 3 处需修正项',
+        issues: [
+          { line: 2, code: 'IC-07', field: 'taxRate', current: 0.13, suggest: 0.09, msg: '运输服务适用 9% 税率，与货物混开按 13% 将导致多缴或被认定错误适用' },
+          { line: 2, code: 'IC-08', field: 'taxClassCode', current: '1080405020000000000', suggest: '3010101010000000000', msg: '应使用运输服务-道路运输服务编码' },
+          { line: 2, code: 'IC-09', field: 'unit', current: '吨', suggest: '次 / 车', msg: '运输服务不应以吨计量' }
+        ],
+        quota: { monthlyLimit: 80000000, used: 48602800, usageRate: 0.6075, remaining: 31397200 },
+        buyerCheck: { titleMatch: true, taxNoValid: true, riskLevel: 'high', note: '购方为高风险客户宏基建设集团，建议核对结算方式后开票' }
+      }
+    }
+  ];
+
+  document.getElementById('apiList').innerHTML = API.map((a, i) => `
+    <div class="api-item ${i === 1 ? 'open' : ''}">
+      <div class="api-hd">
+        <span class="method m-post">POST</span>
+        <span class="api-path">${esc(a.g.api.replace('POST ', ''))}</span>
+        <span class="api-desc">${a.g.name}</span>
+        ${a.g.key ? '<span class="tag tag-red">最关键</span>' : ''}
+        <span class="tag tag-grey">${a.g.when}</span>
+        <span class="chev">${App.icon('right', 14)}</span>
+      </div>
+      <div class="api-bd">
+        <div class="note blue mb"><b>ERP 使用位置</b>：${a.g.erp}</div>
+        <div class="fs11 t4 mb" style="letter-spacing:.5px;margin-bottom:5px">请求参数</div>
+        <table class="tbl param-tbl mb">
+          <thead><tr><th style="width:190px">参数</th><th style="width:100px">类型</th><th style="width:64px">必填</th><th>说明</th></tr></thead>
+          <tbody>${a.params.map(p => `<tr>
+            <td class="mono fs11 c-blue">${esc(p[0])}</td><td class="mono fs10 t3">${p[1]}</td>
+            <td>${p[2] ? '<span class="tag tag-red">必填</span>' : '<span class="t4 fs11">可选</span>'}</td>
+            <td class="fs11 t2">${p[3]}</td></tr>`).join('')}</tbody>
+        </table>
+        <div class="grid g2" style="gap:12px">
+          <div><div class="code-hd">${App.icon('link', 12)} 请求示例</div><pre class="code">${App.json(a.req)}</pre></div>
+          <div><div class="code-hd">${App.icon('file', 12)} 响应示例</div><pre class="code">${App.json(a.resp)}</pre></div>
+        </div>
+        <div class="note mt" style="font-size:11px">
+          <b>统一返回约定</b>：<code class="mono">decision</code> 取值 <code class="mono">pass / review / red</code>，
+          <code class="mono">blocked</code> 恒为 <code class="mono">false</code>（当前配置为不强阻断），
+          <code class="mono">appealable</code> 标识是否允许申诉。ERP 侧只需按这三个字段统一渲染即可，无需为每道闸口写不同逻辑。
+        </div>
+      </div>
+    </div>`).join('');
+  App.collapsible('#apiList');
+  document.getElementById('expandAll').onclick = function () {
+    document.querySelectorAll('.api-item').forEach(x => x.classList.add('open'));
+    this.textContent = '已展开全部';
+  };
+
+  /* ---------- 证据链 ---------- */
+  const E = I.EVIDENCE;
+  document.getElementById('evBiz').textContent = E.biz;
+  document.getElementById('evSeller').textContent = E.seller;
+  document.getElementById('evAmt').textContent = E.amount.toFixed(2);
+  document.getElementById('evNote').innerHTML = E.note;
+  document.getElementById('evTbl').innerHTML = `
+    <thead><tr><th style="width:130px">材料类型</th><th style="width:210px">编号 / 文件</th><th style="width:96px">日期</th><th style="width:64px">状态</th><th>说明</th></tr></thead>
+    <tbody>${E.items.map(x => `<tr>
+      <td class="t-main fs11">${x[0]}</td><td class="mono fs11 t2">${x[1]}</td>
+      <td class="mono fs11 t3">${x[2]}</td>
+      <td><span class="tag tag-green">齐备</span></td>
+      <td class="fs11 t3" style="line-height:1.7">${x[4]}</td></tr>`).join('')}</tbody>`;
+
+  /* ---------- 应急处置 ---------- */
+  const C = I.EMERGENCY.current;
+  document.getElementById('emgKpi').innerHTML = `
+    <div class="node center"><div class="fs10 t4">涉及销方</div><div class="fs12 b6" style="margin-top:2px">${C.seller}</div></div>
+    <div class="node center"><div class="fs10 t4">涉及发票</div><div class="mono b7" style="font-size:17px">${C.invoices} <span class="fs10">张</span></div></div>
+    <div class="node center"><div class="fs10 t4">进项税额</div><div class="mono b7 c-red" style="font-size:17px">${C.inputTax} <span class="fs10">万</span></div></div>
+    <div class="node center"><div class="fs10 t4">预计滞纳金</div><div class="mono b7 c-orange" style="font-size:17px">${C.lateFee} <span class="fs10">万</span></div></div>
+    <div class="node center"><div class="fs10 t4">税负率影响</div><div class="mono b7 c-orange" style="font-size:17px">${C.vatImpact}</div></div>
+    <div class="node center"><div class="fs10 t4">证据链状态</div><div class="fs12 b6 c-orange" style="margin-top:2px">${C.evidence}</div></div>`;
+  document.getElementById('emgAdvice').innerHTML = C.advice;
+  document.getElementById('emgTl').innerHTML = I.EMERGENCY.steps.map(s => `
+    <div class="tl-i ${s.s === 'done' ? 'green' : s.s === 'doing' ? 'orange' : ''}">
+      <div class="tl-t">${s.t}
+        <span class="tag ${s.s === 'done' ? 'tag-green' : s.s === 'doing' ? 'tag-orange' : 'tag-grey'}">${s.s === 'done' ? '已完成' : s.s === 'doing' ? '进行中' : '待执行'}</span>
+        <span class="tl-time ml-auto">${s.time}</span></div>
+      <div class="tl-b">${s.d}</div>
+    </div>`).join('');
+
+  /* ---------- 基线配置 ---------- */
+  document.getElementById('entRow').innerHTML = I.CONFIG.entities.map(e => `
+    <div class="node ${e.main ? 'new' : ''}">
+      <div class="node-t" style="font-size:11.5px">${e.name}<span class="tag ${e.main ? 'tag-teal' : 'tag-grey'} ml-auto">${e.role}</span></div>
+      <div class="fs10 t4 mono" style="margin-top:3px">${e.taxNo} · ${e.region}</div>
+    </div>`).join('') + `
+    <div class="node" style="border-style:dashed;display:grid;place-items:center">
+      <div class="center"><div class="fs11 t3">+ 新增主体</div><div class="fs10 t4">单一主体企业可关闭多主体模式</div></div>
+    </div>`;
+
+  document.getElementById('cfTabs').innerHTML = I.CONFIG.groups.map((g, i) =>
+    `<button class="${i === 0 ? 'on' : ''}" data-tab="c${i}">${g.g}</button>`).join('');
+  document.getElementById('cfPanels').innerHTML = I.CONFIG.groups.map((g, i) => `
+    <div data-panel="c${i}" data-group="cf" ${i ? 'style="display:none"' : ''}>
+      <table class="tbl">
+        <thead><tr><th style="width:170px">配置项</th><th style="width:150px">当前值</th><th style="width:110px">默认值</th><th style="width:150px">作用范围</th><th>为什么这样设</th></tr></thead>
+        <tbody>${g.items.map(it => `<tr>
+          <td class="t-main fs11">${it.name}<div class="t-sub mono">${it.k}</div></td>
+          <td><span class="erp-input" style="display:inline-flex;padding:3px 9px;background:rgba(56,189,248,.08);border-color:rgba(56,189,248,.32);color:var(--brand);font-family:var(--mono);font-weight:600">${it.val}${it.unit}</span></td>
+          <td class="mono fs11 t4">${it.def}${it.unit}</td>
+          <td class="fs11 t3">${it.scope}</td>
+          <td class="fs11 t3" style="line-height:1.7">${it.note}</td></tr>`).join('')}</tbody>
+      </table>
+    </div>`).join('');
+  App.tabs('#cfTabs');
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>开放 API 接口 · 钢铁行业 AI 风控大脑</title>
+<link rel="stylesheet" href="assets/css/main.css?v=20260817">
+</head>
+<body data-page="api">
+<div class="app-bg"></div>
+<div class="layout">
+  <div class="main">
+    <div class="content">
+
+      <div class="page-head">
+        <div>
+          <h1>开放 API 接口 · 与 ERP 双向集成</h1>
+          <p>数据从 ERP 来，风险结论还要回到 ERP 去。风控大脑把风险能力封装成标准接口，
+             让<b class="c-blue">销售员报价时看到客户风险</b>、<b class="c-blue">采购员配货时看到市场货源与供货商风险</b>、
+             <b class="c-blue">管理者看报表时看到风险总览</b> —— 业务人员不用切换系统，风险信息出现在他本来就在看的那个页面上。</p>
+        </div>
+        <div class="ph-right">
+          <a class="btn btn-primary" href="erp-embed.html">查看 ERP 嵌入效果</a>
+          <button class="btn">下载 OpenAPI 3.0 规范</button>
+        </div>
+      </div>
+
+      <div class="stat-strip mb">
+        <div><div class="ss-t">已开放接口</div><div class="ss-v c-blue">26 <span class="fs11 t4">个 REST</span></div></div>
+        <div><div class="ss-t">Webhook 事件</div><div class="ss-v c-ai">6 <span class="fs11 t4">类</span></div></div>
+        <div><div class="ss-t">嵌入式组件</div><div class="ss-v c-orange">5 <span class="fs11 t4">个</span></div></div>
+        <div><div class="ss-t">日均调用量</div><div class="ss-v">28,460</div></div>
+        <div><div class="ss-t">P95 响应延迟</div><div class="ss-v c-green">142 <span class="fs11 t4">ms</span></div></div>
+        <div><div class="ss-t">近 30 日可用性</div><div class="ss-v c-green">99.97%</div></div>
+        <div><div class="ss-t">已接入系统</div><div class="ss-v">ERP · 企微 · BI</div></div>
+      </div>
+
+      <!-- ===== 双向集成架构 ===== -->
+      <div class="card mb accent-top">
+        <div class="card-hd">
+          <h3>双向集成架构</h3>
+          <span class="sub">上行：ERP 业务数据入湖；下行：风险结论回流 ERP 业务界面</span>
+          <div class="hd-act"><span class="tag tag-blue">上行 5 类</span><span class="tag tag-teal">下行 4 种方式</span></div>
+        </div>
+        <div class="card-bd">
+          <div class="chart h300" id="archFlow"></div>
+          <div class="divider"></div>
+          <div class="grid g4">
+            <div class="node">
+              <div class="node-t"><span class="method m-get">PULL</span>实时查询 API</div>
+              <div class="node-b">ERP 页面加载 / 用户操作时同步调用，毫秒级返回风险结论。适合报价、采购申请、客户详情等<b>需要当场看到结论</b>的场景。</div>
+              <ul class="node-ul"><li>P95 &lt; 200ms，超时 800ms 自动降级</li><li>结果带 5 分钟缓存标记，避免重复调用</li></ul>
+            </div>
+            <div class="node">
+              <div class="node-t"><span class="method m-hook">PUSH</span>事件推送 Webhook</div>
+              <div class="node-b">风险等级变化、新增失信事件、抛压预警时，风控大脑<b>主动推送</b>给 ERP，ERP 落库后可在列表页直接展示，无需每次实时查询。</div>
+              <ul class="node-ul"><li>HMAC-SHA256 签名 + 事件幂等 ID</li><li>失败指数退避重试 5 次（1m/5m/30m/2h/6h）</li></ul>
+            </div>
+            <div class="node">
+              <div class="node-t"><span class="method m-sdk">EMBED</span>嵌入式组件 SDK</div>
+              <div class="node-b">一行 JS 标签即可在 ERP 页面渲染风险徽章 / 风险卡片，<b>ERP 后端零改造</b>，适合快速上线与老系统。</div>
+              <ul class="node-ul"><li>Shadow DOM 隔离样式，不污染 ERP</li><li>支持深浅两套主题自动适配</li></ul>
+            </div>
+            <div class="node">
+              <div class="node-t"><span class="method m-post">WRITE</span>结果回写 API</div>
+              <div class="node-b">业务员在 ERP 里的采纳 / 否决、实际执行动作、最终业务结果回写风控大脑，<b>直接喂给数据飞轮</b>，无需业务员再登录风控系统填一遍。</div>
+              <ul class="node-ul"><li>决策回填 + 业务结果回填</li><li>回写即进入案例池与微调样本池</li></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 鉴权 / 限流 / 降级 ===== -->
+      <div class="grid g3 mb">
+        <div class="card">
+          <div class="card-hd"><h3>鉴权与安全</h3><span class="sub">OAuth2 + 签名双保险</span></div>
+          <div class="card-bd">
+            <div id="authCode"></div>
+            <div class="divider"></div>
+            <div class="kv"><span>鉴权方式</span><b>OAuth2 client_credentials</b></div>
+            <div class="kv"><span>Token 有效期</span><b>7200s（自动续期）</b></div>
+            <div class="kv"><span>请求签名</span><b>HMAC-SHA256（防篡改）</b></div>
+            <div class="kv"><span>传输</span><b>HTTPS / TLS 1.2+</b></div>
+            <div class="kv"><span>访问控制</span><b>IP 白名单 + 接口级权限</b></div>
+            <div class="kv"><span>数据脱敏</span><b>按角色返回字段</b></div>
+            <div class="note blue mt">
+              ERP 不同角色看到的字段不同：业务员只看到<b>风险等级与建议动作</b>，不返回坏账概率明细与失信原文；财务与管理者返回完整字段。由接口级权限控制，不在前端做隐藏。
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-hd"><h3>限流配额</h3><span class="sub">按接口分级，防止 ERP 循环调用打爆</span></div>
+          <div class="card-bd">
+            <table class="tbl mb">
+              <thead><tr><th>接口等级</th><th>典型接口</th><th>QPS</th><th>日配额</th></tr></thead>
+              <tbody>
+                <tr><td><span class="tag tag-green">高频轻量</span></td><td class="fs11 t3">客户风险画像、市场对标价</td><td class="num">50</td><td class="num">50,000</td></tr>
+                <tr><td><span class="tag tag-blue">中频计算</span></td><td class="fs11 t3">报价风控校验、配货建议</td><td class="num">20</td><td class="num">20,000</td></tr>
+                <tr><td><span class="tag tag-orange">低频重算</span></td><td class="fs11 t3">采购风控校验、经营总览</td><td class="num">5</td><td class="num">3,000</td></tr>
+                <tr><td><span class="tag tag-ai">大模型</span></td><td class="fs11 t3">自然语言问答</td><td class="num">2</td><td class="num">500</td></tr>
+                <tr><td><span class="tag tag-grey">批量</span></td><td class="fs11 t3">批量客户风险（≤200/次）</td><td class="num">5</td><td class="num">2,000</td></tr>
+              </tbody>
+            </table>
+            <div class="chart h140" id="quotaChart"></div>
+            <div class="fs10 t4 center">今日各等级配额使用率</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-hd"><h3>SLA 与降级策略</h3><span class="sub">风控不可用时绝不阻断业务</span></div>
+          <div class="card-bd">
+            <div class="note red mb">
+              <b>最重要的一条原则</b>：风控接口是 ERP 的<b>旁路增强</b>，不是主链路。任何超时、异常、限流，ERP 都必须能继续把单开出去 —— 只是不显示风险信息或显示上次缓存结果。
+            </div>
+            <table class="tbl">
+              <thead><tr><th>异常场景</th><th>ERP 侧行为</th><th>提示</th></tr></thead>
+              <tbody>
+                <tr><td class="fs11">响应超时 &gt;800ms</td><td class="fs11 t2">用本地缓存的上次风险等级</td><td><span class="tag tag-yellow">数据可能延迟</span></td></tr>
+                <tr><td class="fs11">接口 5xx</td><td class="fs11 t2">跳过风控展示，业务正常进行</td><td><span class="tag tag-grey">风控暂不可用</span></td></tr>
+                <tr><td class="fs11">触发限流 429</td><td class="fs11 t2">降级为 Webhook 落库数据</td><td><span class="tag tag-yellow">非实时</span></td></tr>
+                <tr><td class="fs11">客户未匹配到主数据</td><td class="fs11 t2">正常放行并记录待映射</td><td><span class="tag tag-blue">新客户待评估</span></td></tr>
+                <tr><td class="fs11 c-red">高风险且强管控开关开启</td><td class="fs11 t2">仅<b>提示 + 需上级审批</b>，不自动拦单</td><td><span class="tag tag-red">需审批</span></td></tr>
+              </tbody>
+            </table>
+            <div class="divider"></div>
+            <div class="grid g3" style="gap:9px">
+              <div class="node center"><div class="fs10 t4">承诺可用性</div><div class="mono b7 c-green" style="font-size:16px">99.9%</div></div>
+              <div class="node center"><div class="fs10 t4">P95 延迟</div><div class="mono b7 c-green" style="font-size:16px">142ms</div></div>
+              <div class="node center"><div class="fs10 t4">超时阈值</div><div class="mono b7 c-orange" style="font-size:16px">800ms</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 接口清单 ===== -->
+      <div class="card mb">
+        <div class="card-hd">
+          <h3>接口清单</h3>
+          <span class="sub">按 ERP 使用场景分组 · 点击展开查看参数与请求响应示例</span>
+          <div class="hd-act">
+            <button class="btn btn-sm" id="expandAll">展开全部</button>
+            <button class="btn btn-sm" id="collapseAll">收起全部</button>
+          </div>
+        </div>
+        <div class="card-bd">
+          <div class="tabs" data-group="api" id="apiTabs">
+            <button class="on" data-tab="sale">销售报价场景</button>
+            <button data-tab="purchase">采购与配货场景</button>
+            <button data-tab="ar">应收与客户管理场景</button>
+            <button data-tab="mgmt">经营报表场景</button>
+            <button data-tab="invoice">发票与税务风控</button>
+            <button data-tab="master">主数据与回写</button>
+            <button data-tab="hook">Webhook 事件推送</button>
+          </div>
+          <div data-panel="invoice" data-group="api" id="g-invoice" style="display:none"></div>
+          <div data-panel="sale" data-group="api" id="g-sale"></div>
+          <div data-panel="purchase" data-group="api" id="g-purchase" style="display:none"></div>
+          <div data-panel="ar" data-group="api" id="g-ar" style="display:none"></div>
+          <div data-panel="mgmt" data-group="api" id="g-mgmt" style="display:none"></div>
+          <div data-panel="master" data-group="api" id="g-master" style="display:none"></div>
+          <div data-panel="hook" data-group="api" id="g-hook" style="display:none"></div>
+        </div>
+      </div>
+
+      <!-- ===== 嵌入式组件 ===== -->
+      <div class="card mb accent-top">
+        <div class="card-hd">
+          <h3>嵌入式组件 SDK <span class="tag tag-orange">ERP 后端零改造</span></h3>
+          <span class="sub">在 ERP 页面模板里加一个占位 div，风险模块自动渲染</span>
+          <div class="hd-act"><a class="btn btn-sm" href="erp-embed.html">看实际嵌入效果</a></div>
+        </div>
+        <div class="card-bd">
+          <div class="grid g-2-3" style="gap:14px">
+            <div>
+              <div id="sdkCode"></div>
+            </div>
+            <div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">可用组件清单</div>
+              <table class="tbl">
+                <thead><tr><th>组件</th><th>形态</th><th>数据来源接口</th><th>建议放置位置</th></tr></thead>
+                <tbody>
+                  <tr><td class="mono fs11 c-orange">customer-risk-badge</td><td class="fs11 t3">行内徽章</td><td class="mono fs10 t4">GET /risk/customer</td><td class="fs11 t2">客户名称旁（列表、单据抬头）</td></tr>
+                  <tr><td class="mono fs11 c-orange">customer-risk-card</td><td class="fs11 t3">卡片</td><td class="mono fs10 t4">GET /risk/customer</td><td class="fs11 t2">客户详情页、应收查询页右侧</td></tr>
+                  <tr><td class="mono fs11 c-orange">quote-risk-panel</td><td class="fs11 t3">横幅 + 明细</td><td class="mono fs10 t4">POST /risk/quote/check</td><td class="fs11 t2">销售报价单 / 销售订单页底部</td></tr>
+                  <tr><td class="mono fs11 c-orange">market-price-tip</td><td class="fs11 t3">行内提示</td><td class="mono fs10 t4">POST /market/price/compare</td><td class="fs11 t2">报价单价输入框旁</td></tr>
+                  <tr><td class="mono fs11 c-orange">purchase-advice-panel</td><td class="fs11 t3">面板</td><td class="mono fs10 t4">POST /risk/purchase/check</td><td class="fs11 t2">采购申请单提交区上方</td></tr>
+                </tbody>
+              </table>
+              <div class="note mt">
+                组件用 <b>Shadow DOM</b> 隔离，不会污染 ERP 现有样式；主题跟随 <code class="mono">data-theme</code> 自动切换深浅色；
+                加载失败时组件自动隐藏，<b>不影响 ERP 页面渲染</b>。
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 调用监控 ===== -->
+      <div class="grid g4 mb">
+        <div class="card">
+          <div class="card-hd"><h3>接口调用量趋势</h3><span class="sub">近 14 日</span></div>
+          <div class="card-bd"><div class="chart h230" id="callChart"></div>
+            <div class="legend center mt" style="justify-content:center">
+              <span><i class="sq" style="background:#38bdf8"></i>销售报价</span>
+              <span><i class="sq" style="background:#fb923c"></i>采购配货</span>
+              <span><i class="sq" style="background:#a78bfa"></i>应收客户</span>
+              <span><i class="sq" style="background:#34d399"></i>报表其他</span>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><h3>调用量 TOP 接口</h3><span class="sub">今日</span></div>
+          <div class="card-bd"><div class="chart h230" id="topChart"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><h3>响应延迟分布</h3><span class="sub">今日全部接口</span></div>
+          <div class="card-bd"><div class="chart h230" id="latChart"></div></div>
+          <div class="card-ft">P50 <b class="mono">58ms</b> · P95 <b class="mono c-green">142ms</b> · P99 <b class="mono c-orange">386ms</b></div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><h3>Webhook 投递情况</h3><span class="sub">近 7 日</span></div>
+          <div class="card-bd"><div class="chart h230" id="hookChart"></div></div>
+          <div class="card-ft">投递成功率 <b class="c-green">99.6%</b>，失败自动重试后最终成功率 <b class="c-green">100%</b></div>
+        </div>
+      </div>
+
+      <!-- ===== 接入步骤 ===== -->
+      <div class="card">
+        <div class="card-hd"><h3>ERP 接入实施步骤</h3><span class="sub">从申请凭证到全场景上线</span></div>
+        <div class="card-bd">
+          <div class="grid g-2-3" style="gap:16px">
+            <div>
+              <div class="tl">
+                <div class="tl-i green">
+                  <div class="tl-t">① 申请接入凭证与联调环境 <span class="tag tag-green">0.5 天</span></div>
+                  <div class="tl-b">分配 <code class="mono">app_id / app_secret</code>、配置 IP 白名单与接口权限，开通 sandbox 环境（返回构造数据，可反复调试）。</div>
+                </div>
+                <div class="tl-i green">
+                  <div class="tl-t">② 打通主数据映射 <span class="tag tag-red">最关键</span></div>
+                  <div class="tl-b">ERP 客户编码 ↔ 统一社会信用代码；ERP 物料编码 ↔ 平台标准规格编码。<b>这一步没做好，后面所有接口返回的都是空结果</b>，与规格标准化是同一件事的两端。</div>
+                </div>
+                <div class="tl-i blue">
+                  <div class="tl-t">③ 先接「只读展示」类接口</div>
+                  <div class="tl-b">客户风险画像、市场对标价先上线，纯展示不影响流程，风险最低，业务员当天就能看到价值。</div>
+                </div>
+                <div class="tl-i blue">
+                  <div class="tl-t">④ 再接「流程校验」类接口</div>
+                  <div class="tl-b">报价风控校验、采购风控校验接入单据提交流程，配合灰度开关，先<b>只提示不拦截</b>，跑两周确认误报率后再决定是否开启审批管控。</div>
+                </div>
+                <div class="tl-i">
+                  <div class="tl-t">⑤ 打通 Webhook 与结果回写</div>
+                  <div class="tl-b">风险等级变化推送 ERP 落库；ERP 里的采纳 / 否决与业务结果回写风控大脑，闭合数据飞轮。</div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">各场景接入优先级建议</div>
+              <table class="tbl mb">
+                <thead><tr><th>ERP 场景</th><th>接入方式</th><th>改造量</th><th>业务价值</th><th>建议顺序</th></tr></thead>
+                <tbody>
+                  <tr><td class="t-main">客户 / 应收查询页</td><td class="fs11 t3">嵌入式组件</td><td><span class="tag tag-green">极小</span></td><td><span class="tag tag-red">高</span></td><td class="num b7 c-green">1</td></tr>
+                  <tr><td class="t-main">销售报价 / 订单页</td><td class="fs11 t3">查询 API + 组件</td><td><span class="tag tag-yellow">中</span></td><td><span class="tag tag-red">高</span></td><td class="num b7 c-green">2</td></tr>
+                  <tr><td class="t-main">采购申请 / 配货页</td><td class="fs11 t3">查询 API</td><td><span class="tag tag-yellow">中</span></td><td><span class="tag tag-red">高</span></td><td class="num b7 c-blue">3</td></tr>
+                  <tr><td class="t-main">经营报表 / 驾驶舱</td><td class="fs11 t3">汇总 API + 问答</td><td><span class="tag tag-green">小</span></td><td><span class="tag tag-orange">中</span></td><td class="num b7 c-blue">4</td></tr>
+                  <tr><td class="t-main">审批流 / 消息中心</td><td class="fs11 t3">Webhook</td><td><span class="tag tag-orange">较大</span></td><td><span class="tag tag-orange">中</span></td><td class="num b7 t3">5</td></tr>
+                </tbody>
+              </table>
+              <div class="grid g2" style="gap:11px">
+                <div class="note green">
+                  <b>为什么先接客户/应收页</b>：只需在客户名称旁挂一个组件，ERP 几乎不用改代码，业务员立刻能在自己每天都看的页面上看到风险，接受度最高，也最容易证明价值。
+                </div>
+                <div class="note">
+                  <b>为什么报价校验先只提示不拦截</b>：拦单会直接影响成交，一旦误报业务会强烈抵触。先跑两周观察误报率与采纳率，数据说话之后再谈管控强度。
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/charts.js?v=20260817"></script>
+<script src="assets/js/data.js?v=20260817"></script>
+<script src="assets/js/app.js?v=20260817"></script>
+<script>
+(function () {
+  const M = Mock, J = App.json, esc = App.esc;
+
+  /* ================= 双向集成架构图 ================= */
+  Chart.flow('#archFlow', {
+    columns: [
+      { title: 'ERP 系统（业务侧）', nodes: [
+        { id: 'e1', label: '销售报价 / 订单', sub: '业务员', value: 1.5, color: '#38bdf8' },
+        { id: 'e2', label: '采购申请 / 配货', sub: '采购员', value: 1.5, color: '#fb923c' },
+        { id: 'e3', label: '客户 / 应收查询', sub: '财务 / 销售', value: 1.5, color: '#a78bfa' },
+        { id: 'e4', label: '经营报表 / 驾驶舱', sub: '老板 / 管理者', value: 1.5, color: '#34d399' },
+        { id: 'e5', label: 'ERP 主数据 & 台账', sub: '上行数据源', value: 1.6, color: '#fbbf24' }
+      ]},
+      { title: 'API 网关', nodes: [
+        { id: 'g1', label: '鉴权 / 限流 / 审计', sub: 'OAuth2 + HMAC', value: 2.4, color: '#2dd4bf' },
+        { id: 'g2', label: '主数据映射层', sub: '客户码 / 物料码归一', value: 2.2, color: '#2dd4bf' }
+      ]},
+      { title: '风控大脑', nodes: [
+        { id: 'r1', label: '量化预测模型', sub: '呆滞/坏账/供应链', value: 2, color: '#a78bfa' },
+        { id: 'r2', label: 'Agent 智能体集群', sub: '推理与方案', value: 2, color: '#a78bfa' },
+        { id: 'r3', label: '平台全域市场数据', sub: '报价流/指数/失信', value: 2.2, color: '#2dd4bf' }
+      ]},
+      { title: '回流方式', nodes: [
+        { id: 'o1', label: '实时查询 API', sub: 'P95 142ms', value: 1.8, color: '#38bdf8' },
+        { id: 'o2', label: 'Webhook 推送', sub: '风险变化即时通知', value: 1.5, color: '#a78bfa' },
+        { id: 'o3', label: '嵌入式组件 SDK', sub: 'ERP 零改造', value: 1.5, color: '#fb923c' },
+        { id: 'o4', label: '结果回写 API', sub: '决策回流飞轮', value: 1.5, color: '#34d399' }
+      ]}
+    ],
+    links: [
+      { from: 'e5', to: 'g2', color: '#fbbf24', width: 2.6 },
+      { from: 'e1', to: 'g1' }, { from: 'e2', to: 'g1' }, { from: 'e3', to: 'g1' }, { from: 'e4', to: 'g1' },
+      { from: 'g2', to: 'r1', color: '#2dd4bf', width: 2.4 }, { from: 'g1', to: 'r1', color: '#2dd4bf' },
+      { from: 'g1', to: 'r2', color: '#2dd4bf', width: 2.2 }, { from: 'g2', to: 'r3', color: '#2dd4bf' },
+      { from: 'r1', to: 'o1', color: '#a78bfa', width: 2.2 }, { from: 'r2', to: 'o1', color: '#a78bfa' },
+      { from: 'r2', to: 'o2', color: '#a78bfa' }, { from: 'r3', to: 'o3', color: '#2dd4bf' },
+      { from: 'r1', to: 'o3', color: '#a78bfa' }, { from: 'r2', to: 'o4', color: '#34d399' }
+    ]
+  });
+
+  /* ================= 鉴权示例 ================= */
+  document.getElementById('authCode').innerHTML =
+    `<div class="code-hd">${App.icon('link', 12)} 1. 获取访问令牌</div>
+<pre class="code"><span class="b">POST</span> /oauth2/token
+Content-Type: application/json
+
+${App.json({ grant_type: 'client_credentials', app_id: 'erp-prod-8821', app_secret: '••••••••••••' })}
+
+<span class="c">// 响应</span>
+${App.json({ access_token: 'srb_at_9f2c...', expires_in: 7200, scope: 'risk.read feedback.write' })}</pre>
+     <div class="code-hd" style="margin-top:9px">${App.icon('link', 12)} 2. 业务接口调用（附签名与角色）</div>
+<pre class="code"><span class="b">GET</span> /v1/risk/customer/C10086
+Authorization: Bearer srb_at_9f2c...
+X-SRB-Timestamp: 1786974738
+X-SRB-Nonce:     8f3a1c
+X-SRB-Signature: HMAC-SHA256(secret, method+path+ts+nonce+body)
+X-SRB-Role:      sales   <span class="c">// 角色决定返回字段范围</span></pre>`;
+
+  /* ================= 接口清单 ================= */
+  const API = {
+    sale: [
+      {
+        m: 'POST', path: '/v1/risk/quote/check', name: '报价风控校验',
+        desc: '销售员填完报价单点「保存 / 提交」时调用，一次性返回客户风险、授信占用、价格是否低于成本、市场对标价与建议账期',
+        where: 'ERP 销售报价单 / 销售订单页 —— 提交按钮上方的风险横幅',
+        level: '中频计算', p95: '168ms',
+        params: [
+          ['customerCode', 'string', 1, 'ERP 客户编码'],
+          ['items[].erpSkuCode', 'string', 1, 'ERP 物料编码'],
+          ['items[].qty', 'number', 1, '数量（吨）'],
+          ['items[].unitPrice', 'number', 1, '报价单价（元/吨）'],
+          ['payment.type', 'enum', 1, 'cash 款到发货 / credit 赊销 / advance 预付'],
+          ['payment.creditDays', 'number', 0, '账期天数，赊销时必填'],
+          ['scene', 'string', 0, '调用场景标识，用于埋点与效果归因']
+        ],
+        req: {
+          customerCode: 'C10086',
+          items: [{ erpSkuCode: '螺纹钢HRB400E-20-沙钢-9M', qty: 300, unitPrice: 3560 }],
+          payment: { type: 'credit', creditDays: 60 },
+          scene: 'erp.quote.submit'
+        },
+        resp: {
+          traceId: 'q-20260817-0093',
+          decision: 'warn',
+          decisionText: '可以做，但建议改为款到发货',
+          customer: {
+            name: '宏基建设集团有限公司', riskLevel: 'high', badDebtProb: 0.87, probTrend: 0.23,
+            arBalance: 10800000, overdueAmount: 3860000, overdueDays: 63,
+            creditLimit: 12000000, creditUsed: 10800000, creditAvailable: 1200000,
+            latestEvent: { date: '2026-08-14', type: '被执行人', amount: 12400000, severity: 'high' },
+            platformBehavior: { isMerchant: true, dumping: true, note: '近5日低价抛售自有货源1860吨' },
+            aiSummary: '征信事件 + 平台低价抛货 + 内部沟通拖延话术三项相互印证，判定为资金链紧张，非孤立小额诉讼'
+          },
+          creditCheck: { pass: false, reason: '本单赊销金额 1,068,000 元 超出可用授信 1,200,000 元的 89%', suggestedCreditDays: 0 },
+          pricing: [{
+            erpSkuCode: '螺纹钢HRB400E-20-沙钢-9M', stdCode: 'RB-400E-020-9000-SG',
+            costPrice: 3598, quotePrice: 3560, grossMargin: -0.0106,
+            marketAvgPrice: 3472, marketLowPrice: 3440, listingMerchants: 83,
+            tip: '报价低于库存成本 38 元/吨；但市场同业均价已跌至 3472，本单报价高于市场 88 元/吨，成交概率偏低'
+          }],
+          suggestions: [
+            '改为款到发货或预付 50%，本单不占用赊销额度',
+            '若客户坚持赊销，账期压缩至 15 天并要求担保',
+            '该批次呆滞概率 82%、市场抛压等级 L5，本单成交对去库存有利，可在款到发货前提下适度让价至 3510'
+          ],
+          fallback: false
+        }
+      },
+      {
+        m: 'GET', path: '/v1/risk/customer/{customerCode}', name: '客户风险画像',
+        desc: '最常用的接口。返回客户风险等级、坏账概率、逾期、授信、最新失信事件、平台抛售行为与 AI 解读',
+        where: 'ERP 客户名称旁的风险徽章、客户详情页风险卡片、报价单抬头',
+        level: '高频轻量', p95: '46ms',
+        params: [
+          ['customerCode', 'string', 1, 'ERP 客户编码（路径参数）'],
+          ['fields', 'string', 0, '按需返回字段，逗号分隔，减少传输量'],
+          ['withEvents', 'boolean', 0, '是否返回失信事件明细，默认 false']
+        ],
+        req: 'GET /v1/risk/customer/C10086?withEvents=true',
+        resp: {
+          customerCode: 'C10086', name: '宏基建设集团有限公司', industry: '房建工程',
+          riskLevel: 'high', riskLevelText: '高风险', badDebtProb: 0.87, probTrend: 0.23,
+          creditLimit: 12000000, creditUsed: 10800000, creditAvailable: 1200000,
+          overdueAmount: 3860000, overdueDays: 63,
+          suggestedAction: '授信下调至 300 万、停止新增赊销、48h 上门对账',
+          events: [
+            { date: '2026-08-14', type: '被执行人', amount: 12400000, severity: 'high', source: '失信检测API' },
+            { date: '2026-08-09', type: '买卖合同纠纷立案', amount: 3180000, severity: 'mid', source: '失信检测API' }
+          ],
+          platformBehavior: { isMerchant: true, dumping: true, listingQty: 1860, priceGap: -82 },
+          updatedAt: '2026-08-17T02:10:33+08:00', cacheTtl: 300
+        }
+      },
+      {
+        m: 'POST', path: '/v1/market/price/compare', name: '市场对标价查询',
+        desc: '报价时告诉销售员：同样这个规格，平台上 500 多家商户现在都报多少钱，你报的价在市场里是什么位置',
+        where: 'ERP 报价单「单价」输入框旁的实时提示',
+        level: '高频轻量', p95: '38ms',
+        params: [
+          ['erpSkuCode', 'string', 1, 'ERP 物料编码（自动映射为平台标准编码）'],
+          ['region', 'string', 0, '区域，默认取客户收货地所在区域'],
+          ['quotePrice', 'number', 0, '当前报价，传入后返回分位与建议']
+        ],
+        req: { erpSkuCode: '螺纹钢HRB400E-20-沙钢-9M', region: '上海', quotePrice: 3560 },
+        resp: {
+          stdCode: 'RB-400E-020-9000-SG', mappingConfidence: 0.992,
+          market: { avgPrice: 3472, lowPrice: 3440, highPrice: 3528, listingMerchants: 83, merchantsChange: 46, totalListingQty: 56200 },
+          myCost: 3598, quotePrice: 3560, quotePercentile: 0.96,
+          marketIndex: { category: '建材综合', value: 92.4, trend7d: -0.068 }, sentiment: 31,
+          tip: '你的报价高于市场 96% 的挂牌资源，成交难度大；同时市场均价已低于我方成本 126 元/吨，建议以去库存为优先目标定价'
+        }
+      },
+      {
+        m: 'GET', path: '/v1/credit/available/{customerCode}', name: '实时可用授信查询',
+        desc: '返回结合风险等级动态调整后的可用授信，而不是 ERP 里那个静态额度',
+        where: 'ERP 报价单 / 订单页的授信占用条',
+        level: '高频轻量', p95: '32ms',
+        params: [['customerCode', 'string', 1, 'ERP 客户编码'], ['orderAmount', 'number', 0, '本单金额，传入后返回是否超限']],
+        req: 'GET /v1/credit/available/C10086?orderAmount=1068000',
+        resp: {
+          customerCode: 'C10086', originalLimit: 12000000, riskAdjustedLimit: 3000000,
+          used: 10800000, available: 0, orderAmount: 1068000, exceed: true,
+          adjustReason: '新增被执行 1,240 万元触发风险上调，AI 建议授信由 1200 万下调至 300 万',
+          approvalRequired: true, approver: '财务总监'
+        }
+      }
+    ],
+
+    purchase: [
+      {
+        m: 'POST', path: '/v1/pricing/stage', name: '行情阶段与定价建议',
+        desc: '按规格返回当前所处的行情阶段（平稳 / 波动 / 加速涨跌）、判定得分、建议限价、建议采购量、目标备货天数与预付上限。采购员填完品类就能看到该不该买、买多少、最高出到什么价',
+        where: 'ERP 采购申请单「品名规格」填完后自动触发，显示在单价输入框上方的阶段徽章与限价提示',
+        level: '中频计算', p95: '142ms',
+        params: [
+          ['erpSkuCode', 'string', 1, 'ERP 物料编码，自动映射为平台标准规格码'],
+          ['region', 'string', 0, '区域，默认取收货仓所在区域'],
+          ['qty', 'number', 0, '拟采购数量（吨），传入后返回是否超出本阶段单次上限'],
+          ['unitPrice', 'number', 0, '拟采购单价，传入后返回与建议限价的差额']
+        ],
+        req: { erpSkuCode: '螺纹钢HRB400E-20-沙钢-9M', region: '上海', qty: 3000, unitPrice: 3520 },
+        resp: {
+          stdCode: 'RB-400E-020-9000-SG', stage: 'accel_down', stageName: '加速下跌期',
+          score: 65.1, level: 'red', levelText: '红 · 强警示',
+          market: {
+            spot: 3470, spot3d: -96, maxDaily: -42,
+            futCode: 'RB2610', fut: 3386, fut3d: -78, basis: 84, normalBasis: 40,
+            millAdj10d: -110, settle: -50, costFloor: 3380, costFloorName: '电炉平电成本'
+          },
+          scoreDetail: [
+            { name: '3日累计涨跌', value: '-96 元/吨', band: 'accel', weight: 16, contrib: 12.2 },
+            { name: '主力合约3日涨跌', value: '-78 元/吨', band: 'online', weight: 14, contrib: 7.7 },
+            { name: '基差偏离常态值', value: '+44 元/吨', band: 'online', weight: 12, contrib: 6.2 },
+            { name: '挂牌商户数3日变化', value: '+124%', band: 'accel', weight: 10, contrib: 10.0 }
+          ],
+          limitBreakdown: {
+            stageBase: 3406, stageBaseFormula: '期货主力 3386 + 常态基差 40 − 安全垫 20',
+            specDiff: 0, gradePremium: 0, millPremium: 0, regionDiff: 0, limitPrice: 3406
+          },
+          advice: {
+            action: '暂停采购', limitPrice: 3406, suggestQty: 0, exceedCap: true,
+            targetStockDays: 5, currentCoverDays: 106.5, capQty: 96,
+            channel: '停止钢厂预订，只走市场现货', pricingWay: '一单一议压价，严禁锁价',
+            hedge: '库存卖出保值 30%~50%', prepayMaxRatio: 0,
+            priceGapVsLimit: 114,
+            reasons: ['3日累计跌96元/吨，越过80元加速门槛', '现货升水期货84元高于常态40元，基差修复方向是现货补跌',
+              '钢厂旬价累计下调110元并让利结算50元', '距电炉平电成本3380仅90元/吨，已接近成本地板可分批试探']
+          },
+          overrideHit: ['旺季 / 冬储窗口：距金九银十15天，备货天数由3天放宽至5天', '主产区限产落地：下跌判定扣减6分'],
+          pushTo: ['采购主管', '总经理']
+        }
+      },
+      {
+        m: 'POST', path: '/v1/risk/purchase/check', name: '采购申请风控校验',
+        desc: '采购员提交采购申请时调用。同时看内部库存水位、平台该品类整体挂牌货源体量、同业报价、行情指数、供货商失信风险，给出建议采购量',
+        where: 'ERP 采购申请单提交区上方的风险面板',
+        level: '低频重算', p95: '324ms',
+        params: [
+          ['erpSkuCode', 'string', 1, 'ERP 物料编码'],
+          ['qty', 'number', 1, '申请采购数量（吨）'],
+          ['unitPrice', 'number', 1, '申报采购单价'],
+          ['supplierCode', 'string', 1, 'ERP 供应商编码'],
+          ['payment.prepayRatio', 'number', 0, '预付款比例'],
+          ['expectedArrival', 'date', 0, '预计到货日期']
+        ],
+        req: {
+          erpSkuCode: '螺纹钢HRB400E-20-沙钢-9M', qty: 3000, unitPrice: 3520,
+          supplierCode: 'S2043', payment: { prepayRatio: 0.4 }, expectedArrival: '2026-08-28'
+        },
+        resp: {
+          traceId: 'p-20260817-0021',
+          decision: 'reject', decisionText: '现在整个市场货源泛滥，不建议大批量采购',
+          inventory: { onHandQty: 4260, inTransitQty: 800, soldNotShipped: 320, idleProb: 0.82, ageDays: 47, waterLevel: 'high' },
+          market: {
+            totalListingQty: 56200, listingQtyChange: 1.48, listingMerchants: 83, merchantsChange: 46,
+            avgPrice: 3472, lowPrice: 3440, priceVs申报: -48,
+            marketIndex: 92.4, indexTrend7d: -0.068, sentiment: 31, pressureLevel: 'L5'
+          },
+          supplier: {
+            name: '华鑫钢贸有限公司', riskLevel: 'high', riskProb: 0.74, purchaseShare: 0.236, openPoAmount: 18600000,
+            events: [{ date: '2026-08-15', type: '失信被执行人', amount: 21800000 }, { date: '2026-08-10', type: '账户被冻结' }],
+            tip: '断货与预付款损失风险高，建议暂停预付款采购并启动备源'
+          },
+          advice: {
+            suggestedQty: 800, suggestedMaxPrice: 3406, suggestedPrepayRatio: 0,
+            alternativeSuppliers: [{ name: '中天钢铁销售公司', riskLevel: 'low', capacity: '有承接余量' }],
+            reasons: [
+              '平台挂牌量环比 +148%、83 家商户集中抛售，后市大概率继续下探',
+              '同业均价 3472 已低于申报采购价 48 元/吨',
+              '自有库存 4260 吨呆滞概率 82%，再进货将加重积压',
+              '供货商新增失信被执行与账户冻结，预付款存在损失风险'
+            ]
+          },
+          fallback: false
+        }
+      },
+      {
+        m: 'POST', path: '/v1/advice/allocation', name: '配货批次建议',
+        desc: '采购员 / 仓管配货时调用：同一规格有多个批次，优先发哪一批。默认按「库龄长 + 呆滞概率高 + 浮亏风险大」优先出货，避免老货越压越久',
+        where: 'ERP 发货配货页的批次选择列表 —— 推荐批次行高亮',
+        level: '中频计算', p95: '96ms',
+        params: [
+          ['erpSkuCode', 'string', 1, 'ERP 物料编码'],
+          ['qty', 'number', 1, '需配货数量（吨）'],
+          ['customerCode', 'string', 0, '客户编码，用于判断质量要求与账期匹配'],
+          ['strategy', 'enum', 0, 'risk_first 风险优先（默认）/ fifo 先进先出 / margin_first 毛利优先']
+        ],
+        req: { erpSkuCode: '螺纹钢HRB400E-20-沙钢-9M', qty: 300, customerCode: 'C10231', strategy: 'risk_first' },
+        resp: {
+          recommended: [
+            { batchNo: 'PC-20260630-008', qty: 300, ageDays: 47, costPrice: 3598, idleProb: 0.82, pressureLevel: 'L5', reason: '库龄最长且抛压等级最高，优先出清可减少后续浮亏扩大' }
+          ],
+          alternatives: [
+            { batchNo: 'PC-20260722-031', qty: 300, ageDays: 26, costPrice: 3542, idleProb: 0.41, pressureLevel: 'L3', reason: '成本更低毛利更好，但会把老批次继续压在库里' }
+          ],
+          impact: { ifRecommended: { lossAvoided: 68000, ageReduce: 6.2 }, ifAlternative: { extraMargin: 16800, riskAdded: '老批次库龄将突破 60 天进入深度呆滞区间' } }
+        }
+      },
+      {
+        m: 'GET', path: '/v1/risk/supplier/{supplierCode}', name: '供货商风险查询',
+        desc: '返回上游供货商的失信风险、采购集中度、在手未交付订单敞口与平台挂牌异动',
+        where: 'ERP 供应商档案页、采购申请单供应商选择框旁',
+        level: '高频轻量', p95: '52ms',
+        params: [['supplierCode', 'string', 1, 'ERP 供应商编码'], ['withEvents', 'boolean', 0, '是否返回风险事件明细']],
+        req: 'GET /v1/risk/supplier/S2043?withEvents=true',
+        resp: {
+          supplierCode: 'S2043', name: '华鑫钢贸有限公司', isPlatformMerchant: true,
+          riskLevel: 'high', riskProb: 0.74, purchaseShare: 0.236, openPoAmount: 18600000, annualQty: 5200,
+          events: [
+            { date: '2026-08-15', type: '失信被执行人', amount: 21800000, severity: 'high' },
+            { date: '2026-08-10', type: '账户被冻结', severity: 'high' }
+          ],
+          platformBehavior: { listingQtyChange: 0.32, priceTrend7d: -0.021 },
+          suggestedAction: ['暂停新增预付款采购', '在手订单改为现货自提', '启动备源：中天钢铁、永钢、鑫达']
+        }
+      },
+      {
+        m: 'GET', path: '/v1/risk/inventory/{erpSkuCode}', name: '库存呆滞与浮亏查询',
+        desc: '按 ERP 物料编码返回呆滞概率、库龄、浮亏敞口、市场抛压等级与行情情绪等级',
+        where: 'ERP 库存查询页、配货页、报价单商品行',
+        level: '高频轻量', p95: '44ms',
+        params: [['erpSkuCode', 'string', 1, 'ERP 物料编码'], ['batchNo', 'string', 0, '批次号，不传则按规格汇总']],
+        req: 'GET /v1/risk/inventory/螺纹钢HRB400E-20-沙钢-9M',
+        resp: {
+          erpSkuCode: '螺纹钢HRB400E-20-沙钢-9M', stdCode: 'RB-400E-020-9000-SG',
+          onHandQty: 4260, amount: 15330000, avgAgeDays: 47, costPrice: 3598,
+          idleProb: 0.82, unrealizedLoss: 537000,
+          marketAvgPrice: 3472, priceGap: -126,
+          pressureLevel: 'L5', pressureScore: 91, sentimentLevel: '悲观', sentimentScore: 27,
+          suggestedAction: '5 日内分 3 批降价出清 60%，并暂停该品类新增采购'
+        }
+      }
+    ],
+
+    ar: [
+      {
+        m: 'POST', path: '/v1/risk/customer/batch', name: '批量客户风险查询',
+        desc: '应收账款查询页、客户列表页一次性拉取整页客户的风险等级，避免逐行调用',
+        where: 'ERP 应收查询列表 / 客户列表的「风险」列',
+        level: '批量', p95: '236ms',
+        params: [
+          ['customerCodes', 'array', 1, 'ERP 客户编码数组，单次上限 200'],
+          ['fields', 'string', 0, '返回字段，默认精简模式']
+        ],
+        req: { customerCodes: ['C10086', 'C10112', 'C10203', 'C10231'], fields: 'riskLevel,badDebtProb,overdueAmount,latestEvent' },
+        resp: {
+          total: 4,
+          items: [
+            { customerCode: 'C10086', riskLevel: 'high', badDebtProb: 0.87, overdueAmount: 3860000, latestEvent: '2026-08-14 新增被执行 1,240 万' },
+            { customerCode: 'C10112', riskLevel: 'high', badDebtProb: 0.76, overdueAmount: 2140000, latestEvent: '2026-08-12 经营异常名录' },
+            { customerCode: 'C10203', riskLevel: 'mid', badDebtProb: 0.51, overdueAmount: 960000, latestEvent: '2026-08-11 劳动仲裁 3 起' },
+            { customerCode: 'C10231', riskLevel: 'low', badDebtProb: 0.22, overdueAmount: 0, latestEvent: null }
+          ]
+        }
+      },
+      {
+        m: 'GET', path: '/v1/risk/customer/{code}/events', name: '客户风险事件明细',
+        desc: '返回失信检测 API 抓取的司法、失信、变更、经营异常事件，以及大模型对每条事件严重等级的解读',
+        where: 'ERP 客户详情页「风险事件」页签',
+        level: '高频轻量', p95: '58ms',
+        params: [['code', 'string', 1, 'ERP 客户编码'], ['since', 'date', 0, '起始日期，默认近 90 天'], ['minSeverity', 'enum', 0, 'low / mid / high']],
+        req: 'GET /v1/risk/customer/C10086/events?since=2026-06-01',
+        resp: {
+          customerCode: 'C10086', total: 3,
+          items: [
+            { date: '2026-08-14', type: '被执行人', amount: 12400000, severity: 'high', aiRead: '金额已超过我方授信额度，属资金链断裂级信号，概率增量 +23%', probDelta: 0.23 },
+            { date: '2026-08-09', type: '买卖合同纠纷立案', amount: 3180000, severity: 'mid', aiRead: '中等金额合同纠纷，单独看属传导型风险', probDelta: 0.11 },
+            { date: '2026-07-28', type: '法定代表人变更', severity: 'mid', aiRead: '法代变更本身不直接构成风险，但与前两项组合出现时提升整体不确定性', probDelta: 0.04 }
+          ]
+        }
+      },
+      {
+        m: 'GET', path: '/v1/advice/collection/{code}', name: '回款跟进策略建议',
+        desc: '返回针对该客户的授信调整与回款跟进动作建议，业务员可一键在 ERP 里生成催收任务',
+        where: 'ERP 应收明细页「AI 建议」按钮',
+        level: '中频计算', p95: '188ms',
+        params: [['code', 'string', 1, 'ERP 客户编码']],
+        req: 'GET /v1/advice/collection/C10086',
+        resp: {
+          customerCode: 'C10086', urgency: 'immediate',
+          creditAdvice: { from: 12000000, to: 3000000, reason: '新增被执行 1,240 万 + 平台低价抛货，判定资金链紧张' },
+          actions: [
+            { seq: 1, action: '停止新增赊销发货，改为款到发货', owner: '销售一部', deadline: '2026-08-17' },
+            { seq: 2, action: '48h 内上门对账并争取抵押物或第三方担保', owner: '李娜', deadline: '2026-08-19' },
+            { seq: 3, action: '启动 386 万逾期款分期回款协议谈判', owner: '财务部', deadline: '2026-08-24' }
+          ],
+          workOrderId: 'WO-20260815-041'
+        }
+      }
+    ],
+
+    mgmt: [
+      {
+        m: 'GET', path: '/v1/dashboard/summary', name: '经营风险总览',
+        desc: '老板和管理者打开经营报表 / 驾驶舱时调用，一次返回库存、应收、采购三条链的风险汇总与 TOP 风险项',
+        where: 'ERP 经营驾驶舱 / 管理报表首页的风险区块',
+        level: '低频重算', p95: '286ms',
+        params: [['date', 'date', 0, '统计日期，默认当日'], ['scope', 'string', 0, '组织 / 部门范围']],
+        req: 'GET /v1/dashboard/summary?date=2026-08-16',
+        resp: {
+          date: '2026-08-16', overallLevel: 'high',
+          inventory: { totalAmount: 60860000, riskAmount: 32260000, riskRatio: 0.53, unrealizedLoss: 1046000, avgAgeDays: 39.8, riskScore: 79 },
+          receivable: { balance: 118600000, overdue: 10910000, highRiskExposure: 41210000, highRiskCustomers: 4, riskScore: 72 },
+          purchase: { openPoAmount: 60400000, highRiskSuppliers: 1, exposure: 18600000, interceptedThisMonth: 3, lossAvoided: 620000, riskScore: 58 },
+          market: { pressureIndex: 78.4, pressureChange: 12.6, dumpingCategories: ['螺纹钢Φ20', '热轧卷3.0', 'H型钢200×200'] },
+          topRisks: [
+            { type: 'inventory', target: '螺纹钢 HRB400E Φ20', level: 'high', exposure: 537000, note: '83 家商户集中挂牌，均价低于成本 126 元/吨' },
+            { type: 'receivable', target: '宏基建设集团', level: 'high', exposure: 10800000, note: '新增被执行 1,240 万，坏账概率 87%' },
+            { type: 'supplier', target: '华鑫钢贸', level: 'high', exposure: 18600000, note: '失信 + 账户冻结，断货风险高' }
+          ]
+        }
+      },
+      {
+        m: 'POST', path: '/v1/ask', name: '自然语言问答',
+        desc: '把风控大脑的问答能力开放给 ERP —— 管理者在报表页直接提问，返回整合内部经营数据与平台全域市场数据的完整分析',
+        where: 'ERP 经营驾驶舱顶部的问答输入框',
+        level: '大模型', p95: '4.2s（流式首字 780ms）',
+        params: [
+          ['question', 'string', 1, '自然语言问题'],
+          ['role', 'enum', 0, 'boss / finance / sales / purchase，决定回答视角与数据权限'],
+          ['stream', 'boolean', 0, '是否流式返回，默认 false']
+        ],
+        req: { question: '现在平台上抛货最多的钢材品类有哪些，对应我手上哪些库存会面临亏损，对应的下游客户哪些需要重点盯回款', role: 'boss', stream: true },
+        resp: {
+          traceId: 'ask-20260817-0044', elapsedMs: 4218,
+          answer: '① 平台抛货最集中的 3 个品类：螺纹钢Φ20（83家/+46）…… ② 会面临亏损的库存：合计浮亏敞口 84.7 万元…… ③ 需重点盯回款的客户：宏基、正弘、鼎晟、中远建工，合计应收 4,121 万元……',
+          references: [
+            { type: 'inventory', id: 'RB-400E-020-9000-SG' },
+            { type: 'customer', id: 'C10086' },
+            { type: 'market', id: 'index.建材综合' }
+          ],
+          suggestedActions: ['螺纹钢Φ20 启动分批降价出清并暂停采购', '4 家地产链客户统一改款到发货并压缩账期']
+        }
+      },
+      {
+        m: 'GET', path: '/v1/dashboard/market-overview', name: '行业市场风险总览',
+        desc: '返回全平台哪些品类正在集中抛货、对应我方库存与下游客户的连带风险，用于管理报表的市场版块',
+        where: 'ERP 经营报表「市场行情」页签',
+        level: '低频重算', p95: '212ms',
+        params: [['region', 'string', 0, '区域筛选'], ['topN', 'number', 0, '返回品类数量，默认 10']],
+        req: 'GET /v1/dashboard/market-overview?topN=5',
+        resp: {
+          pressureIndex: 78.4,
+          categories: [
+            { stdCode: 'RB-400E-020-9000-SG', name: '螺纹钢 HRB400E Φ20', pressureScore: 91, listingMerchants: 83, merchantsChange: 46, avgPrice: 3472, myStockQty: 4260, myUnrealizedLoss: 537000, downstreamIndustries: ['房建工程', '市政工程', '房地产开发'], relatedArAmount: 44370000 },
+            { stdCode: 'HR-Q235B-030-1250-RZ', name: '热轧卷板 Q235B 3.0×1250', pressureScore: 79, listingMerchants: 61, merchantsChange: 27, avgPrice: 3548, myStockQty: 2980, myUnrealizedLoss: 170000, downstreamIndustries: ['机械制造', '钢材贸易'], relatedArAmount: 7680000 }
+          ]
+        }
+      }
+    ],
+
+    invoice: [
+      {
+        m: 'POST', path: '/v1/invoice/gate/supplier-access', name: '闸口一 · 供应商准入校验',
+        desc: '新增供应商建档或首次开票前调用，返回空壳企业画像打分、涉税信用与变名开票特征，给出准入结论与附加条件',
+        where: 'ERP 供应商档案维护页 —— 保存时自动调用，风险画像渲染在页面右侧',
+        level: '中频计算', p95: '186ms',
+        params: [
+          ['supplierName', 'string', 1, '供应商工商全称'],
+          ['taxNo', 'string', 1, '统一社会信用代码 —— 票税能力的匹配键，缺失则全部风险检测失效'],
+          ['entityCode', 'string', 1, '我方主体编码（多主体模式必填）'],
+          ['expectedAmount', 'number', 0, '预计年度采购额，用于进项集中度预判']
+        ],
+        req: { supplierName: '瑞晟金属材料有限公司', taxNo: '91310115MA1EEEE55E', entityCode: 'E01', expectedAmount: 12000000 },
+        resp: {
+          traceId: 'ivg1-20260822-0044', decision: 'review', decisionText: '建议转税务经理审批后有条件准入',
+          blocked: false, appealable: true, shellScore: 81, shellLevel: 'high', threshold: { warn: 60, high: 75 },
+          profile: { setupMonths: 11, paidCapital: 0, insuredCount: 4, addressType: 'cluster', relatedCompanies: 4, taxCreditLevel: 'M', inTaxHavenPark: true },
+          signals: [
+            { code: 'FR-06', name: '变名开票', detail: '进项以煤炭、矿产品为主，销项全为钢材', severity: 'high' },
+            { code: 'FR-07', name: '集群注册地址', detail: '同一地址注册企业 27 家', severity: 'mid' }
+          ],
+          conditions: ['单笔限额 50 万元', '款到发货不予赊销', '每笔必须提供过磅单与运单']
+        }
+      },
+      {
+        m: 'POST', path: '/v1/invoice/gate/pre-payment', name: '闸口二 · 付款前校验（最关键）',
+        desc: '财务发起付款时调用。款未付是止损窗口最大的时点 —— 此时发票通常尚未申报抵扣，且资金尚可控。一次性返回发票合规、四流勾稽、销方实时复查三组结论',
+        where: 'ERP 付款申请单 —— 提交时调用，风险横幅显示在提交按钮上方',
+        level: '中频计算', p95: '268ms',
+        params: [
+          ['paymentNo', 'string', 1, 'ERP 付款申请单号'],
+          ['entityCode', 'string', 1, '付款主体编码'],
+          ['payeeTaxNo', 'string', 1, '收款方税号，用于与开票方一致性校验'],
+          ['amount', 'number', 1, '付款金额（元）'],
+          ['invoiceNos', 'array', 1, '关联数电发票号码（20 位）'],
+          ['bizNos', 'array', 1, '关联业务单号，用于四流六单勾稽']
+        ],
+        req: { paymentNo: 'PA-20260822-0117', entityCode: 'E01', payeeTaxNo: '91320500MA1DDDD44D', amount: 1296361.76, invoiceNos: ['24310000000018842317'], bizNos: ['PO-20260814-0033'] },
+        resp: {
+          traceId: 'ivg2-20260822-0117', decision: 'red', decisionText: '建议转财务总监审批',
+          blocked: false, approver: '财务总监', appealable: true,
+          compliance: { verifyResult: 'pass', titleMatch: true, crossEntityDuplicate: false, redLetterStatus: 'normal', taxRateCorrect: true },
+          fourFlow: {
+            matchRate: 0.83,
+            docs: { contract: 'ok', order: 'ok', weighNote: 'missing', wmsInbound: 'ok', bankReceipt: 'pending', invoice: 'ok' },
+            qtyCheck: { invoiceQty: 360, weighQty: null, wmsQty: 354.2, deviation: -0.016, tolerance: 0.03, pass: true },
+            payeeMatchSeller: true
+          },
+          sellerRisk: {
+            runawayWarning: true, taxCreditLevel: 'C', taxCreditDowngraded: true, inputShare: 0.236,
+            events: [{ date: '2026-08-15', type: '失信被执行', amount: 21800000 }, { date: '2026-08-18', type: '列入经营异常名录' }]
+          },
+          impact: { unpaidAmount: 1296361.76, deductedInputTax: 149138.96, potentialTransferOut: 149138.96 },
+          suggestions: ['暂停付款转财务总监审批', '该销方已确认抵扣的 14.91 万元进项暂缓申报', '立即固化证据链以备善意取得举证', '补齐过磅单后可重新提交校验']
+        }
+      },
+      {
+        m: 'POST', path: '/v1/invoice/gate/pre-deduction', name: '闸口三 · 勾选抵扣前校验',
+        desc: '月度用途确认或申报前批量调用，返回建议暂缓确认的发票清单，并测算暂缓与不暂缓两种情形下的税负率与转出风险',
+        where: 'ERP 进项税管理 / 用途确认页 —— 批量勾选前一键校验',
+        level: '批量', p95: '412ms',
+        params: [
+          ['entityCode', 'string', 1, '申报主体编码'],
+          ['period', 'string', 1, '所属期 YYYY-MM'],
+          ['invoiceNos', 'array', 1, '拟勾选确认的发票号码，单次上限 500'],
+          ['simulate', 'boolean', 0, '是否返回税负率影响测算，默认 true']
+        ],
+        req: { entityCode: 'E01', period: '2026-08', invoiceNos: ['24310000000018842317', '24310000000018836042', '24310000000018798320'], simulate: true },
+        resp: {
+          traceId: 'ivg3-20260822-0006', total: 3, recommendConfirm: 1, recommendHold: 2, blocked: false,
+          holdList: [
+            { invoiceNo: '24310000000018842317', seller: '华鑫钢贸有限公司', inputTax: 149138.96, reason: '销方走逃失联预警 + 经营异常名录', level: 'red' },
+            { invoiceNo: '24310000000018836042', seller: '瑞晟金属材料有限公司', inputTax: 111454.98, reason: '空壳画像 81 分 + 变名开票特征', level: 'red' }
+          ],
+          simulation: {
+            ifConfirmAll: { vatRate: 0.38 }, ifHoldRecommended: { vatRate: 0.47, extraVatPayable: 260594 },
+            transferOutRiskIfConfirmed: 260593.94, lateFeeRatePerDay: 0.0005
+          }
+        }
+      },
+      {
+        m: 'POST', path: '/v1/invoice/gate/pre-issuing', name: '闸口四 · 销项开票前校验',
+        desc: '我方对外开具数电票前调用，校验税率、税收分类编码、计量单位、购方四要素与开票额度，防止自身开票错误导致下游被动',
+        where: 'ERP 销售开票页 —— 开票前置校验，错误项直接高亮到字段',
+        level: '高频轻量', p95: '86ms',
+        params: [
+          ['entityCode', 'string', 1, '开票主体编码'],
+          ['buyerTaxNo', 'string', 1, '购方税号'],
+          ['lines[].goodsName', 'string', 1, '商品名称'],
+          ['lines[].taxClassCode', 'string', 1, '税收分类编码'],
+          ['lines[].taxRate', 'number', 1, '税率'],
+          ['lines[].unit', 'string', 1, '计量单位（钢材应为吨）'],
+          ['remark', 'string', 0, '备注栏，货物运输发票必填起讫地与车牌']
+        ],
+        req: {
+          entityCode: 'E01', buyerTaxNo: '91310000MA1XXXXX8N',
+          lines: [
+            { goodsName: '螺纹钢 HRB400E Φ20', taxClassCode: '1080405020000000000', taxRate: 0.13, unit: '吨', qty: 300 },
+            { goodsName: '运输费', taxClassCode: '1080405020000000000', taxRate: 0.13, unit: '吨', qty: 300 }
+          ]
+        },
+        resp: {
+          traceId: 'ivg4-20260822-0082', decision: 'review', decisionText: '存在 3 处需修正项', blocked: false,
+          issues: [
+            { line: 2, code: 'IC-07', field: 'taxRate', current: 0.13, suggest: 0.09, msg: '运输服务适用 9% 税率' },
+            { line: 2, code: 'IC-08', field: 'taxClassCode', current: '1080405020000000000', suggest: '3010101010000000000', msg: '应使用运输服务-道路运输服务编码' },
+            { line: 2, code: 'IC-09', field: 'unit', current: '吨', suggest: '次 / 车', msg: '运输服务不应以吨计量' }
+          ],
+          quota: { monthlyLimit: 80000000, used: 48602800, usageRate: 0.6075 },
+          buyerCheck: { titleMatch: true, riskLevel: 'high', note: '购方为高风险客户，建议核对结算方式后开票' }
+        }
+      },
+      {
+        m: 'POST', path: '/v1/invoice/verify', name: '数电票查验与合规校验',
+        desc: '单票查验，返回真伪、票面要素、四要素比对、跨主体查重与命中的合规规则',
+        where: 'ERP 发票录入 / 认证页',
+        level: '高频轻量', p95: '124ms',
+        params: [
+          ['invoiceNo', 'string', 1, '数电发票号码（20 位）'],
+          ['entityCode', 'string', 1, '受票主体编码'],
+          ['amount', 'number', 0, '账面金额，用于比对']
+        ],
+        req: { invoiceNo: '24310000000018836042', entityCode: 'E01', amount: 968800.98 },
+        resp: {
+          invoiceNo: '24310000000018836042', verifyResult: 'pass', invoiceType: '数电票（增值税专用发票）',
+          seller: { name: '瑞晟金属材料有限公司', taxNo: '91310115MA1EEEE55E' },
+          amount: 857346.00, tax: 111454.98, total: 968800.98, taxRate: 0.13,
+          goodsName: '螺纹钢 HRB400E Φ16', taxClassCode: '1080405020000000000', unit: '吨', qty: 280,
+          useState: 'unconfirmed', redLetterStatus: 'normal',
+          checks: { titleMatch: true, crossEntityDuplicate: false, taxRateCorrect: true, taxClassCodeCorrect: true, unitStandard: true },
+          hitRules: [{ code: 'FR-06', name: '变名开票', severity: 'high' }, { code: 'FR-05', name: '空壳画像高危', severity: 'high' }]
+        }
+      },
+      {
+        m: 'POST', path: '/v1/invoice/four-flow', name: '四流一致性校验',
+        desc: '按业务单号做六单勾稽：采购合同、采购订单、过磅单、WMS 入库单、银行付款回单、进项发票，票货数量按品种容差判定',
+        where: 'ERP 付款申请页、内审工作台',
+        level: '中频计算', p95: '224ms',
+        params: [['bizNo', 'string', 1, 'ERP 业务单号'], ['entityCode', 'string', 1, '主体编码']],
+        req: { bizNo: 'PO-20260810-0021', entityCode: 'E02' },
+        resp: {
+          bizNo: 'PO-20260810-0021', matchRate: 0.88,
+          docs: [
+            { type: 'contract', no: 'CG-2026-0805', status: 'ok' },
+            { type: 'weighNote', no: 'WB-20260810-0166', status: 'ok', qty: 113.0 },
+            { type: 'wmsInbound', no: 'IN-20260810-0092', status: 'ok', qty: 113.0 },
+            { type: 'bankReceipt', no: 'PY-20260811-0064', status: 'ok', payeeMatchSeller: true },
+            { type: 'invoice', no: '24320000000012198855', status: 'warn', qty: 120 }
+          ],
+          qtyCheck: { invoiceQty: 120, weighQty: 113.0, deviation: 0.058, tolerance: 0.025, category: 'section', pass: false },
+          conclusion: '六单齐备且资金流与票流一致，但票量超型材类 2.5% 容差，建议红冲重开差额部分或补充说明'
+        }
+      },
+      {
+        m: 'GET', path: '/v1/invoice/seller-risk/{taxNo}', name: '销方票税风险画像',
+        desc: '按税号返回空壳打分卡、开票行为特征、变名开票检测与走逃失联状态',
+        where: 'ERP 供应商档案、付款申请页',
+        level: '高频轻量', p95: '68ms',
+        params: [['taxNo', 'string', 1, '统一社会信用代码'], ['withCard', 'boolean', 0, '是否返回打分卡明细']],
+        req: 'GET /v1/invoice/seller-risk/91310115MA1EEEE55E?withCard=true',
+        resp: {
+          taxNo: '91310115MA1EEEE55E', name: '瑞晟金属材料有限公司', shellScore: 81, level: 'high',
+          runawayWarning: false, abnormalVoucher: false, taxCreditLevel: 'M',
+          behavior: { quotaUsage: 0.74, monthEndConcentration: 0.68, topAmountRatio: 0.61 },
+          nameSwitching: { detected: true, inputTop: ['煤炭', '金属矿产品'], outputTop: ['螺纹钢'] },
+          ourExposure: { amount8m: 964000, inputTax: 111454.98, invoiceCnt: 8, inputShare: 0.082 }
+        }
+      },
+      {
+        m: 'GET', path: '/v1/tax/indicator', name: '税负率与申报指标',
+        desc: '返回各主体增值税税负率、毛利率、背离度与三表四方比对结果。基线区间取租户配置值',
+        where: 'ERP 财务报表 / 经营驾驶舱',
+        level: '低频重算', p95: '196ms',
+        params: [['entityCode', 'string', 0, '主体编码，不传返回全部'], ['period', 'string', 0, '所属期 YYYY-MM']],
+        req: 'GET /v1/tax/indicator?period=2026-08',
+        resp: {
+          period: '2026-08', baseline: { vatRateMin: 0.003, vatRateMax: 0.008, source: 'tenant_config' },
+          entities: [
+            { code: 'E01', vatRate: 0.0042, grossMargin: 0.0342, level: 'ok' },
+            { code: 'E02', vatRate: 0.0011, grossMargin: 0.0318, level: 'high', reason: '毛利 3.18% 但税负仅 0.11%，背离 2.8 倍，疑似虚开进项' },
+            { code: 'E03', vatRate: 0.0094, grossMargin: 0.0106, level: 'mid', reason: '税负高于上限，疑似进项不足（无票采购）' }
+          ],
+          threeTableCheck: { vatDeclared: 486204000, citDeclared: 486204000, financialRevenue: 486552000, invoiced: 486028000, maxDiff: 0.0007, pass: true }
+        }
+      },
+      {
+        m: 'POST', path: '/v1/invoice/evidence-package', name: '证据链一键归档导出',
+        desc: '按业务单号打包合同、订单、过磅单、运单、WMS 入库单、质保书、银行回单、发票，以及<b>付款当日的供应商资质与风险查验快照</b>，生成可提交稽查的证据包',
+        where: '稽查应对、内审、异常凭证举证申诉',
+        level: '低频重算', p95: '1.8s（异步生成，回调通知）',
+        params: [
+          ['bizNos', 'array', 1, '业务单号数组'],
+          ['format', 'enum', 0, 'pdf 带目录 PDF / zip 原始附件包 / both，默认 both'],
+          ['includeSnapshot', 'boolean', 0, '是否包含当时的资质与查验快照，默认 true']
+        ],
+        req: { bizNos: ['PO-20260807-0014'], format: 'both', includeSnapshot: true },
+        resp: {
+          packageId: 'EVP-20260822-0311', bizNo: 'PO-20260807-0014', itemCount: 10, completeness: 1.0,
+          items: ['采购合同', '采购订单', '过磅单（原始照片）', '运输单据', 'WMS入库单', '质保书', '银行付款回单', '数电发票', '供应商资质快照', '风险查验记录'],
+          snapshotDate: '2026-08-08', downloadUrl: 'https://risk-api.your-steel.com/evp/EVP-20260822-0311',
+          note: '快照证明付款当日该供应商为正常纳税人且四流齐备，是善意取得抗辩的核心材料'
+        }
+      }
+    ],
+
+    master: [
+      {
+        m: 'POST', path: '/v1/mapping/sku/resolve', name: 'ERP 物料编码解析',
+        desc: '把 ERP 自己的钢材规格写法解析成平台标准编码。这是所有市场类接口能生效的前提 —— 映射不通，返回的就是空结果',
+        where: 'ERP 物料主数据维护页、接入联调阶段批量跑一次',
+        level: '中频计算', p95: '124ms',
+        params: [
+          ['skuCodes', 'array', 1, 'ERP 物料编码或规格描述数组，单次上限 500'],
+          ['autoLearn', 'boolean', 0, '是否把人工确认结果回流规则库，默认 true']
+        ],
+        req: { skuCodes: ['螺纹钢HRB400E-20-沙钢-9M', '花纹板Q235B-3.0*1500*C', '带钢Q195-2.0*355'], autoLearn: true },
+        resp: {
+          resolved: 1, needReview: 1, failed: 1,
+          items: [
+            { input: '螺纹钢HRB400E-20-沙钢-9M', stdCode: 'RB-400E-020-9000-SG', confidence: 0.992, method: 'rule', status: 'ok' },
+            { input: '花纹板Q235B-3.0*1500*C', stdCode: 'CP-Q235B-030-1500-?', confidence: 0.724, method: 'llm', status: 'need_review', reason: '钢厂信息缺失，存在 2 个候选' },
+            { input: '带钢Q195-2.0*355', stdCode: null, confidence: 0.486, method: 'llm', status: 'failed', reason: '平台无对应挂牌品类，建议人工建档' }
+          ]
+        }
+      },
+      {
+        m: 'POST', path: '/v1/mapping/customer/resolve', name: 'ERP 客户主数据匹配',
+        desc: '把 ERP 客户编码与统一社会信用代码对齐，失信检测 API 才能正确查到这家企业',
+        where: 'ERP 客户档案维护页保存时自动调用',
+        level: '中频计算', p95: '86ms',
+        params: [['customerCode', 'string', 1, 'ERP 客户编码'], ['name', 'string', 1, '企业全称'], ['uscc', 'string', 0, '统一社会信用代码，已知则直接绑定']],
+        req: { customerCode: 'C10086', name: '宏基建设集团有限公司' },
+        resp: { customerCode: 'C10086', uscc: '91310000MA1XXXXX8N', matchConfidence: 0.998, isPlatformMerchant: true, merchantId: 'M0421', status: 'ok' }
+      },
+      {
+        m: 'POST', path: '/v1/feedback/decision', name: '决策与业务结果回写',
+        desc: '业务员在 ERP 里对 AI 建议做出的采纳 / 部分采纳 / 否决，以及最终业务结果，回写风控大脑。这是数据飞轮的燃料入口 —— 业务员不用再登录风控系统填一遍',
+        where: 'ERP 单据保存 / 结案时自动触发',
+        level: '中频计算', p95: '68ms',
+        params: [
+          ['traceId', 'string', 1, '原风控调用返回的 traceId，用于关联判断逻辑与当时的市场数据快照'],
+          ['decision', 'enum', 1, 'adopted 采纳 / partial 部分采纳 / rejected 否决'],
+          ['action', 'string', 0, '实际执行动作'],
+          ['operator', 'string', 1, '操作人'],
+          ['businessResult', 'object', 0, '最终业务结果，结案时回填']
+        ],
+        req: {
+          traceId: 'q-20260817-0093', decision: 'partial',
+          action: '未改款到发货，但账期由 60 天压缩至 15 天并要求补充担保', operator: '李娜',
+          businessResult: { settled: true, amount: 1068000, overdueDays: 0, badDebt: false, remark: '15 天内全额回款' }
+        },
+        resp: { accepted: true, caseId: 'CS-20260901-118', archivedToVectorKb: true, markedAsFineTuneSample: false }
+      },
+      {
+        m: 'POST', path: '/v1/ingest/events', name: 'ERP 业务事件实时上送',
+        desc: '上行方向的增量通道：ERP 发生开单、发货、回款、入库等业务事件时实时上送，让风控大脑的库存与应收数据保持新鲜，不必等每日批量同步',
+        where: 'ERP 业务事件总线 / 消息队列消费端',
+        level: '高频轻量', p95: '28ms',
+        params: [
+          ['events[].type', 'enum', 1, 'order.created / shipment.done / payment.received / stock.in / stock.out'],
+          ['events[].bizId', 'string', 1, 'ERP 单据号，用于幂等'],
+          ['events[].payload', 'object', 1, '事件内容'],
+          ['events[].occurredAt', 'datetime', 1, '业务发生时间']
+        ],
+        req: {
+          events: [
+            { type: 'payment.received', bizId: 'RC-20260817-0042', occurredAt: '2026-08-17T09:20:11+08:00', payload: { customerCode: 'C10086', amount: 620000, method: '银行转账' } },
+            { type: 'stock.out', bizId: 'DO-20260817-0117', occurredAt: '2026-08-17T09:41:03+08:00', payload: { erpSkuCode: '螺纹钢HRB400E-20-沙钢-9M', batchNo: 'PC-20260630-008', qty: 300 } }
+          ]
+        },
+        resp: { accepted: 2, duplicated: 0, failed: 0, recalcTriggered: ['risk.customer.C10086', 'risk.inventory.RB-400E-020-9000-SG'] }
+      }
+    ],
+
+    hook: [
+      {
+        m: 'HOOK', path: 'risk.customer.level_changed', name: '客户风险等级变化',
+        desc: '客户风险等级发生变化时推送。ERP 收到后更新本地客户档案上的风险标记，列表页无需实时查询就能显示风险色块',
+        where: 'ERP 客户档案表新增 risk_level 字段，收到推送即更新',
+        level: '事件推送', p95: '投递 P95 320ms',
+        params: [
+          ['event', 'string', 1, '事件类型'],
+          ['eventId', 'string', 1, '事件唯一 ID，用于幂等去重'],
+          ['data', 'object', 1, '事件内容'],
+          ['signature', 'string', 1, 'HMAC-SHA256 签名，需校验']
+        ],
+        req: 'POST https://erp.your-company.com/webhook/risk\nX-SRB-Event: risk.customer.level_changed\nX-SRB-Signature: sha256=3f9a...',
+        resp: {
+          event: 'risk.customer.level_changed', eventId: 'evt_9f2c81a4', occurredAt: '2026-08-15T16:38:02+08:00',
+          data: {
+            customerCode: 'C10086', name: '宏基建设集团有限公司',
+            from: { riskLevel: 'mid', badDebtProb: 0.64 }, to: { riskLevel: 'high', badDebtProb: 0.87 },
+            trigger: '失信检测API 新增被执行 1,240 万元 + 平台低价抛售自有货源',
+            suggestedAction: '授信下调至 300 万，停止新增赊销', workOrderId: 'WO-20260815-041'
+          }
+        }
+      },
+      {
+        m: 'HOOK', path: 'risk.customer.credit_event', name: '客户新增失信事件',
+        desc: '失信检测 API 巡检到新增司法、失信、经营异常事件时立即推送，不等下一次查询',
+        where: 'ERP 消息中心 / 待办；同时可触发 ERP 审批流冻结该客户新单',
+        level: '事件推送', p95: '投递 P95 280ms',
+        params: [['data.customerCode', 'string', 1, '客户编码'], ['data.event', 'object', 1, '事件详情与 AI 解读']],
+        req: 'POST https://erp.your-company.com/webhook/risk\nX-SRB-Event: risk.customer.credit_event',
+        resp: {
+          event: 'risk.customer.credit_event', eventId: 'evt_a71b3c02', occurredAt: '2026-08-14T10:12:44+08:00',
+          data: {
+            customerCode: 'C10086', eventType: '被执行人', amount: 12400000, severity: 'high', source: '失信检测API',
+            aiRead: '金额已超过我方授信额度，判定为资金链断裂级信号，非孤立小额诉讼', probDelta: 0.23,
+            recommendedErpAction: 'freeze_new_credit_order'
+          }
+        }
+      },
+      {
+        m: 'HOOK', path: 'risk.inventory.pressure_alert', name: '库存抛压预警',
+        desc: '某规格市场抛压等级跳档、或同业均价跌破我方库存成本时推送，提醒 ERP 侧调整销售策略与配货顺序',
+        where: 'ERP 库存管理模块预警列表；可自动把该 SKU 标记为「优先出清」',
+        level: '事件推送', p95: '投递 P95 340ms',
+        params: [['data.erpSkuCode', 'string', 1, 'ERP 物料编码'], ['data.pressureLevel', 'string', 1, '抛压等级']],
+        req: 'POST https://erp.your-company.com/webhook/risk\nX-SRB-Event: risk.inventory.pressure_alert',
+        resp: {
+          event: 'risk.inventory.pressure_alert', eventId: 'evt_c04f7d19', occurredAt: '2026-08-16T14:49:07+08:00',
+          data: {
+            erpSkuCode: '螺纹钢HRB400E-20-沙钢-9M', stdCode: 'RB-400E-020-9000-SG',
+            pressureLevel: 'L5', pressureScore: 91, listingMerchants: 83, merchantsChange: 46,
+            marketAvgPrice: 3472, myCostPrice: 3598, priceGap: -126, unrealizedLoss: 537000,
+            suggestedAction: '5 日内分 3 批降价出清 60%，并暂停该品类新增采购',
+            recommendedErpAction: 'mark_priority_clearance'
+          }
+        }
+      },
+      {
+        m: 'HOOK', path: 'risk.invoice.abnormal_voucher', name: '异常凭证 / 销方走逃失联',
+        desc: '销方被公告为走逃失联户，或收到增值税异常扣税凭证时立即推送。ERP 收到后可自动冻结该供应商在途付款、并把相关发票标记为暂缓抵扣',
+        where: 'ERP 财务待办 + 付款申请自动挂起 + 进项税管理标记',
+        level: '事件推送', p95: '投递 P95 260ms',
+        params: [
+          ['data.sellerTaxNo', 'string', 1, '销方税号'],
+          ['data.eventType', 'enum', 1, 'runaway 走逃失联 / abnormal_voucher 异常凭证 / credit_downgrade 信用降级'],
+          ['data.affectedInvoices', 'array', 1, '受影响的发票与已抵扣税额'],
+          ['data.recommendedErpAction', 'enum', 0, '建议 ERP 侧执行的动作']
+        ],
+        req: 'POST https://erp.your-company.com/webhook/risk\nX-SRB-Event: risk.invoice.abnormal_voucher',
+        resp: {
+          event: 'risk.invoice.abnormal_voucher', eventId: 'evt_iv8f21c4', occurredAt: '2026-08-22T08:10:22+08:00',
+          data: {
+            sellerTaxNo: '91320500MA1DDDD44D', sellerName: '华鑫钢贸有限公司', eventType: 'runaway',
+            trigger: '08-15 新增失信被执行 2,180 万 + 账户冻结；08-18 列入经营异常名录；纳税信用 B→C',
+            affectedInvoices: [
+              { invoiceNo: '24310000000018842317', entityCode: 'E01', inputTax: 149138.96, useState: 'confirmed', payState: 'unpaid' }
+            ],
+            summary: { invoiceCount: 6, totalInputTax: 149138.96, unpaidAmount: 1296361.76, estimatedLateFee: 3400 },
+            evidenceCompleteness: 0.83, evidenceGap: ['2 笔业务缺过磅单'],
+            recommendedErpAction: 'hold_payment_and_suspend_deduction',
+            pushTo: ['财务总监', '税务经理', '采购主管']
+          }
+        }
+      },
+      {
+        m: 'HOOK', path: 'risk.pricing.stage_changed', name: '行情阶段切换',
+        desc: '某规格的行情阶段发生切换（如波动期 → 加速下跌期）时推送。ERP 收到后可自动更新已保存采购申请单上的限价提示，并对超限单据转审批',
+        where: 'ERP 采购模块预警 + 已保存采购申请单的限价自动刷新',
+        level: '事件推送', p95: '投递 P95 310ms',
+        params: [
+          ['data.erpSkuCode', 'string', 1, 'ERP 物料编码'],
+          ['data.from / data.to', 'enum', 1, '切换前后的阶段'],
+          ['data.advice', 'object', 1, '新阶段下的采购建议'],
+          ['data.recommendedErpAction', 'enum', 0, '建议 ERP 侧执行的动作']
+        ],
+        req: 'POST https://erp.your-company.com/webhook/risk\nX-SRB-Event: risk.pricing.stage_changed',
+        resp: {
+          event: 'risk.pricing.stage_changed', eventId: 'evt_p71c3f08', occurredAt: '2026-08-17T09:12:04+08:00',
+          data: {
+            erpSkuCode: '螺纹钢HRB400E-20-沙钢-9M', stdCode: 'RB-400E-020-9000-SG',
+            from: 'volatile', to: 'accel_down', fromName: '波动期', toName: '加速下跌期',
+            trigger: '7日跌幅由2.4%扩大至3.42%，加速度2.14突破阈值，挂牌商户数3日+124%',
+            score: 79.6, confirmedPeriods: 2,
+            advice: { action: '暂停采购', limitPrice: 3406, prevLimitPrice: 3460, targetStockDays: 5, prepayMaxRatio: 0 },
+            affectedDraftOrders: ['PR-20260817-0021'],
+            recommendedErpAction: 'refresh_limit_price_and_require_approval',
+            pushTo: ['采购主管', '总经理']
+          }
+        }
+      },
+      {
+        m: 'HOOK', path: 'risk.supplier.alert', name: '上游供应商风险告警',
+        desc: '长期合作供货商出现重大失信事件或平台挂牌异动时推送给 ERP 采购模块',
+        where: 'ERP 采购模块预警 + 供应商档案风险标记；可自动冻结该供应商新增预付款采购',
+        level: '事件推送', p95: '投递 P95 296ms',
+        params: [['data.supplierCode', 'string', 1, '供应商编码'], ['data.exposure', 'number', 1, '在手未交付订单敞口']],
+        req: 'POST https://erp.your-company.com/webhook/risk\nX-SRB-Event: risk.supplier.alert',
+        resp: {
+          event: 'risk.supplier.alert', eventId: 'evt_d92e5b71', occurredAt: '2026-08-15T11:05:23+08:00',
+          data: {
+            supplierCode: 'S2043', name: '华鑫钢贸有限公司', riskLevel: 'high', riskProb: 0.74,
+            eventType: '失信被执行人 + 账户冻结', amount: 21800000,
+            purchaseShare: 0.236, openPoAmount: 18600000,
+            suggestedAction: '暂停新增预付款采购，在手订单改现货自提，启动备源',
+            alternativeSuppliers: ['中天钢铁销售公司', '永钢集团华东', '鑫达金属材料'],
+            recommendedErpAction: 'freeze_prepay_purchase'
+          }
+        }
+      }
+    ]
+  };
+
+  const lvTagMap = {
+    '高频轻量': 'tag-green', '中频计算': 'tag-blue', '低频重算': 'tag-orange',
+    '大模型': 'tag-ai', '批量': 'tag-grey', '事件推送': 'tag-ai'
+  };
+  function renderGroup(key) {
+    const host = document.getElementById('g-' + key);
+    host.innerHTML = API[key].map((a, i) => `
+      <div class="api-item ${i === 0 ? 'open' : ''}">
+        <div class="api-hd">
+          <span class="method m-${a.m === 'GET' ? 'get' : a.m === 'HOOK' ? 'hook' : 'post'}">${a.m}</span>
+          <span class="api-path">${esc(a.path)}</span>
+          <span class="api-desc">${a.name}</span>
+          <span class="tag ${lvTagMap[a.level] || 'tag-grey'}">${a.level}</span>
+          <span class="tag tag-grey mono">${a.p95}</span>
+          <span class="chev">${App.icon('right', 14)}</span>
+        </div>
+        <div class="api-bd">
+          <div class="fs12 t2 mb" style="line-height:1.8">${a.desc}</div>
+          <div class="note blue mb"><b>ERP 使用位置</b>：${a.where}</div>
+          <div class="fs11 t4 mb" style="letter-spacing:.5px;margin-bottom:5px">${a.m === 'HOOK' ? '推送报文字段' : '请求参数'}</div>
+          <table class="tbl param-tbl mb">
+            <thead><tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+            <tbody>${a.params.map(p => `<tr>
+              <td class="mono fs11 c-blue">${esc(p[0])}</td>
+              <td class="fs11 t3">${p[1]}</td>
+              <td>${p[2] ? '<span class="tag tag-red">必填</span>' : '<span class="t4 fs11">可选</span>'}</td>
+              <td class="fs11 t2">${p[3]}</td></tr>`).join('')}</tbody>
+          </table>
+          <div class="grid g2" style="gap:12px">
+            <div>
+              <div class="code-hd">${App.icon('link', 12)} ${a.m === 'HOOK' ? '推送目标' : '请求示例'}</div>
+              <pre class="code">${typeof a.req === 'string' ? esc(a.req) : App.json(a.req)}</pre>
+            </div>
+            <div>
+              <div class="code-hd">${App.icon('file', 12)} ${a.m === 'HOOK' ? '推送报文示例' : '响应示例'}</div>
+              <pre class="code">${App.json(a.resp)}</pre>
+            </div>
+          </div>
+        </div>
+      </div>`).join('');
+    App.collapsible('#g-' + key);
+  }
+  Object.keys(API).forEach(renderGroup);
+  App.tabs('#apiTabs');
+  document.getElementById('expandAll').onclick = () => document.querySelectorAll('.api-item').forEach(i => i.classList.add('open'));
+  document.getElementById('collapseAll').onclick = () => document.querySelectorAll('.api-item').forEach(i => i.classList.remove('open'));
+
+  /* ================= SDK 示例 ================= */
+  document.getElementById('sdkCode').innerHTML =
+    `<div class="code-hd">${App.icon('file', 12)} ERP 页面模板中加入占位元素</div>
+<pre class="code">&lt;!-- 客户名称旁的风险徽章 --&gt;
+&lt;span data-srb="customer-risk-badge"
+      data-customer-code="C10086"&gt;&lt;/span&gt;
+
+&lt;!-- 报价单底部的风控面板 --&gt;
+&lt;div data-srb="quote-risk-panel"
+     data-customer-code="C10086"
+     data-items="[{&amp;quot;sku&amp;quot;:&amp;quot;螺纹钢HRB400E-20&amp;quot;,&amp;quot;qty&amp;quot;:300}]"
+     data-payment="credit:60"
+     data-mode="tip"&gt;&lt;/div&gt;
+
+&lt;!-- SDK：整个 ERP 只需引入一次 --&gt;
+&lt;script src="https://risk-api.your-steel.com/sdk/v1/embed.js"
+        data-app-id="erp-prod-8821"
+        data-theme="light"
+        data-role="sales"
+        defer&gt;&lt;/script&gt;</pre>
+     <div class="code-hd" style="margin-top:9px">${App.icon('file', 12)} 需要自己控制时机时，也可用 JS API</div>
+<pre class="code">SRB.mount('#quote-risk', {
+  widget: 'quote-risk-panel',
+  customerCode: 'C10086',
+  items: [{ sku: '螺纹钢HRB400E-20-沙钢-9M', qty: 300, price: 3560 }],
+  payment: { type: 'credit', days: 60 },
+  <span class="c">// 拿到结论后 ERP 自己决定怎么用</span>
+  onResult(r) {
+    if (r.decision === 'warn') showApprovalButton();
+  },
+  <span class="c">// 风控不可用时静默失败，不影响 ERP 开单</span>
+  onError() { hide('#quote-risk'); }
+});</pre>`;
+
+  /* ================= 监控图表 ================= */
+  const d14 = M.days(14);
+  Chart.bar('#callChart', {
+    xLabels: d14, stacked: true,
+    series: [
+      { name: '销售报价', data: M.walk(701, 14, 9800, 900, 120).map(v => Math.round(v)), color: '#38bdf8', unit: ' 次' },
+      { name: '采购配货', data: M.walk(702, 14, 4200, 500, 40).map(v => Math.round(v)), color: '#fb923c', unit: ' 次' },
+      { name: '应收客户', data: M.walk(703, 14, 8600, 700, 90).map(v => Math.round(v)), color: '#a78bfa', unit: ' 次' },
+      { name: '报表其他', data: M.walk(704, 14, 4600, 400, 30).map(v => Math.round(v)), color: '#34d399', unit: ' 次' }
+    ],
+    yFmt: v => (v / 1000).toFixed(0) + 'k'
+  });
+
+  Chart.rank('#topChart', {
+    metric: '今日调用', unit: ' 次', labelW: 152, fmt: v => v.toLocaleString(),
+    items: [
+      { label: 'GET /risk/customer', value: 9840, color: '#38bdf8' },
+      { label: 'POST /market/price/compare', value: 6120, color: '#38bdf8' },
+      { label: 'GET /risk/inventory', value: 4380, color: '#fb923c' },
+      { label: 'POST /risk/quote/check', value: 3260, color: '#a78bfa' },
+      { label: 'POST /risk/customer/batch', value: 1940, color: '#a78bfa' },
+      { label: 'POST /advice/allocation', value: 1420, color: '#fb923c' },
+      { label: 'POST /feedback/decision', value: 860, color: '#34d399' },
+      { label: 'GET /dashboard/summary', value: 420, color: '#34d399' },
+      { label: 'POST /ask', value: 218, color: '#f472b6' }
+    ]
+  });
+
+  Chart.bar('#latChart', {
+    xLabels: ['<50ms', '50-100', '100-200', '200-500', '500ms-1s', '>1s'],
+    series: [{ name: '请求数', data: [12840, 8260, 4920, 1980, 386, 74], color: '#34d399', unit: ' 次' }],
+    yFmt: v => v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v.toFixed(0)
+  });
+
+  Chart.bar('#hookChart', {
+    xLabels: ['8/10', '8/11', '8/12', '8/13', '8/14', '8/15', '8/16'],
+    stacked: true,
+    series: [
+      { name: '首次投递成功', data: [46, 38, 52, 61, 74, 88, 96], color: '#34d399', unit: ' 条' },
+      { name: '重试后成功', data: [1, 0, 2, 1, 0, 1, 2], color: '#fbbf24', unit: ' 条' }
+    ],
+    yFmt: v => v.toFixed(0)
+  });
+
+  Chart.bar('#quotaChart', {
+    xLabels: ['高频轻量', '中频计算', '低频重算', '大模型', '批量'],
+    series: [{ name: '配额使用率', data: [42, 31, 18, 44, 26], color: '#38bdf8', unit: ' %' }],
+    yFmt: v => v.toFixed(0)
+  });
+})();
+</script>
+</body>
+</html>

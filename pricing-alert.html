@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>采购智能定价预警 · 钢铁行业 AI 风控大脑</title>
+<link rel="stylesheet" href="assets/css/main.css?v=20260817">
+</head>
+<body data-page="price">
+<div class="app-bg"></div>
+<div class="layout">
+  <div class="main">
+    <div class="content">
+
+      <div class="page-head">
+        <div>
+          <h1>采购智能定价预警 · 钢铁大宗行情三阶梯</h1>
+          <p>钢材是大宗商品，判断行情不能用百分比 —— 采购员脑子里是<b class="c-yellow">「今天跌了 30 块」</b>而不是「跌了 0.86%」。
+             所以这套模型的主尺度是 <b class="c-yellow">元/吨</b>，并且必须同时看三样东西：
+             <b class="c-ai">期货盘面与基差</b>、<b class="c-yellow">钢厂旬价与结算政策</b>、<b class="c-teal">自有平台的线上报价分化</b>，
+             再落到<b>具体材质与规格</b>给出限价。</p>
+        </div>
+        <div class="ph-right">
+          <div class="seg" id="scopeSeg">
+            <button class="on" data-v="all">全部</button>
+            <button data-v="螺纹钢">螺纹钢</button>
+            <button data-v="热轧卷">热轧卷</button>
+            <button data-v="中厚板">中厚板</button>
+            <button data-v="H型钢">H型钢</button>
+            <button data-v="镀锌卷">镀锌卷</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 盘面速览 ============ -->
+      <div class="card mb accent-top">
+        <div class="card-hd">
+          <h3><span class="dot dot-blue pulse"></span>盘面速览</h3>
+          <span class="sub">钢贸定价的起点：先看盘面，再看基差，最后才看现货报价</span>
+          <div class="hd-act"><span class="tag tag-grey mono">2026-08-17 09:32 更新</span></div>
+        </div>
+        <div class="card-bd">
+          <div class="grid g4 mb" id="futRow"></div>
+          <div class="grid g4 mb" id="spotRow"></div>
+          <div class="grid g3" style="gap:12px">
+            <div class="node" style="border-color:rgba(244,88,110,.34);background:rgba(244,88,110,.06)">
+              <div class="node-t">螺纹基差（现货 − 期货）<span class="tag tag-red ml-auto">升水偏高</span></div>
+              <div class="flex items-c gap12" style="margin:6px 0">
+                <div><div class="fs10 t4">当前基差</div><div class="mono b7 c-red" style="font-size:20px">+84</div></div>
+                <div><div class="fs10 t4">常态区间</div><div class="mono b7" style="font-size:16px">+40</div></div>
+                <div><div class="fs10 t4">30日均值</div><div class="mono b7" style="font-size:16px">+46</div></div>
+                <div><div class="fs10 t4">偏离</div><div class="mono b7 c-red" style="font-size:16px">+44</div></div>
+              </div>
+              <div class="fs11 t2" style="line-height:1.75" id="basisRead"></div>
+            </div>
+            <div class="node">
+              <div class="node-t">卷螺差（热卷主力 − 螺纹主力）<span class="tag tag-orange ml-auto">收窄</span></div>
+              <div class="flex items-c gap12" style="margin:6px 0">
+                <div><div class="fs10 t4">当前</div><div class="mono b7 c-orange" style="font-size:20px">+66</div></div>
+                <div><div class="fs10 t4">30日均值</div><div class="mono b7" style="font-size:16px">+88</div></div>
+                <div><div class="fs10 t4">变动</div><div class="mono b7 c-red" style="font-size:16px">−22</div></div>
+              </div>
+              <div class="fs11 t2" style="line-height:1.75" id="spreadRead"></div>
+            </div>
+            <div class="node">
+              <div class="node-t">近 30 日 螺纹现货 / 期货 / 基差</div>
+              <div class="chart h140" id="basisChart"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-strip mb" id="kpiStrip"></div>
+
+      <!-- ============ 三阶段阶梯 ============ -->
+      <div class="card mb">
+        <div class="card-hd">
+          <h3>三阶段阶梯（判定门槛以元/吨计）</h3>
+          <span class="sub">加速期必须分上涨、下跌两个方向 —— 同样是「加速」，采购动作完全相反</span>
+        </div>
+        <div class="card-bd">
+          <div class="grid g4 mb" id="stageCards"></div>
+          <div class="fs12 b6 mb" style="margin-bottom:7px">采购策略对照表（钢贸实际动作口径）</div>
+          <div class="tbl-wrap" style="max-height:none"><table class="tbl" id="stgTbl"></table></div>
+        </div>
+      </div>
+
+      <!-- ============ 判定指标 + 一票否决 ============ -->
+      <div class="grid g-3-2 mb">
+        <div class="card">
+          <div class="card-hd"><h3>判定指标体系</h3><span class="sub">五大类 11 项指标加权，全部用钢贸自己的口径</span></div>
+          <div class="tbl-wrap" style="max-height:none"><table class="tbl" id="indTbl"></table></div>
+          <div class="card-ft">
+            综合得分 = Σ（单项得分 × 权重）。<b class="c-green">&lt; 30</b> 平稳期，<b class="c-yellow">30 ~ 62</b> 线上波动期，<b class="c-red">≥ 62</b> 加速涨跌期，方向由 3 日涨跌符号决定。
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><h3>一票否决与强制修正规则</h3><span class="sub">钢铁行业特有，指标算不出来但必须遵守的经验</span></div>
+          <div class="card-bd" style="max-height:520px;overflow-y:auto" id="ovList"></div>
+        </div>
+      </div>
+
+      <!-- ============ 成本支撑 ============ -->
+      <div class="card mb">
+        <div class="card-hd">
+          <h3>成本支撑测算 —— 钢材的价格地板</h3>
+          <span class="sub">不是拍脑袋的系数，是按铁矿焦炭配比和废钢电费算出来的</span>
+          <div class="hd-act"><span class="tag tag-yellow">当前现货距电炉成本仅 90 元/吨</span></div>
+        </div>
+        <div class="card-bd">
+          <div class="grid g3" style="gap:14px">
+            <div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">长流程（高炉转炉）完全成本</div>
+              <table class="tbl mb" id="bfTbl"></table>
+              <div class="note" id="bfRead"></div>
+            </div>
+            <div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">短流程（电炉）平电成本 <span class="tag tag-red">价格地板</span></div>
+              <table class="tbl mb" id="efTbl"></table>
+              <div class="note red" id="efRead"></div>
+            </div>
+            <div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">现货价与成本线的距离</div>
+              <div class="chart h230" id="costChart"></div>
+              <div class="grid g3 mt" style="gap:9px">
+                <div class="node center"><div class="fs10 t4">现货到位价</div><div class="mono b7" style="font-size:16px">3,470</div></div>
+                <div class="node center" style="border-color:rgba(244,88,110,.4)"><div class="fs10 t4 c-red">电炉平电成本</div><div class="mono b7 c-red" style="font-size:16px">3,380</div></div>
+                <div class="node center"><div class="fs10 t4">电炉谷电成本</div><div class="mono b7" style="font-size:16px">3,290</div></div>
+              </div>
+              <div class="note green mt">
+                钢厂当前吨钢利润约 <b>188 元</b>，尚无减产动力，供给压力短期不缓解；但电炉产能利用率已降至 51.2%，
+                说明<b>部分电炉厂已在成本线附近减产</b> —— 这是判断本轮下跌还有多少空间的关键依据。
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 规格 × 材质矩阵 ============ -->
+      <div class="card mb">
+        <div class="card-hd">
+          <h3>材质 × 规格 阶段矩阵</h3>
+          <span class="sub">每格显示：阶段 / 到位价 / 3 日涨跌（元/吨）/ 规格差价及其历史分位</span>
+          <div class="hd-act"><div class="legend" id="matLegend"></div></div>
+        </div>
+        <div class="card-bd">
+          <div id="matrix"></div>
+          <div class="note mt">
+            <b>这就是为什么必须做到规格和材质</b>：同为螺纹钢 HRB400E，主流的 Φ16~Φ28 已进入加速下跌期（3 日跌 86~98 元），
+            但 <b class="c-yellow">Φ12、Φ14 细规格和 Φ32 大规格只跌了 64~68 元，仍在线上波动期</b> —— 因为这些规格产量少、需求刚性，
+            <b>规格差价反而在扩大</b>（Φ32 由 62 扩到 90 元，处 30 日 88 分位）。<br>
+            如果只看「螺纹钢」一个品类指数一刀切停采，Φ32 会因断供影响交付；反过来照常备货，Φ20 就在下跌通道里越买越亏。
+            <b>规格差价的异动本身就是资源松紧的信号。</b>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 单规格详情 ============ -->
+      <div class="card mb" id="detailCard">
+        <div class="card-hd">
+          <h3 id="dTitle">—</h3><span class="sub" id="dSub"></span>
+          <div class="hd-act" id="dTags"></div>
+        </div>
+        <div class="card-bd">
+          <div class="grid g-2-3 mb" style="gap:14px">
+            <!-- 限价拆解 -->
+            <div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">采购限价构成拆解 <span class="fs10 t4">（这才是采购真正要的东西）</span></div>
+              <div id="priceBreak"></div>
+              <div class="divider"></div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">规格差价走势与历史分位</div>
+              <div class="chart h170" id="diffChart"></div>
+              <div class="fs10 t4 center" id="diffNote"></div>
+            </div>
+            <!-- 走势 -->
+            <div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">现货 / 期货 / 成本支撑 三线对照 <span class="fs10 t4">（背景色 = 所处阶段）</span></div>
+              <div class="chart h300" id="priceChart"></div>
+              <div class="legend mt" style="justify-content:center" id="priceLegend"></div>
+            </div>
+          </div>
+
+          <div class="grid g-3-2" style="gap:14px">
+            <div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">采购定价建议</div>
+              <div id="adviceBox"></div>
+            </div>
+            <div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">阶段判定明细</div>
+              <div class="chart h140 mb" id="scoreGauge"></div>
+              <div class="tbl-wrap" style="max-height:none"><table class="tbl" id="scoreTbl"></table></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 旬度日历 + 季节性 ============ -->
+      <div class="grid g-2-3 mb">
+        <div class="card">
+          <div class="card-hd"><h3>钢厂旬度政策日历</h3><span class="sub">钢贸最重要的价格节奏：上旬 / 中旬 / 下旬调价 + 月末结算</span></div>
+          <div class="card-bd"><div class="tl" id="calTl"></div></div>
+          <div class="card-ft">下一次调价窗口 <b class="mono">08-21</b>，模型预测下调 <b class="c-red">40 ~ 70 元/吨</b>（概率 68%）—— 在此之前不建议大批量补货</div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><h3>季节性窗口与供需数据</h3><span class="sub">钢材行情最重要的两个背景变量</span></div>
+          <div class="card-bd">
+            <div class="flex gap6 wrap mb" id="seasonWin"></div>
+            <div class="note mb" id="seasonNow"></div>
+            <div class="grid g2" style="gap:14px">
+              <table class="tbl" id="supplyTbl"></table>
+              <div>
+                <div class="chart h170" id="stockChart"></div>
+                <div class="fs10 t4 center">螺纹社会库存与表观消费（周度）</div>
+              </div>
+            </div>
+            <div class="note red mt" id="seasonRead"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 切换预警 + 动作清单 ============ -->
+      <div class="grid g-2-3 mb">
+        <div class="card red">
+          <div class="card-hd"><h3><span class="dot dot-red pulse"></span>今日阶段切换预警</h3><span class="sub">切换即推送</span></div>
+          <div class="card-bd" style="max-height:460px;overflow-y:auto"><div class="tl" id="transTl"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><h3>采购动作清单</h3><span class="sub">可直接带入采购申请单</span>
+            <div class="hd-act">
+              <div class="seg" id="actSeg">
+                <button class="on" data-v="all">全部</button>
+                <button data-v="accel_down">急跌</button>
+                <button data-v="accel_up">急涨</button>
+                <button data-v="online">线上波动</button>
+                <button data-v="stable">平稳</button>
+              </div>
+            </div>
+          </div>
+          <div class="tbl-wrap" style="max-height:460px"><table class="tbl" id="actTbl"></table></div>
+        </div>
+      </div>
+
+      <!-- ============ 效果 ============ -->
+      <div class="grid g3">
+        <div class="card">
+          <div class="card-hd"><h3>采纳率与节省金额</h3><span class="sub">近 6 个月</span></div>
+          <div class="card-bd"><div class="chart h230" id="btChart"></div></div>
+          <div class="card-ft">累计节省采购成本约 <b class="c-green">229.7 万元</b>，主要来自加速下跌期停止钢厂预订与加速上涨期提前锁价</div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><h3>采购均价对比</h3><span class="sub">负数 = 买得比对标价便宜</span></div>
+          <div class="card-bd"><div class="chart h230" id="gapChart"></div>
+            <div class="legend center mt" style="justify-content:center">
+              <span><i class="sq" style="background:#38bdf8"></i>vs 平台市场均价</span>
+              <span><i class="sq" style="background:#a78bfa"></i>vs 钢厂结算价</span>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><h3>接入 ERP 采购申请</h3></div>
+          <div class="card-bd">
+            <div id="apiCode"></div>
+            <div class="note blue mt">
+              采购员在 ERP 填完品名规格与钢厂，页面直接显示阶段徽章与<b>拆解后的限价</b>；
+              阶段切换或钢厂旬价发布时通过 <code class="mono">Webhook risk.pricing.stage_changed</code> 推送，ERP 自动刷新已保存申请单的限价。
+            </div>
+            <div class="flex gap6 mt">
+              <a class="btn btn-sm" href="open-api.html">接口文档</a>
+              <a class="btn btn-sm" href="erp-embed.html">ERP 嵌入效果</a>
+              <a class="btn btn-sm" href="workflow.html">采购审批流程</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/charts.js?v=20260817"></script>
+<script src="assets/js/data.js?v=20260817"></script>
+<script src="assets/js/pricing.js?v=20260817"></script>
+<script src="assets/js/app.js?v=20260817"></script>
+<script>
+(function () {
+  const P = Pricing, ST = P.STAGES, M = Mock, esc = App.esc;
+  /* 默认选 Φ32：它同时展示「规格差价扩大 → 资源偏紧 → 阶段由急跌降级为线上波动 → 备货天数放宽」整条链路 */
+  let scope = 'all', current = '螺纹钢|HRB400E|Φ32';
+  const inScope = s => scope === 'all' || s.cat === scope;
+  const sign = v => (v > 0 ? '+' : '') + v;
+
+  /* ---------- 盘面 ---------- */
+  document.getElementById('futRow').innerHTML = P.FUTURES.map(f => `
+    <div class="node">
+      <div class="flex items-c gap6">
+        <span class="mono fs10 t4">${f.code}</span>
+        <span class="fs11 b6">${f.name}</span>
+        <span class="tag tag-grey ml-auto mono" style="font-size:9.5px">持仓 ${f.oi}</span>
+      </div>
+      <div class="flex items-baseline gap8" style="margin:4px 0 2px">
+        <span class="mono b7" style="font-size:21px;color:${f.chg < 0 ? 'var(--green)' : 'var(--red)'}">${f.last.toLocaleString()}</span>
+        <span class="mono fs12" style="color:${f.chg < 0 ? 'var(--green)' : 'var(--red)'}">${sign(f.chg)}</span>
+        <span class="fs10 t4">${f.unit}</span>
+      </div>
+      <div class="fs10 t4">${f.note}</div>
+    </div>`).join('');
+
+  document.getElementById('spotRow').innerHTML = P.SPOT_BENCH.map(s => `
+    <div class="node">
+      <div class="fs11 b6">${s.name}</div>
+      <div class="flex items-baseline gap8" style="margin:4px 0 2px">
+        <span class="mono b7" style="font-size:19px">${s.price.toLocaleString()}</span>
+        <span class="mono fs12" style="color:${s.chg < 0 ? 'var(--green)' : 'var(--red)'}">${sign(s.chg)}</span>
+        <span class="fs10 t4">元/吨</span>
+      </div>
+      <div class="fs10 t4">${s.note}</div>
+    </div>`).join('');
+
+  document.getElementById('basisRead').innerHTML = P.BASIS.rb.read;
+  document.getElementById('spreadRead').innerHTML = P.SPREAD.read;
+
+  const rb = P.SKUS.find(s => s.id === '螺纹钢|HRB400E|Φ20');
+  Chart.line('#basisChart', {
+    xLabels: M.days(30), y2: true, pad: { t: 10, r: 34, b: 22, l: 40 },
+    series: [
+      { name: '螺纹现货', data: rb.spotSeries, color: '#fbbf24', dots: false, unit: ' 元/吨' },
+      { name: 'RB2610', data: rb.futSeries, color: '#a78bfa', dots: false, unit: ' 元/吨' },
+      { name: '基差', data: rb.basisSeries, color: '#f4586e', axis2: true, dashed: true, dots: false, unit: ' 元' }
+    ],
+    yFmt: v => v.toFixed(0), y2Fmt: v => v.toFixed(0)
+  });
+
+  /* ---------- KPI ---------- */
+  function drawKpi() {
+    const l = P.SKUS.filter(inScope), c = k => l.filter(s => s.stage === k).length;
+    document.getElementById('kpiStrip').innerHTML = `
+      <div><div class="ss-t">监控规格</div><div class="ss-v">${l.length}</div></div>
+      <div><div class="ss-t">平稳期</div><div class="ss-v c-green">${c('stable')}</div></div>
+      <div><div class="ss-t">线上波动期</div><div class="ss-v c-yellow">${c('online')}</div></div>
+      <div><div class="ss-t">加速上涨期</div><div class="ss-v c-orange">${c('accel_up')}</div></div>
+      <div><div class="ss-t">加速下跌期</div><div class="ss-v c-red">${c('accel_down')}</div></div>
+      <div><div class="ss-t">今日阶段切换</div><div class="ss-v">${P.TRANSITIONS.length}</div></div>
+      <div><div class="ss-t">建议停采 / 收紧</div><div class="ss-v c-red">${l.filter(s => s.advice.suggestQty === 0).length} <span class="fs11 t4">个规格</span></div></div>`;
+  }
+
+  /* ---------- 三阶段卡 ---------- */
+  document.getElementById('stageCards').innerHTML = P.STAGE_ORDER.map(k => {
+    const s = ST[k];
+    return `<div class="node" style="border-color:${s.color}44;background:linear-gradient(160deg,${s.color}14,rgba(11,18,31,.6));padding:13px 14px">
+      <div class="node-t" style="font-size:13px">
+        <span class="dot" style="background:${s.color};box-shadow:0 0 8px ${s.color}"></span>${s.name}
+        <span class="tag ${s.levelTag} ml-auto">${s.level}</span>
+      </div>
+      <div class="mono fs11 b6" style="color:${s.color};margin:3px 0 8px">${s.gate}</div>
+      ${[['现货', s.spot], ['盘面 / 基差', s.fut], ['钢厂', s.mill], ['线上报价', s.online]].map(x =>
+      `<div class="fs10 t4" style="letter-spacing:.4px;margin-top:6px">${x[0]}</div>
+         <div class="fs11 t2" style="line-height:1.75">${x[1]}</div>`).join('')}
+      <div class="divider" style="margin:9px 0"></div>
+      <div class="fs11 t3" style="line-height:1.8">${s.buy}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('stgTbl').innerHTML = `
+    <thead><tr><th style="width:120px">决策维度</th>
+      <th style="color:#34d399">平稳期</th><th style="color:#fbbf24">线上波动期</th>
+      <th style="color:#fb923c">加速上涨期</th><th style="color:#f4586e">加速下跌期</th></tr></thead>
+    <tbody>${P.STRATEGY.map(r => `<tr><td class="t-main nowrap">${r.dim}</td>
+      <td class="fs11 t2">${r.stable}</td><td class="fs11 t2">${r.online}</td>
+      <td class="fs11 t2">${r.up}</td><td class="fs11 t2">${r.down}</td></tr>`).join('')}</tbody>`;
+
+  /* ---------- 指标表 ---------- */
+  document.getElementById('indTbl').innerHTML = `
+    <thead><tr><th>类别</th><th>指标</th><th class="num">权重</th>
+      <th style="color:#34d399">平稳</th><th style="color:#fbbf24">线上波动</th><th style="color:#f4586e">加速</th>
+      <th>为什么钢铁行业要看它</th></tr></thead>
+    <tbody>${P.IND_GROUPS.map(g => g.items.map((m, i) => `<tr>
+      ${i === 0 ? `<td rowspan="${g.items.length}" class="b6" style="color:${g.color};vertical-align:middle">${g.g}</td>` : ''}
+      <td class="t-main fs11">${m.name}</td>
+      <td class="num b6">${m.w}%</td>
+      <td class="mono fs11 c-green">≤ ${m.t[0]}${m.unit === '%' ? '%' : ''}</td>
+      <td class="mono fs11 c-yellow">${m.t[0]} ~ ${m.t[1]}${m.unit === '%' ? '%' : ''}</td>
+      <td class="mono fs11 c-red">&gt; ${m.t[1]}${m.unit === '%' ? '%' : ''}</td>
+      <td class="fs11 t3" style="line-height:1.7">${m.why}</td>
+    </tr>`).join('')).join('')}</tbody>`;
+
+  /* ---------- 一票否决 ---------- */
+  document.getElementById('ovList').innerHTML = P.OVERRIDES.map(o => `
+    <div class="node" style="margin-bottom:9px;${o.hit ? 'border-color:rgba(251,191,36,.4);background:rgba(251,191,36,.06)' : ''}">
+      <div class="node-t" style="font-size:11.5px">${o.name}
+        ${o.hit ? '<span class="tag tag-yellow ml-auto">当前已触发</span>' : '<span class="tag tag-grey ml-auto">未触发</span>'}</div>
+      <div class="fs11 t3" style="line-height:1.7"><b class="t2">触发条件：</b>${o.cond}</div>
+      <div class="fs11" style="line-height:1.7;color:var(--orange)"><b>动作：</b>${o.act}</div>
+      <div class="fs10 t4" style="line-height:1.65;margin-top:4px">${o.why}</div>
+      ${o.hitNote ? `<div class="note" style="margin-top:6px;font-size:11px">${o.hitNote}</div>` : ''}
+    </div>`).join('');
+
+  /* ---------- 成本 ---------- */
+  const costTbl = (c, id) => {
+    document.getElementById(id).innerHTML = `
+      <thead><tr><th>成本项</th><th>测算口径</th><th class="num">元/吨</th></tr></thead>
+      <tbody>${c.items.map(x => `<tr><td class="fs11 t-main">${x[0]}</td><td class="fs11 t3">${x[1]}</td><td class="num">${x[2].toLocaleString()}</td></tr>`).join('')}
+      <tr style="background:rgba(56,189,248,.06)"><td class="b7" colspan="2">${c.name}</td><td class="num b7 c-blue">${c.value.toLocaleString()}</td></tr></tbody>`;
+  };
+  costTbl(P.COST.bf, 'bfTbl'); costTbl(P.COST.ef, 'efTbl');
+  document.getElementById('bfRead').innerHTML = P.COST.bf.read;
+  document.getElementById('efRead').innerHTML = P.COST.ef.read;
+
+  Chart.line('#costChart', {
+    xLabels: M.days(30),
+    markLines: [
+      { value: 3380, label: '电炉平电 3,380', color: '#f4586e' },
+      { value: 3290, label: '电炉谷电 3,290', color: '#7f9cc0' },
+      { value: 3282, label: '长流程 3,282', color: '#34d399' }
+    ],
+    series: [{ name: '螺纹现货到位价', data: rb.spotSeries, color: '#fbbf24', area: true, dots: false, unit: ' 元/吨' }],
+    yFmt: v => v.toFixed(0)
+  });
+
+  /* ---------- 矩阵 ---------- */
+  document.getElementById('matLegend').innerHTML = P.STAGE_ORDER.map(k =>
+    `<span><i class="sq" style="background:${ST[k].color}"></i>${ST[k].name}</span>`).join('');
+
+  function drawMatrix() {
+    const list = P.SKUS.filter(inScope), cats = [];
+    list.forEach(s => { if (!cats.includes(s.cat)) cats.push(s.cat); });
+    document.getElementById('matrix').innerHTML = cats.map(cat => {
+      const rows = list.filter(s => s.cat === cat), mats = [];
+      rows.forEach(s => { if (!mats.includes(s.grade)) mats.push(s.grade); });
+      const C = P.CATEGORY[cat];
+      return `<div style="margin-bottom:15px">
+        <div class="flex items-c gap8 mb" style="margin-bottom:6px">
+          <span class="tag tag-blue">${cat}</span>
+          <span class="fs10 t4">基价 ${C.base.toLocaleString()}（${C.baseGrade} ${C.baseSpec} ${C.baseMill} ${C.baseRegion}）
+            · 3 日 <b style="color:${C.spot3d < 0 ? 'var(--green)' : 'var(--red)'}">${sign(C.spot3d)}</b> 元/吨
+            · ${C.noFut ? '无对应期货，参考 ' + C.fut : C.fut + ' ' + C.futLast.toLocaleString()}
+            · 基差 ${sign(C.curBasis)}（常态 ${sign(C.normalBasis)}）</span>
+        </div>
+        ${mats.map(mat => `
+          <div class="flex items-c gap8" style="margin-bottom:6px">
+            <span class="fs11 b6 t2" style="width:74px;flex:none">${mat}</span>
+            <div class="flex gap6 wrap" style="flex:1">
+              ${rows.filter(s => s.grade === mat).map(s => {
+        const c = ST[s.stage].color, on = s.id === current;
+        const dp = s.price.specDiffPct;
+        return `<div class="mat-cell" data-id="${esc(s.id)}" style="
+                  min-width:132px;border:1px solid ${c}${on ? 'ee' : '55'};border-radius:8px;padding:6px 9px;cursor:pointer;
+                  background:linear-gradient(160deg,${c}${on ? '2e' : '12'},rgba(11,18,31,.5));
+                  ${on ? 'box-shadow:0 0 0 1px ' + c + ',0 6px 16px -8px ' + c : ''}">
+                  <div class="flex items-c gap6">
+                    <span class="fs11 b6">${s.spec}</span>
+                    <span class="tag ${ST[s.stage].tag} ml-auto" style="font-size:9.5px;padding:0 5px">${ST[s.stage].short}</span>
+                  </div>
+                  <div class="flex items-c gap6" style="margin-top:2px">
+                    <span class="mono fs11">${s.price.spot.toLocaleString()}</span>
+                    <span class="mono fs10 ml-auto" style="color:${s.ind.spot3d < 0 ? 'var(--green)' : 'var(--red)'}">${sign(s.ind.spot3d)}</span>
+                  </div>
+                  <div class="fs10 t4" style="margin-top:1px">
+                    规格差 ${sign(s.price.specDiff)}
+                    <span style="color:${dp > 75 ? 'var(--orange)' : dp < 30 ? 'var(--blue)' : 'var(--txt-4)'}">· ${dp}分位${dp > 75 ? ' 偏紧' : ''}</span>
+                  </div>
+                </div>`;
+      }).join('')}
+            </div>
+          </div>`).join('')}
+      </div>`;
+    }).join('');
+    document.querySelectorAll('.mat-cell').forEach(c => c.onclick = () => { current = c.dataset.id; drawMatrix(); drawDetail(); });
+  }
+
+  /* ---------- 详情 ---------- */
+  function drawDetail() {
+    const s = P.SKUS.find(x => x.id === current) || P.SKUS[0];
+    const st = ST[s.stage], p = s.price;
+    document.getElementById('dTitle').innerHTML = `${s.cat} ${s.grade} ${s.spec} <span class="tag ${st.tag}">${st.name}</span>`;
+    document.getElementById('dSub').textContent = `${s.mill} · ${s.region} · 到位价 ${p.spot.toLocaleString()} 元/吨 · 3 日 ${sign(s.ind.spot3d)} 元`;
+    document.getElementById('dTags').innerHTML =
+      `<span class="tag tag-grey mono">综合得分 ${s.score}</span><span class="tag ${st.levelTag}">${st.level}</span>
+       <span class="tag tag-grey">推送：${s.advice.push}</span>`;
+
+    /* 限价拆解 */
+    const rows = [
+      ['阶段基准价', p.stageBase, p.stageBaseFormula, 'base'],
+      ['规格差价 · ' + s.spec, p.specDiff, `30 日均值 ${sign(p.specDiffMa)} · 当前处 ${p.specDiffPct} 分位${p.specDiffPct > 75 ? ' · 资源偏紧' : p.specDiffPct < 30 ? ' · 资源宽松' : ''}`, 'd'],
+      ['材质升水 · ' + s.grade, p.gradePrem, p.gradeNote || '相对该品类基准材质', 'd'],
+      ['钢厂品牌溢价 · ' + s.mill, p.millPrem, p.millPrem === 0 ? '基准钢厂' : p.millPrem > 0 ? '一线品牌溢价' : '二三线折价', 'd'],
+      ['区域价差 · ' + s.region, p.regionDiff, p.regionDiff === 0 ? '基准区域（上海）' : '含运费与区域供需', 'd']
+    ];
+    document.getElementById('priceBreak').innerHTML = `
+      <div style="border:1px solid var(--line);border-radius:10px;overflow:hidden">
+        ${rows.map((r, i) => `
+          <div class="flex items-c gap10" style="padding:8px 12px;${i ? 'border-top:1px solid rgba(125,158,214,.08)' : ''}">
+            <div style="flex:1">
+              <div class="fs11 b6">${i ? '<span class="t4 mono">' + (r[1] >= 0 ? '+' : '−') + '</span> ' : ''}${r[0]}</div>
+              <div class="fs10 t4" style="margin-top:1px">${r[2]}</div>
+            </div>
+            <div class="mono b7" style="font-size:${i ? 14 : 16}px;color:${i === 0 ? 'var(--txt)' : r[1] > 0 ? 'var(--orange)' : r[1] < 0 ? 'var(--green)' : 'var(--txt-3)'}">
+              ${i === 0 ? r[1].toLocaleString() : (r[1] === 0 ? '0' : Math.abs(r[1]))}
+            </div>
+          </div>`).join('')}
+        <div class="flex items-c gap10" style="padding:10px 12px;background:linear-gradient(90deg,${st.color}22,transparent);border-top:1px solid ${st.color}55">
+          <div style="flex:1"><div class="fs12 b7">＝ 建议采购限价</div>
+            <div class="fs10 t4">当前市场到位价 ${p.spot.toLocaleString()}，限价<b style="color:${p.limit < p.spot ? 'var(--green)' : 'var(--orange)'}">${p.limit < p.spot ? '低于市场 ' + (p.spot - p.limit) : '高于市场 ' + (p.limit - p.spot)} 元/吨</b></div>
+          </div>
+          <div class="mono b7" style="font-size:22px;color:${st.color}">${p.limit.toLocaleString()}</div>
+        </div>
+      </div>
+      <div class="grid g3 mt" style="gap:9px">
+        <div class="node center"><div class="fs10 t4">${p.noFut ? '参考盘面' : p.futName}</div><div class="mono b7" style="font-size:15px">${p.fut.toLocaleString()}</div></div>
+        <div class="node center"><div class="fs10 t4">基差 / 常态</div><div class="mono b7" style="font-size:15px;color:${p.basis - p.normalBasis > 25 ? 'var(--red)' : 'var(--txt)'}">${sign(p.basis)} / ${sign(p.normalBasis)}</div></div>
+        <div class="node center"><div class="fs10 t4">${p.costFloorName}</div><div class="mono b7" style="font-size:15px;color:${p.spot - p.costFloor < 120 ? 'var(--orange)' : 'var(--txt)'}">${p.costFloor.toLocaleString()}</div></div>
+      </div>`;
+
+    /* 规格差价 */
+    Chart.line('#diffChart', {
+      xLabels: M.days(30), pad: { t: 12, r: 16, b: 22, l: 40 },
+      markLines: [{ value: p.specDiffMa, label: '30日均值 ' + sign(p.specDiffMa), color: '#7f9cc0' }],
+      series: [{ name: '规格差价', data: s.specDiffSeries, color: p.specDiffPct > 75 ? '#fb923c' : '#38bdf8', area: true, dots: false, unit: ' 元/吨' }],
+      yFmt: v => v.toFixed(0)
+    });
+    document.getElementById('diffNote').innerHTML = p.specDiffPct > 75
+      ? `该规格差价由 ${sign(p.specDiff3d)} 扩至 <b class="c-orange">${sign(p.specDiff)}</b> 元（30 日 ${p.specDiffPct} 分位），<b>资源偏紧</b>，跌幅小于主流规格，备货天数可放宽`
+      : p.specDiffPct < 30
+        ? `该规格差价处 ${p.specDiffPct} 分位，资源相对宽松，可优先用该规格替代`
+        : `该规格差价 ${sign(p.specDiff)} 元，处 ${p.specDiffPct} 分位，属正常区间`;
+
+    /* 三线图 */
+    const bands = s.bands.map(b => ({ from: b.from, to: b.to, color: ST[b.stage].color + '1c', label: ST[b.stage].name, textColor: ST[b.stage].color }));
+    Chart.line('#priceChart', {
+      xLabels: M.days(30), bands: bands,
+      markLines: [
+        { value: p.limit, label: '建议限价 ' + p.limit.toLocaleString(), color: '#34d399' },
+        { value: p.myCost, label: '我方成本 ' + p.myCost.toLocaleString(), color: '#f472b6' },
+        { value: p.costFloor, label: p.costFloorName + ' ' + p.costFloor.toLocaleString(), color: '#f4586e' }
+      ],
+      series: [
+        { name: '现货到位价', data: s.spotSeries, color: '#fbbf24', area: true, dots: false, unit: ' 元/吨' },
+        { name: '盘面折算合理价（基差回归常态）', data: s.futSeries.map(v => v + p.normalBasis + p.specDiff + p.gradePrem + p.millPrem + p.regionDiff), color: '#a78bfa', dashed: true, dots: false, unit: ' 元/吨' }
+      ],
+      yFmt: v => v.toFixed(0)
+    });
+    document.getElementById('priceLegend').innerHTML = `
+      <span><i style="background:#fbbf24"></i>现货到位价</span>
+      <span><i style="background:#a78bfa"></i>盘面折算合理价</span>
+      <span><i style="background:#34d399"></i>建议限价</span>
+      <span><i style="background:#f472b6"></i>我方成本</span>
+      <span><i style="background:#f4586e"></i>成本支撑</span>`;
+
+    /* 得分 */
+    Chart.gauge('#scoreGauge', {
+      value: s.score, min: 0, max: 100, digits: 1, thickness: 12, label: '综合得分 · ' + st.name,
+      segments: [{ to: .30, color: '#34d399' }, { to: .62, color: '#fbbf24' }, { to: 1, color: s.ind.spot3d < 0 ? '#f4586e' : '#fb923c' }]
+    });
+    const bt = { accel: ['tag-red', '加速', 'var(--red)'], online: ['tag-yellow', '波动', 'var(--yellow)'], stable: ['tag-green', '平稳', 'var(--green)'] };
+    document.getElementById('scoreTbl').innerHTML = `
+      <thead><tr><th>指标</th><th class="num">实测值</th><th class="num">档位</th><th class="num">权重</th><th class="num">贡献</th></tr></thead>
+      <tbody>${s.scoreDetail.map(d => `<tr>
+        <td class="fs11 t2">${d.name}</td><td class="num b6">${d.val}</td>
+        <td class="num"><span class="tag ${bt[d.band][0]}">${bt[d.band][1]}</span></td>
+        <td class="num t3">${d.w}%</td>
+        <td class="num b6" style="color:${bt[d.band][2]}">${d.contrib}</td></tr>`).join('')}
+      <tr><td class="fs11 t3" colspan="4">限产政策利多修正（下跌方向扣分）</td><td class="num c-green">−6.0</td></tr>
+      <tr style="background:rgba(56,189,248,.06)"><td class="b7" colspan="4">综合得分</td><td class="num b7 c-blue">${s.score}</td></tr></tbody>`;
+
+    /* 建议 */
+    const a = s.advice, k = s.stock;
+    document.getElementById('adviceBox').innerHTML = `
+      <div class="ai-box mb" style="border-color:${st.color}55;background:linear-gradient(160deg,${st.color}18,rgba(20,26,45,.55))">
+        <div class="ai-hd" style="color:${st.color}">${App.icon('trend', 14)} ${a.action}<span class="m">更新于 3 分钟前</span></div>
+        <div class="grid g5 mb" style="gap:9px;margin-top:4px">
+          <div class="node center" style="padding:8px"><div class="fs10 t4">建议限价</div><div class="mono b7" style="font-size:16px;color:${st.color}">${a.limitPrice.toLocaleString()}</div><div class="fs10 t4">元/吨</div></div>
+          <div class="node center" style="padding:8px"><div class="fs10 t4">建议采购量</div><div class="mono b7" style="font-size:16px;color:${a.suggestQty ? 'var(--brand)' : 'var(--red)'}">${a.suggestQty.toLocaleString()}</div><div class="fs10 t4">吨</div></div>
+          <div class="node center" style="padding:8px"><div class="fs10 t4">目标备货</div><div class="mono b7" style="font-size:16px">${a.targetDays}</div><div class="fs10 t4">天</div></div>
+          <div class="node center" style="padding:8px"><div class="fs10 t4">当前可供</div><div class="mono b7" style="font-size:16px;color:${k.coverDays > a.targetDays ? 'var(--orange)' : 'var(--green)'}">${k.coverDays}</div><div class="fs10 t4">天</div></div>
+          <div class="node center" style="padding:8px"><div class="fs10 t4">单次上限</div><div class="mono b7" style="font-size:16px">${k.capQty.toLocaleString()}</div><div class="fs10 t4">吨</div></div>
+        </div>
+        <div class="ai-txt"><b style="color:#fff">判定依据</b><br>${a.reasons.map((r, i) => `${i + 1}. ${r}`).join('<br>')}</div>
+      </div>
+      <div class="grid g4 mb" style="gap:9px">
+        <div class="node"><div class="fs10 t4">采购渠道结构</div><div class="fs11 b6" style="margin-top:2px">${a.channel}</div></div>
+        <div class="node"><div class="fs10 t4">定价方式</div><div class="fs11 b6" style="margin-top:2px">${a.way}</div></div>
+        <div class="node"><div class="fs10 t4">套期保值</div><div class="fs11 b6" style="margin-top:2px">${a.hedge}</div></div>
+        <div class="node"><div class="fs10 t4">推送对象</div><div class="fs11 b6" style="margin-top:2px">${a.push}</div></div>
+      </div>
+      <div class="flex gap6 wrap">
+        <button class="btn btn-sm btn-primary">带入采购申请单</button>
+        <button class="btn btn-sm">生成询价单（限价 ${a.limitPrice.toLocaleString()}）</button>
+        <button class="btn btn-sm ml-auto">否决建议并说明原因</button>
+      </div>`;
+  }
+
+  /* ---------- 旬度日历 ---------- */
+  document.getElementById('calTl').innerHTML = P.MILL_CALENDAR.map(c => `
+    <div class="tl-i ${c.state === 'today' ? 'blue' : c.delta === null ? '' : c.delta < 0 ? 'red' : c.delta > 0 ? 'green' : 'orange'}">
+      <div class="tl-t">
+        <span class="tag ${c.type === '旬价' ? 'tag-yellow' : c.type === '结算' ? 'tag-ai' : c.type === '今日' ? 'tag-blue' : 'tag-grey'}">${c.type}</span>
+        <span>${c.mill}</span>
+        ${c.state === 'future' ? '<span class="tag tag-grey">预测</span>' : ''}
+        <span class="tl-time ml-auto">${c.date}</span>
+      </div>
+      <div class="tl-b">${c.content}</div>
+    </div>`).join('');
+
+  /* ---------- 季节性 ---------- */
+  document.getElementById('seasonWin').innerHTML = P.SEASON.windows.map(w =>
+    `<span class="chip ${w.now ? 'on' : ''}" style="${w.near ? 'border-color:rgba(251,146,60,.5);color:var(--orange)' : ''}">${w.name} · ${w.period} <b>${w.type}</b>${w.now ? ' · 当前' : w.near ? ' · 临近' : ''}</span>`).join('');
+  document.getElementById('seasonNow').innerHTML = `<b>${P.SEASON.now}</b><br>${P.SEASON.detail}`;
+  document.getElementById('seasonRead').innerHTML = P.SEASON.read;
+  document.getElementById('supplyTbl').innerHTML = `
+    <thead><tr><th>供需指标</th><th class="num">数值</th><th class="num">周环比</th></tr></thead>
+    <tbody>${P.SEASON.supply.map(x => `<tr><td class="fs11 t-main">${x[0]}</td><td class="num">${x[1]}</td>
+      <td class="num" style="color:${x[3] === 'up' ? 'var(--red)' : 'var(--green)'}">${x[2]}</td></tr>`).join('')}</tbody>`;
+  Chart.bar('#stockChart', {
+    xLabels: ['w-5', 'w-4', 'w-3', 'w-2', 'w-1', '本周'], pad: { t: 12, r: 40, b: 22, l: 40 },
+    series: [{ name: '社会库存', data: [402, 398, 406, 412, 419, 428.6], color: '#f4586e', unit: ' 万吨', fmt: v => v.toFixed(0) }],
+    lineSeries: [{ name: '表观消费', data: [246, 251, 242, 236, 233, 218.4], color: '#34d399', unit: ' 万吨' }],
+    yFmt: v => v.toFixed(0)
+  });
+
+  /* ---------- 切换预警 ---------- */
+  document.getElementById('transTl').innerHTML = P.TRANSITIONS.map(t => {
+    const s = P.SKUS.find(x => x.id === t.id) || {}, to = ST[t.to];
+    return `<div class="tl-i ${t.to === 'accel_down' ? 'red' : t.to === 'accel_up' ? 'orange' : t.to === 'online' ? 'orange' : 'green'}">
+      <div class="tl-t"><span>${s.cat || ''} ${s.grade || ''} ${s.spec || ''}</span>
+        <span class="tag ${ST[t.from].tag}" style="opacity:.6">${ST[t.from].short}</span><span class="t4">→</span>
+        <span class="tag ${to.tag}">${to.short}</span><span class="tl-time ml-auto">${t.time}</span></div>
+      <div class="tl-b">${t.trigger}</div>
+      <div class="flex gap6 wrap" style="margin-top:5px">
+        <span class="tag tag-grey">→ ${t.push}</span><span class="tag tag-blue">${t.act}</span>
+        <button class="btn btn-sm ml-auto" data-goto="${esc(t.id)}">查看</button></div>
+    </div>`;
+  }).join('');
+  document.getElementById('transTl').addEventListener('click', e => {
+    const b = e.target.closest('[data-goto]');
+    if (b) { current = b.dataset.goto; scope = 'all'; drawKpi(); drawMatrix(); drawDetail(); document.getElementById('detailCard').scrollIntoView({ behavior: 'smooth' }); }
+  });
+
+  /* ---------- 动作清单 ---------- */
+  function drawAct(f) {
+    const rows = P.SKUS.filter(inScope).filter(s => f === 'all' || s.stage === f)
+      .sort((a, b) => P.STAGE_ORDER.indexOf(b.stage) - P.STAGE_ORDER.indexOf(a.stage) || b.score - a.score);
+    document.getElementById('actTbl').innerHTML = `
+      <thead><tr><th>材质 / 规格</th><th>阶段</th><th class="num">到位价</th><th class="num">3日</th><th class="num">规格差</th>
+        <th class="num">建议限价</th><th class="num">建议量</th><th class="num">可供</th><th>渠道</th></tr></thead>
+      <tbody>${rows.map(s => `<tr data-id="${esc(s.id)}" style="cursor:pointer">
+        <td class="t-main fs11">${s.grade} ${s.spec}<div class="t-sub">${s.cat} · ${s.mill} · ${s.region}</div></td>
+        <td class="nowrap"><span class="tag ${ST[s.stage].tag}">${ST[s.stage].short}</span></td>
+        <td class="num">${s.price.spot.toLocaleString()}</td>
+        <td class="num" style="color:${s.ind.spot3d < 0 ? 'var(--green)' : 'var(--red)'}">${sign(s.ind.spot3d)}</td>
+        <td class="num ${s.price.specDiffPct > 75 ? 'c-orange' : 't3'}">${sign(s.price.specDiff)}<div class="t-sub">${s.price.specDiffPct}分位</div></td>
+        <td class="num b6" style="color:${ST[s.stage].color}">${s.price.limit.toLocaleString()}</td>
+        <td class="num ${s.advice.suggestQty ? '' : 'c-red'}">${s.advice.suggestQty ? s.advice.suggestQty.toLocaleString() : '0'}</td>
+        <td class="num ${s.stock.coverDays > s.advice.targetDays ? 'c-orange' : ''}">${s.stock.coverDays}</td>
+        <td class="fs11 t2">${s.advice.channel}</td>
+      </tr>`).join('')}</tbody>`;
+    document.querySelectorAll('#actTbl tbody tr').forEach(tr => tr.onclick = () => {
+      current = tr.dataset.id; drawMatrix(); drawDetail(); document.getElementById('detailCard').scrollIntoView({ behavior: 'smooth' });
+    });
+  }
+
+  /* ---------- 回测 ---------- */
+  Chart.bar('#btChart', {
+    xLabels: P.BACKTEST.months,
+    series: [{ name: '节省采购成本', data: P.BACKTEST.saved, color: '#34d399', unit: ' 万元', fmt: v => v.toFixed(1) }],
+    lineSeries: [{ name: '建议采纳率', data: P.BACKTEST.followed, color: '#38bdf8', unit: ' %' }],
+    yFmt: v => v.toFixed(0)
+  });
+  Chart.bar('#gapChart', {
+    xLabels: P.BACKTEST.months,
+    series: [
+      { name: 'vs 平台市场均价', data: P.BACKTEST.gapVsMarket, color: '#38bdf8', unit: ' 元/吨' },
+      { name: 'vs 钢厂结算价', data: P.BACKTEST.gapVsMill, color: '#a78bfa', unit: ' 元/吨' }
+    ], yFmt: v => v.toFixed(0)
+  });
+
+  /* ---------- API ---------- */
+  document.getElementById('apiCode').innerHTML =
+    `<div class="code-hd">${App.icon('link', 12)} POST /v1/pricing/stage</div>
+<pre class="code">${App.json({ erpSkuCode: '螺纹钢HRB400E-20-沙钢-9M', region: '上海', qty: 3000 })}
+
+<span class="c">// 响应（限价按结构化拆解返回）</span>
+${App.json({
+      stdCode: 'RB-400E-020-9000-SG', stage: 'accel_down', stageName: '加速下跌期', score: 79.6,
+      market: { spot: 3470, spot3d: -96, futCode: 'RB2610', fut: 3386, basis: 84, normalBasis: 40, costFloor: 3380 },
+      limitBreakdown: { stageBase: 3406, specDiff: 0, gradePremium: 0, millPremium: 0, regionDiff: 0, limitPrice: 3406 },
+      advice: { action: '暂停采购', suggestQty: 0, targetStockDays: 5, channel: '停钢厂预订，只走市场现货', hedge: '库存卖出保值30%~50%' }
+    })}</pre>`;
+
+  /* ---------- 初始化 ---------- */
+  App.seg('#scopeSeg', v => {
+    scope = v;
+    const l = P.SKUS.filter(inScope);
+    if (!l.find(s => s.id === current)) current = l[0].id;
+    drawKpi(); drawMatrix(); drawDetail(); drawAct(document.querySelector('#actSeg .on').dataset.v);
+  });
+  App.seg('#actSeg', v => drawAct(v));
+  drawKpi(); drawMatrix(); drawDetail(); drawAct('all');
+})();
+</script>
+</body>
+</html>
