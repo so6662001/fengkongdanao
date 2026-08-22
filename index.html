@@ -154,9 +154,9 @@
               <div class="fs10 t4 mono" style="margin-top:6px">/pricing/stage · /risk/purchase/check · /advice/allocation</div>
             </div>
             <div class="node new">
-              <div class="node-t">财务查应收时</div>
-              <div class="node-b">同一张应收表多出三列：风险等级、坏账概率、最新失信事件。催收资源精准投到最该催的那几家。</div>
-              <div class="fs10 t4 mono" style="margin-top:6px">/risk/customer/batch · /advice/collection</div>
+              <div class="node-t">财务查应收 / 付款时</div>
+              <div class="node-b">同一张应收表多出风险等级、坏账概率、最新失信事件三列；付款申请页调用<a href="invoice-gate.html?v=20260822" class="c-blue">发票风控闸口</a>，付款前完成查验、四流勾稽与销方走逃复查。</div>
+              <div class="fs10 t4 mono" style="margin-top:6px">/risk/customer/batch · /invoice/gate/pre-payment</div>
             </div>
             <div class="node new">
               <div class="node-t">管理者看报表时</div>
@@ -165,7 +165,7 @@
             </div>
           </div>
           <div class="flex items-c gap12 wrap mt fs11 t3">
-            <span>已开放 <b class="mono c-blue">16</b> 个 REST 接口 · <b class="mono c-ai">4</b> 类 Webhook 事件 · <b class="mono c-orange">5</b> 个嵌入式组件</span>
+            <span>已开放 <b class="mono c-blue">26</b> 个 REST 接口 · <b class="mono c-ai">6</b> 类 Webhook 事件 · <b class="mono c-orange">5</b> 个嵌入式组件</span>
             <span>日均调用 <b class="mono">28,460</b> 次</span>
             <span>P95 延迟 <b class="mono c-green">142ms</b></span>
             <span class="ml-auto">决策回写率 <b class="mono c-green">92.4%</b>（业务员在 ERP 里顺手完成，直接喂给数据飞轮）</span>

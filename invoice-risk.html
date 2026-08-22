@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>发票税务风险看板 · 钢铁行业 AI 风控大脑</title>
+<link rel="stylesheet" href="assets/css/main.css?v=20260822">
+</head>
+<body data-page="invoice">
+<div class="app-bg"></div>
+<div class="layout">
+  <div class="main">
+    <div class="content">
+
+      <div class="page-head">
+        <div>
+          <h1>发票税务风险看板</h1>
+          <p>钢贸企业最大的现实敞口不是自己虚开，而是<b class="c-red">善意取得虚开专票</b> —— 上游走逃失联，已抵扣的进项被要求转出，一笔就能吃掉几年利润。
+             所以四大风险域的落点只有一个：<b>在付款前和勾选抵扣前把风险识别出来</b>，而不是等税务机关下通知。</p>
+        </div>
+        <div class="ph-right">
+          <div class="seg" id="entSeg"></div>
+          <a class="btn btn-primary" href="invoice-gate.html?v=20260822">四道风控闸口</a>
+        </div>
+      </div>
+
+      <div class="stat-strip mb" id="kpiStrip"></div>
+
+      <!-- ============ 四大风险域 ============ -->
+      <div class="card mb accent-top">
+        <div class="card-hd">
+          <h3>四大风险域</h3>
+          <span class="sub">60 条规则中确定性合规规则由规则引擎秒级返回，涉及判断的部分交由票税风控智能体交叉推理</span>
+          <div class="hd-act"><span class="tag tag-grey mono">最近扫描 2026-08-22 08:10</span></div>
+        </div>
+        <div class="card-bd">
+          <div class="grid g4 mb" id="domainCards"></div>
+          <div class="tabs" data-group="dm" id="dmTabs"></div>
+          <div id="dmPanels"></div>
+        </div>
+      </div>
+
+      <!-- ============ 高危销方 ============ -->
+      <div class="card mb red">
+        <div class="card-hd">
+          <h3><span class="dot dot-red pulse"></span>高危销方画像</h3>
+          <span class="sub">空壳打分卡 + 开票行为特征 + 变名开票检测</span>
+          <div class="hd-act"><div class="seg" id="sellerSeg"></div></div>
+        </div>
+        <div class="card-bd">
+          <div class="grid g-2-3" style="gap:14px">
+            <div>
+              <div id="sellerBase"></div>
+              <div class="divider"></div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">空壳企业画像打分卡</div>
+              <div class="tbl-wrap" style="max-height:none"><table class="tbl" id="cardTbl"></table></div>
+            </div>
+            <div>
+              <div class="grid g2 mb" style="gap:12px">
+                <div>
+                  <div class="fs12 b6 mb" style="margin-bottom:6px">开票行为特征</div>
+                  <div class="chart h200" id="behaviorChart"></div>
+                </div>
+                <div>
+                  <div class="fs12 b6 mb" style="margin-bottom:6px">进销项品名构成 <span class="fs10 t4">（背离即变名开票）</span></div>
+                  <div class="chart h200" id="nameChart"></div>
+                  <div class="legend" style="justify-content:center;margin-top:5px" id="nameLegend"></div>
+                </div>
+              </div>
+              <div class="ai-box mb">
+                <div class="ai-hd">票税风控智能体 · 交叉研判 <span class="m" id="sellerScoreTag"></span></div>
+                <div class="ai-txt" id="sellerRead"></div>
+              </div>
+              <div class="fs12 b6 mb" style="margin-bottom:6px">处置建议</div>
+              <div class="grid g2" style="gap:8px" id="sellerActions"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 四流六单 ============ -->
+      <div class="card mb">
+        <div class="card-hd">
+          <h3>四流一致性 · 六单勾稽</h3>
+          <span class="sub">合同流 / 货物流 / 资金流 / 发票流，货物流落到<b>过磅单与 WMS 出入库</b>这一层 —— 钢贸唯一难以伪造的物理痕迹</span>
+          <div class="hd-act"><span class="tag tag-yellow">票货容差按品种：棒材 ±3% / 板卷 ±1.5% / 型材 ±2.5%</span></div>
+        </div>
+        <div class="card-bd">
+          <div class="fs12 b6 mb" style="margin-bottom:7px">六单齐备度热力</div>
+          <div class="chart h200 mb" id="flowHeat"></div>
+          <div class="tabs" data-group="fl" id="flTabs"></div>
+          <div id="flPanels"></div>
+        </div>
+      </div>
+
+      <!-- ============ 税务指标 ============ -->
+      <div class="card mb">
+        <div class="card-hd">
+          <h3>税务指标异常</h3>
+          <span class="sub">钢贸税负率基线 <b class="c-yellow" id="baseTxt">0.30% ~ 0.80%</b>（租户可配置）—— 用制造业 2%~3% 的阈值量钢贸，结果是全量误报</span>
+          <div class="hd-act"><a class="btn btn-sm" href="invoice-gate.html?v=20260822#config">调整基线</a></div>
+        </div>
+        <div class="card-bd">
+          <div class="grid g-3-2 mb" style="gap:14px">
+            <div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">各主体税负率走势 vs 钢贸基线区间</div>
+              <div class="chart h260" id="vatChart"></div>
+              <div class="legend mt" style="justify-content:center">
+                <span><i style="background:#34d399"></i>E01 华东钢铁贸易</span>
+                <span><i style="background:#f4586e"></i>E02 无锡</span>
+                <span><i style="background:#fb923c"></i>E03 鑫达物资</span>
+                <span><i style="background:#a78bfa"></i>E02 毛利率</span>
+              </div>
+            </div>
+            <div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">主体税负率与毛利率匹配度</div>
+              <div id="entCards"></div>
+              <div class="note red mt">
+                <b>最有价值的一条交叉规则</b>：毛利 3% 但税负 0.1% → 疑似虚开进项；毛利 1% 但税负 2% → 疑似进项不足（无票采购）。
+                单看税负率绝对值在钢贸没有意义，<b>看它与毛利率的背离</b>才有。
+              </div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="grid g2" style="gap:14px">
+            <div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">三表四方比对 <span class="fs10 t4">（金税四期核心比对项，单位：万元）</span></div>
+              <table class="tbl" id="threeTbl"></table>
+            </div>
+            <div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">其他税务指标</div>
+              <table class="tbl" id="otherTbl"></table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 交易图谱 ============ -->
+      <div class="card mb">
+        <div class="card-hd">
+          <h3>交易图谱 · 循环开票环路检测</h3>
+          <span class="sub">融资性贸易在钢贸普遍存在：票是真开的、款是真付的，但货物不动</span>
+          <div class="hd-act"><span class="tag tag-red">检测到 1 条闭合环路</span></div>
+        </div>
+        <div class="card-bd">
+          <div class="grid g-2-3" style="gap:16px">
+            <div>
+              <div class="chart" style="height:340px" id="graphChart"></div>
+            </div>
+            <div>
+              <div class="fs12 b6 mb" style="margin-bottom:7px">环路详情</div>
+              <div class="flow-pipe mb" id="loopPipe"></div>
+              <div class="grid g3 mb" style="gap:9px">
+                <div class="node center"><div class="fs10 t4">环路开票总额</div><div class="mono b7 c-red" style="font-size:17px">416.0 <span class="fs10">万</span></div></div>
+                <div class="node center"><div class="fs10 t4">全链加价</div><div class="mono b7 c-red" style="font-size:17px">0.42%</div><div class="fs10 t4">正常单环节 1%~3%</div></div>
+                <div class="node center"><div class="fs10 t4">闭环天数</div><div class="mono b7 c-red" style="font-size:17px">11 <span class="fs10">天</span></div></div>
+              </div>
+              <div class="ai-box">
+                <div class="ai-hd">环路研判</div>
+                <div class="ai-txt" id="loopRead"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 发票台账 ============ -->
+      <div class="card">
+        <div class="card-hd">
+          <h3>进项数电票台账</h3>
+          <span class="sub">全面数电化口径：20 位发票号码、用途确认状态、红字确认单</span>
+          <div class="hd-act">
+            <div class="seg" id="lvSeg">
+              <button class="on" data-v="all">全部</button><button data-v="high">高风险</button>
+              <button data-v="mid">中风险</button><button data-v="ok">正常</button>
+            </div>
+            <button class="btn btn-sm">导出台账</button>
+          </div>
+        </div>
+        <div class="tbl-wrap" style="max-height:none"><table class="tbl" id="invTbl"></table></div>
+        <div class="card-ft flex gap12 wrap">
+          <span>本月进项 <b class="mono">126</b> 张</span>
+          <span>高风险 <b class="mono c-red">11</b> 张 / <b class="mono c-red">468.4</b> 万</span>
+          <span>涉及进项税额 <b class="mono c-red">60.9</b> 万</span>
+          <span class="ml-auto t4">多主体模式已启用，发票号码在集团 3 个主体范围内做唯一性查重</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/charts.js?v=20260822"></script>
+<script src="assets/js/data.js?v=20260822"></script>
+<script src="assets/js/invoice.js?v=20260822"></script>
+<script src="assets/js/app.js?v=20260822"></script>
+<script>
+(function () {
+  const I = Invoice, M = Mock, esc = App.esc;
+  const K = I.KPI;
+  let ent = 'all', seller = 0;
+
+  /* ---------- 主体切换 ---------- */
+  document.getElementById('entSeg').innerHTML =
+    '<button class="on" data-v="all">集团合并</button>' +
+    I.CONFIG.entities.map(e => `<button data-v="${e.code}">${e.code}</button>`).join('');
+
+  /* ---------- KPI ---------- */
+  document.getElementById('kpiStrip').innerHTML = `
+    <div><div class="ss-t">待查验发票</div><div class="ss-v">${K.pendingVerify}</div></div>
+    <div><div class="ss-t">高风险发票</div><div class="ss-v c-red">${K.highRiskInvoice} <span class="fs11 t4">张</span></div></div>
+    <div><div class="ss-t">高风险金额</div><div class="ss-v c-red">${K.highRiskAmount} <span class="fs11 t4">万元</span></div></div>
+    <div><div class="ss-t">涉及进项税额</div><div class="ss-v c-red">${K.inputTaxAtRisk} <span class="fs11 t4">万元</span></div></div>
+    <div><div class="ss-t">异常扣税凭证</div><div class="ss-v c-red">${K.abnormalVoucher} <span class="fs11 t4">户</span></div></div>
+    <div><div class="ss-t">票源缺口</div><div class="ss-v c-orange">${K.ticketGap} <span class="fs11 t4">万元</span></div></div>
+    <div><div class="ss-t">增值税税负率</div><div class="ss-v c-green">${K.vatRate}%</div></div>
+    <div><div class="ss-t">证据链自动归档率</div><div class="ss-v c-green">${K.evidenceRate}%</div></div>`;
+
+  /* ---------- 四大风险域 ---------- */
+  document.getElementById('domainCards').innerHTML = I.DOMAINS.map(d => `
+    <div class="node" style="border-color:${d.color}44;background:linear-gradient(160deg,${d.color}14,rgba(11,18,31,.6));padding:13px 14px">
+      <div class="node-t" style="font-size:13px">
+        <span style="width:24px;height:24px;border-radius:7px;display:grid;place-items:center;background:rgba(125,158,214,.1);color:${d.color}">${App.icon(d.icon, 14)}</span>
+        ${d.name}<span class="tag ${d.tag} ml-auto">${d.count} 条规则</span>
+      </div>
+      <div class="fs11 t2" style="line-height:1.8;margin-top:7px">${d.desc}</div>
+      <div class="divider" style="margin:10px 0"></div>
+      <div class="flex gap12">
+        <div><div class="fs10 t4">本月命中</div><div class="mono b7" style="font-size:16px;color:${d.color}">${d.hit}</div></div>
+        ${d.amount ? `<div><div class="fs10 t4">涉及金额</div><div class="mono b7" style="font-size:16px">${d.amount} <span class="fs10">万</span></div></div>` : ''}
+      </div>
+    </div>`).join('');
+
+  document.getElementById('dmTabs').innerHTML = I.DOMAINS.map((d, i) =>
+    `<button class="${i === 0 ? 'on' : ''}" data-tab="${d.k}">${d.name}</button>`).join('');
+  document.getElementById('dmPanels').innerHTML = I.DOMAINS.map((d, i) => `
+    <div data-panel="${d.k}" data-group="dm" ${i ? 'style="display:none"' : ''}>
+      <table class="tbl">
+        <thead><tr><th style="width:70px">规则号</th><th style="width:220px">规则名称</th><th>判定逻辑（钢贸口径）</th><th style="width:70px">等级</th><th style="width:90px" class="num">本月命中</th></tr></thead>
+        <tbody>${d.rules.map(r => `<tr ${r[4] > 0 ? 'style="background:rgba(244,88,110,.04)"' : ''}>
+          <td class="mono fs11 c-blue">${r[0]}</td>
+          <td class="t-main fs11">${r[1]}</td>
+          <td class="fs11 t3" style="line-height:1.7">${r[2]}</td>
+          <td><span class="tag ${r[3] === '高' ? 'tag-red' : r[3] === '中' ? 'tag-orange' : 'tag-grey'}">${r[3]}</span></td>
+          <td class="num ${r[4] > 0 ? 'c-red b6' : 't4'}">${r[4] || '—'}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`).join('');
+  App.tabs('#dmTabs');
+
+  /* ---------- 高危销方 ---------- */
+  document.getElementById('sellerSeg').innerHTML = I.SELLERS.map((s, i) =>
+    `<button class="${i === 0 ? 'on' : ''}" data-v="${i}">${s.name.slice(0, 4)}</button>`).join('');
+
+  function drawSeller(i) {
+    const s = I.SELLERS[i];
+    document.getElementById('sellerBase').innerHTML = `
+      <div class="flex items-c gap10 mb">
+        <div class="avatar-sm">${s.name.slice(0, 1)}</div>
+        <div><div class="fs13 b6" style="font-size:13.5px">${s.name}</div>
+          <div class="fs10 t4 mono">${s.taxNo}</div></div>
+        <div class="ml-auto right">
+          <div class="mono b7" style="font-size:22px;color:var(--red)">${s.score}</div>
+          <div class="fs10 t4">空壳画像分 / 高危线 75</div>
+        </div>
+      </div>
+      ${s.isRunaway ? '<div class="note red mb"><b>走逃失联预警</b>：8/15 新增失信被执行 2,180 万且账户被冻结，8/18 因登记住所无法联系被列入经营异常名录，纳税信用由 B 级下调至 C 级。</div>' : ''}
+      <div class="grid g4 mb" style="gap:8px">
+        <div class="node center"><div class="fs10 t4">8月开票额</div><div class="mono b7 fs12">${s.amount8m} 万</div></div>
+        <div class="node center"><div class="fs10 t4">进项税额</div><div class="mono b7 fs12 c-red">${s.taxAmount} 万</div></div>
+        <div class="node center"><div class="fs10 t4">开票张数</div><div class="mono b7 fs12">${s.invoiceCnt}</div></div>
+        <div class="node center"><div class="fs10 t4">占我方进项</div><div class="mono b7 fs12 ${s.shareOfInput > 20 ? 'c-orange' : ''}">${s.shareOfInput}%</div></div>
+      </div>
+      <table class="tbl">
+        <tbody>
+          <tr><td class="fs11 t3" style="width:96px">成立时间</td><td class="fs11 t-main">${s.base.setup}</td></tr>
+          <tr><td class="fs11 t3">注册资本</td><td class="fs11 t-main">${s.base.capital}</td></tr>
+          <tr><td class="fs11 t3">社保参保</td><td class="fs11 t-main">${s.base.insured} 人</td></tr>
+          <tr><td class="fs11 t3">注册地址</td><td class="fs11 t-main">${s.base.addr}</td></tr>
+          <tr><td class="fs11 t3">经营范围</td><td class="fs11 t-main">${s.base.scope}</td></tr>
+          <tr><td class="fs11 t3">纳税信用</td><td class="fs11 t-main">${s.base.taxCredit}</td></tr>
+          <tr><td class="fs11 t3">税收洼地</td><td class="fs11 t-main">${s.base.park}</td></tr>
+        </tbody>
+      </table>`;
+
+    document.getElementById('cardTbl').innerHTML = `
+      <thead><tr><th>评分维度</th><th class="num">得分</th><th class="num">满分</th><th>说明</th></tr></thead>
+      <tbody>${s.card.map(c => `<tr>
+        <td class="fs11 ${c[1] >= c[2] * .8 ? 't-main' : 't2'}">${c[0]}</td>
+        <td class="num b6" style="color:${c[1] >= c[2] * .8 ? 'var(--red)' : c[1] > 0 ? 'var(--orange)' : 'var(--green)'}">${c[1]}</td>
+        <td class="num t4">${c[2]}</td>
+        <td class="fs11 t3">${c[3]}</td></tr>`).join('')}
+      <tr style="background:rgba(244,88,110,.08)"><td class="b7">合计</td>
+        <td class="num b7 c-red">${s.score}</td><td class="num t4">100</td>
+        <td class="fs11 c-red b6">${s.score >= 75 ? '高危 · 建议不予准入或暂停合作' : '预警'}</td></tr></tbody>`;
+
+    Chart.rank('#behaviorChart', {
+      metric: '占比', unit: '%', labelW: 116, fmt: v => v.toFixed(0),
+      items: [
+        { label: '开票额度使用率', value: s.behavior.quotaUsage, color: s.behavior.quotaUsage > 85 ? '#f4586e' : '#fb923c' },
+        { label: '月末三日集中度', value: s.behavior.monthEndRatio, color: s.behavior.monthEndRatio > 60 ? '#f4586e' : '#fbbf24' },
+        { label: '顶额开票占比', value: s.behavior.topAmountRatio, color: s.behavior.topAmountRatio > 60 ? '#f4586e' : '#fbbf24' },
+        { label: '我方进项占比', value: s.shareOfInput, color: s.shareOfInput > 20 ? '#fb923c' : '#38bdf8' }
+      ]
+    });
+
+    const cats = {};
+    s.behavior.inputTop.forEach(x => cats[x[0]] = [x[1], 0]);
+    s.behavior.outputTop.forEach(x => { cats[x[0]] = cats[x[0]] || [0, 0]; cats[x[0]][1] = x[1]; });
+    const colors = ['#f4586e', '#fb923c', '#fbbf24', '#38bdf8', '#a78bfa', '#34d399'];
+    const nameSeries = Object.keys(cats).map((k, i) => ({ name: k, data: cats[k], color: colors[i % colors.length], unit: ' %' }));
+    Chart.bar('#nameChart', {
+      xLabels: ['进项品名', '销项品名'], stacked: true, bandWidth: .46, pad: { t: 12, r: 14, b: 24, l: 38 },
+      series: nameSeries, yFmt: v => v.toFixed(0)
+    });
+    document.getElementById('nameLegend').innerHTML = nameSeries.map(x =>
+      `<span><i class="sq" style="background:${x.color}"></i>${x.name}</span>`).join('');
+
+    document.getElementById('sellerScoreTag').textContent = '空壳画像 ' + s.score + ' 分 · 更新于 12 分钟前';
+    document.getElementById('sellerRead').innerHTML = s.aiRead;
+    document.getElementById('sellerActions').innerHTML = s.actions.map((a, k) =>
+      `<div class="node"><div class="fs10 t4">建议动作 ${k + 1}</div><div class="fs11" style="line-height:1.75;margin-top:3px">${a}</div></div>`).join('');
+  }
+  drawSeller(0);
+  App.seg('#sellerSeg', v => drawSeller(+v));
+
+  /* ---------- 四流六单 ---------- */
+  Chart.heatmap('#flowHeat', {
+    rows: I.FLOWS.map(f => f.biz.replace('PO-2026', '')),
+    cols: I.FLOW_DOCS,
+    data: I.FLOWS.map(f => f.docs.map(d => d ? 1 : 0)),
+    metric: '单据', min: 0, max: 1, labelW: 92,
+    stops: [[0, [244, 88, 110]], [1, [52, 211, 153]]]
+  });
+
+  document.getElementById('flTabs').innerHTML = I.FLOWS.map((f, i) =>
+    `<button class="${i === 0 ? 'on' : ''}" data-tab="f${i}">${f.biz} · ${f.seller.slice(0, 4)} <span class="tag ${f.matchRate >= 95 ? 'tag-green' : f.matchRate >= 80 ? 'tag-orange' : 'tag-red'}">${f.matchRate}%</span></button>`).join('');
+  document.getElementById('flPanels').innerHTML = I.FLOWS.map((f, i) => `
+    <div data-panel="f${i}" data-group="fl" ${i ? 'style="display:none"' : ''}>
+      <div class="grid g4 mb" style="gap:9px">
+        <div class="node"><div class="fs10 t4">业务单号</div><div class="fs12 b6 mono">${f.biz}</div></div>
+        <div class="node"><div class="fs10 t4">供应商</div><div class="fs12 b6">${f.seller}</div></div>
+        <div class="node"><div class="fs10 t4">品名 / 数量</div><div class="fs12 b6">${f.item} · ${f.qty} 吨</div></div>
+        <div class="node"><div class="fs10 t4">金额 / 匹配率</div><div class="fs12 b6">${f.amount} 万 · <span style="color:${f.matchRate >= 95 ? 'var(--green)' : f.matchRate >= 80 ? 'var(--orange)' : 'var(--red)'}">${f.matchRate}%</span></div></div>
+      </div>
+      <table class="tbl mb">
+        <thead><tr><th style="width:120px">单据</th><th style="width:190px">单号</th><th style="width:90px">状态</th><th>校验说明</th></tr></thead>
+        <tbody>${f.detail.map(d => `<tr>
+          <td class="t-main fs11">${d[0]}</td>
+          <td class="mono fs11 t2">${d[1]}</td>
+          <td><span class="tag ${d[3] === 'ok' ? 'tag-green' : d[3] === 'miss' ? 'tag-red' : d[3] === 'pending' ? 'tag-blue' : 'tag-orange'}">${d[2]}</span></td>
+          <td class="fs11 t3" style="line-height:1.7">${d[4]}</td></tr>`).join('')}</tbody>
+      </table>
+      <div class="note ${f.matchRate >= 95 ? 'green' : f.matchRate >= 80 ? '' : 'red'}"><b>勾稽结论</b>：${f.concl}</div>
+    </div>`).join('');
+  App.tabs('#flTabs');
+
+  /* ---------- 税务指标 ---------- */
+  const cfg = I.CONFIG.groups[0].items;
+  document.getElementById('baseTxt').textContent = cfg[0].val + '% ~ ' + cfg[1].val + '%';
+
+  Chart.line('#vatChart', {
+    xLabels: I.TAX.series.x, y2: true, min: 0,
+    markLines: [
+      { value: 0.80, label: '基线上限 0.80%', color: '#fbbf24' },
+      { value: 0.30, label: '基线下限 0.30%', color: '#fbbf24' }
+    ],
+    series: [
+      { name: 'E01 税负率', data: I.TAX.series.E01, color: '#34d399', unit: ' %', fmt: v => v.toFixed(2) },
+      { name: 'E02 税负率', data: I.TAX.series.E02, color: '#f4586e', unit: ' %', fmt: v => v.toFixed(2) },
+      { name: 'E03 税负率', data: I.TAX.series.E03, color: '#fb923c', unit: ' %', fmt: v => v.toFixed(2) },
+      { name: 'E02 毛利率', data: I.TAX.series.margin_E02, color: '#a78bfa', axis2: true, dashed: true, dots: false, unit: ' %' }
+    ],
+    yFmt: v => v.toFixed(2), y2Fmt: v => v.toFixed(1)
+  });
+
+  document.getElementById('entCards').innerHTML = I.TAX.entities.map(e => `
+    <div class="node" style="margin-bottom:9px;${e.level === 'high' ? 'border-color:rgba(244,88,110,.4);background:rgba(244,88,110,.06)' : e.level === 'mid' ? 'border-color:rgba(251,146,60,.34);background:rgba(251,146,60,.05)' : ''}">
+      <div class="node-t" style="font-size:11.5px">${e.name}
+        <span class="tag ${e.level === 'high' ? 'tag-red' : e.level === 'mid' ? 'tag-orange' : 'tag-green'} ml-auto">${e.level === 'high' ? '背离预警' : e.level === 'mid' ? '关注' : '正常'}</span></div>
+      <div class="flex gap12" style="margin:6px 0">
+        <div><div class="fs10 t4">增值税税负率</div><div class="mono b7" style="font-size:16px;color:${e.level === 'high' ? 'var(--red)' : e.level === 'mid' ? 'var(--orange)' : 'var(--green)'}">${e.vatRate}%</div></div>
+        <div><div class="fs10 t4">毛利率</div><div class="mono b7" style="font-size:16px">${e.grossMargin}%</div></div>
+        <div><div class="fs10 t4">毛利 / 税负</div><div class="mono b7" style="font-size:16px">${(e.grossMargin / e.vatRate).toFixed(1)} 倍</div></div>
+      </div>
+      <div class="fs11 t3" style="line-height:1.7">${e.note}</div>
+    </div>`).join('');
+
+  document.getElementById('threeTbl').innerHTML = `
+    <thead><tr><th>数据来源</th><th class="num">金额（万元）</th><th class="num">与基准差异</th><th>判定</th></tr></thead>
+    <tbody>${I.TAX.threeTable.map(r => `<tr>
+      <td class="t-main fs11">${r[0]}</td><td class="num">${r[1].toLocaleString()}</td>
+      <td class="num ${r[3] === 'base' ? 't4' : 'c-green'}">${r[2]}</td>
+      <td>${r[3] === 'base' ? '<span class="tag tag-blue">基准</span>' : '<span class="tag tag-green">一致</span>'}</td></tr>`).join('')}</tbody>`;
+
+  document.getElementById('otherTbl').innerHTML = `
+    <thead><tr><th>指标</th><th class="num">数值</th><th>口径</th><th>说明</th></tr></thead>
+    <tbody>${I.TAX.other.map(r => `<tr>
+      <td class="t-main fs11">${r[0]}</td>
+      <td class="num b6" style="color:${r[3] === 'warn' ? 'var(--orange)' : 'var(--green)'}">${r[1]}</td>
+      <td class="fs11 t3">${r[2]}</td>
+      <td class="fs11 t3" style="line-height:1.7">${r[4]}</td></tr>`).join('')}</tbody>`;
+
+  /* ---------- 交易图谱 ---------- */
+  function drawGraph() {
+    const host = document.getElementById('graphChart');
+    const W = host.clientWidth, H = 340;
+    if (W < 60) return;
+    host.innerHTML = '';
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('width', W); svg.setAttribute('height', H);
+    const px = n => n.x / 100 * W, py = n => n.y / 100 * H;
+    const nodes = {}; I.GRAPH.nodes.forEach(n => nodes[n.id] = n);
+    const defs = document.createElementNS(NS, 'defs');
+    defs.innerHTML = `<marker id="ga" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+        <path d="M0 0 L7 3.5 L0 7 z" fill="#7f9cc0"/></marker>
+      <marker id="gr" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+        <path d="M0 0 L7 3.5 L0 7 z" fill="#f4586e"/></marker>`;
+    svg.appendChild(defs);
+    I.GRAPH.links.forEach(l => {
+      const a = nodes[l.from], b = nodes[l.to];
+      const x1 = px(a), y1 = py(a), x2 = px(b), y2 = py(b);
+      const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy);
+      const ox = dx / len * 44, oy = dy / len * 26;
+      const p = document.createElementNS(NS, 'path');
+      const mx = (x1 + x2) / 2 + dy * .1, my = (y1 + y2) / 2 - dx * .1;
+      p.setAttribute('d', `M${x1 + ox} ${y1 + oy} Q${mx} ${my} ${x2 - ox} ${y2 - oy}`);
+      p.setAttribute('fill', 'none');
+      p.setAttribute('stroke', l.type === 'loop' ? '#f4586e' : '#7f9cc0');
+      p.setAttribute('stroke-width', l.type === 'loop' ? 2.2 : 1.5);
+      p.setAttribute('stroke-dasharray', l.type === 'loop' ? '6 4' : null);
+      p.setAttribute('opacity', l.type === 'loop' ? .95 : .5);
+      p.setAttribute('marker-end', l.type === 'loop' ? 'url(#gr)' : 'url(#ga)');
+      svg.appendChild(p);
+      const t = document.createElementNS(NS, 'text');
+      t.setAttribute('x', mx); t.setAttribute('y', my - 4);
+      t.setAttribute('text-anchor', 'middle'); t.setAttribute('font-size', 9.5);
+      t.setAttribute('fill', l.type === 'loop' ? '#f4586e' : '#6a7d9d');
+      t.textContent = l.label; svg.appendChild(t);
+    });
+    I.GRAPH.nodes.forEach(n => {
+      const g = document.createElementNS(NS, 'g');
+      const c = n.type === 'me' ? '#38bdf8' : '#f4586e';
+      const r = document.createElementNS(NS, 'rect');
+      r.setAttribute('x', px(n) - 52); r.setAttribute('y', py(n) - 21);
+      r.setAttribute('width', 104); r.setAttribute('height', 42); r.setAttribute('rx', 9);
+      r.setAttribute('fill', c); r.setAttribute('fill-opacity', n.type === 'me' ? .2 : .13);
+      r.setAttribute('stroke', c); r.setAttribute('stroke-opacity', .6);
+      g.appendChild(r);
+      const t1 = document.createElementNS(NS, 'text');
+      t1.setAttribute('x', px(n)); t1.setAttribute('y', py(n) - 3);
+      t1.setAttribute('text-anchor', 'middle'); t1.setAttribute('font-size', 11.5);
+      t1.setAttribute('font-weight', 600); t1.setAttribute('fill', '#e8eefb');
+      t1.textContent = n.label; g.appendChild(t1);
+      const t2 = document.createElementNS(NS, 'text');
+      t2.setAttribute('x', px(n)); t2.setAttribute('y', py(n) + 11);
+      t2.setAttribute('text-anchor', 'middle'); t2.setAttribute('font-size', 9.5);
+      t2.setAttribute('fill', '#7f93b3'); t2.textContent = n.sub; g.appendChild(t2);
+      svg.appendChild(g);
+    });
+    host.appendChild(svg);
+  }
+  /* 本脚本在 DOMContentLoaded 之前同步执行，此时侧边栏尚未插入，容器宽度不准，
+     因此统一交给 ResizeObserver 在布局稳定后重绘 */
+  drawGraph();
+  if (window.ResizeObserver) {
+    let t;
+    new ResizeObserver(() => { clearTimeout(t); t = setTimeout(drawGraph, 120); })
+      .observe(document.getElementById('graphChart'));
+  }
+
+  document.getElementById('loopPipe').innerHTML = I.GRAPH.loop.path.map((p, i) =>
+    `${i ? '<div class="fp-arrow">→</div>' : ''}<div class="fp-box" style="${i === 0 || i === I.GRAPH.loop.path.length - 1 ? 'border-color:rgba(56,189,248,.45);background:rgba(56,189,248,.07)' : 'border-color:rgba(244,88,110,.4);background:rgba(244,88,110,.06)'}"><div class="fp-t">${p}</div></div>`).join('');
+  document.getElementById('loopRead').innerHTML = I.GRAPH.loop.read;
+
+  /* ---------- 台账 ---------- */
+  const lvMap = { high: ['tag-red', '高风险'], mid: ['tag-orange', '中风险'], low: ['tag-yellow', '低风险'], ok: ['tag-green', '正常'] };
+  function drawInv(f) {
+    const rows = I.INVOICES.filter(v => f === 'all' || v.level === f);
+    document.getElementById('invTbl').innerHTML = `
+      <thead><tr><th>数电发票号码</th><th>开票日期</th><th>主体</th><th>销方</th><th>品名规格</th>
+        <th class="num">数量(吨)</th><th class="num">金额(元)</th><th class="num">税额(元)</th><th class="num">税率</th>
+        <th>用途确认</th><th>付款</th><th>风险</th><th>命中规则</th></tr></thead>
+      <tbody>${rows.map(v => `<tr ${v.level === 'high' ? 'style="background:rgba(244,88,110,.05)"' : ''}>
+        <td class="mono fs10 nowrap">${v.no}</td>
+        <td class="mono fs11 t3 nowrap">${v.date}</td>
+        <td class="fs11 t3">${v.entity}</td>
+        <td class="t-main fs11">${v.seller}<div class="t-sub mono">${v.sellerTax}</div></td>
+        <td class="fs11 t2">${v.item}</td>
+        <td class="num">${v.qty.toLocaleString()}</td>
+        <td class="num">${v.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+        <td class="num ${v.level === 'high' ? 'c-red' : ''}">${v.tax.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+        <td class="num t3">${v.taxRate}%</td>
+        <td class="nowrap"><span class="tag ${v.useState === '已确认抵扣' ? 'tag-blue' : 'tag-grey'}">${v.useState}</span></td>
+        <td class="nowrap"><span class="tag ${v.payState === '待付款' ? 'tag-orange' : 'tag-green'}">${v.payState}</span></td>
+        <td class="nowrap"><span class="tag ${lvMap[v.level][0]}">${lvMap[v.level][1]}</span>${v.score > 60 ? `<div class="t-sub mono">${v.score} 分</div>` : ''}</td>
+        <td class="fs11" style="min-width:220px">${v.flags.length
+        ? v.flags.map(x => `<div class="c-red" style="line-height:1.65">${x}</div>`).join('') + `<div class="t4 fs10" style="line-height:1.6;margin-top:2px">${v.note}</div>`
+        : '<span class="t4">—</span>'}</td>
+      </tr>`).join('')}</tbody>`;
+  }
+  drawInv('all');
+  App.seg('#lvSeg', v => drawInv(v));
+  App.seg('#entSeg', v => { ent = v; });
+})();
+</script>
+</body>
+</html>

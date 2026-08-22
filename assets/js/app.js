@@ -60,12 +60,14 @@
         { k: 'inv', t: '库存风险看板', h: 'dashboard-inventory.html', i: 'box', n: 3 },
         { k: 'ar', t: '应收欠款风险看板', h: 'dashboard-receivable.html', i: 'wallet', n: 4 },
         { k: 'global', t: '全局经营风控总看板', h: 'dashboard-global.html', i: 'globe', n: 2 },
+        { k: 'invoice', t: '发票税务风险看板', h: 'invoice-risk.html', i: 'file', tag: 'NEW' },
         { k: 'price', t: '采购智能定价预警', h: 'pricing-alert.html', i: 'trend', tag: 'NEW' }
       ]
     },
     {
       g: '执行与迭代', items: [
         { k: 'flow', t: '业务执行与预警', h: 'workflow.html', i: 'flow' },
+        { k: 'gate', t: '发票风控闸口', h: 'invoice-gate.html', i: 'shield', tag: 'NEW' },
         { k: 'wheel', t: '数据飞轮与路线图', h: 'flywheel.html', i: 'refresh' }
       ]
     },
@@ -90,6 +92,8 @@
     ar: ['风险看板', '应收欠款风险看板'],
     global: ['风险看板', '全局经营风控总看板'],
     price: ['风险看板', '采购智能定价预警'],
+    invoice: ['风险看板', '发票税务风险看板'],
+    gate: ['执行与迭代', '发票风控闸口与证据链'],
     flow: ['执行与迭代', '第三层 · 业务执行与预警'],
     wheel: ['执行与迭代', '数据飞轮闭环与落地路线']
   };

@@ -586,6 +586,300 @@
       consumers: ['应收坏账模型', '供应链风险子模型', '客户应收风控智能体', 'GET /v1/risk/customer/{code}/events', 'Webhook risk.customer.credit_event']
     },
 
+    /* ===================== 三B、票税与物流（发票风控） ===================== */
+    {
+      id: 'einv', group: 'tax', groupName: '票税与物流', name: '数电票进销项明细', table: 'ods_einvoice → dwd_invoice_detail', hot: true,
+      meta: { way: '数电票平台 API + 电子发票服务平台', freq: '每 30 分钟增量 / 每日全量对账', pk: 'invoice_no（20 位）', inc: '按 issue_time 增量', vol: '进项约 126 张/月，销项约 860 张/月', role: '发票合规风险与四流勾稽的事实基础' },
+      input: [
+        ['invoice_no', 'string(20)', 1, '数电发票号码，20 位。数电票无发票代码，仅此一个号码', '24310000000018842317'],
+        ['invoice_type', 'enum', 1, '数电专票 / 数电普票 / 数电票（航空铁路电子客票等）', '数电专票'],
+        ['direction', 'enum', 1, 'input 进项 / output 销项', 'input'],
+        ['entity_code', 'string(16)', 1, '我方受票或开票主体编码。多主体模式下用于跨主体查重', 'E01'],
+        ['issue_time', 'datetime', 1, '开票时间', '2026-08-14T10:22:31+08:00'],
+        ['seller_name / seller_tax_no', 'string', 1, '销方名称与统一社会信用代码。<b>税号是所有票税风控的匹配键</b>', '91320500MA1DDDD44D'],
+        ['buyer_name / buyer_tax_no', 'string', 1, '购方名称与税号', '91310000MA1AAAA11A'],
+        ['buyer_addr_tel / buyer_bank_acct', 'string', 0, '购方地址电话与开户行账号。四要素比对需要，专票必填', '—'],
+        ['goods_name', 'string(128)', 1, '商品名称。钢材须体现材质规格，否则影响业务真实性举证', '螺纹钢 HRB400E Φ20'],
+        ['tax_class_code', 'string(19)', 1, '税收分类编码，19 位。金税四期核心比对项，开错必被标记', '1080405020000000000'],
+        ['spec_model', 'string(64)', 0, '规格型号', 'HRB400E Φ20 9M'],
+        ['unit', 'string(16)', 1, '计量单位。钢材应为「吨」，出现件/支/捆需换算核对', '吨'],
+        ['quantity', 'decimal(18,6)', 1, '数量。与过磅单比对时按品种容差判定', '360.000000'],
+        ['unit_price', 'decimal(18,8)', 1, '不含税单价', '3186.73000000'],
+        ['amount', 'decimal(18,2)', 1, '不含税金额', '1147222.80'],
+        ['tax_rate', 'decimal(6,4)', 1, '税率。货物 13% / 运输 9% / 仓储 6% / 加工 13%', '0.1300'],
+        ['tax_amount', 'decimal(18,2)', 1, '税额。需校验 amount × tax_rate = tax_amount', '149138.96'],
+        ['total_amount', 'decimal(18,2)', 1, '价税合计', '1296361.76'],
+        ['use_state', 'enum', 1, '用途确认状态：未确认 / 已确认抵扣 / 已确认不抵扣 / 已用于退税。<b>数电票特有，替代原认证概念</b>', '已确认抵扣'],
+        ['entry_state', 'enum', 0, '入账状态', '已入账'],
+        ['red_letter_no', 'string(32)', 0, '红字信息确认单编号。数电票红冲必须先取得确认单', null],
+        ['red_flag', 'enum', 0, '正常 / 已红冲 / 部分红冲；并标明由销方还是购方发起', '正常'],
+        ['remark', 'string(256)', 0, '备注栏。货物运输发票必填起运地、到达地、车牌号', '沪A·12345 上海—杭州'],
+        ['biz_no', 'string(64)', 0, '关联业务单号。<b>强烈建议 ERP 在开票时回填</b>，否则四流勾稽只能靠模糊匹配', 'PO-20260814-0033']
+      ],
+      rules: [
+        'L1：invoice_no 缺失或非 20 位 → 拒绝入湖',
+        'L1：seller_tax_no 缺失 → 拒绝（无法做销方风险画像与走逃失联匹配）',
+        'L1：同一 invoice_no 在集团多主体范围内重复入账 → 拒绝并触发 IC-03 跨主体重复入账告警',
+        'L2：amount × tax_rate 与 tax_amount 偏差 > 0.01 元 → 标记勾稽错误（IC-16）',
+        'L2：tax_class_code 与 goods_name 不匹配 → 标记编码错误（IC-08）',
+        'L2：货物与运输混开且统一按 13% → 标记税率适用错误（IC-07）',
+        'L2：unit 非「吨」且品名为钢材 → 标记计量单位不规范（IC-09）',
+        'L2：issue_time 与货物发出日偏离 > 45 天（租户可配置）→ 标记跨期开票（IC-10）',
+        'L2：red_flag = 已红冲 且发起方为销方 → 高优先级告警（IC-05）',
+        'L3：biz_no 为空 → 记录待关联队列，用「销方 + 品名 + 数量 + 日期」做模糊匹配'
+      ],
+      output: [
+        ['invoice_key', 'string', '发票主键（集团唯一）', '全部下游'],
+        ['seller_key', 'string', '销方 uscc，关联到供应商画像与失信检测', '销方风险画像'],
+        ['amount_ex_tax / tax_amount', 'decimal', '不含税金额与税额（统一口径）', '税负率测算'],
+        ['hit_rules', 'array', '命中的合规规则编码列表（IC-xx / TX-xx / BT-xx / FR-xx）', '风险看板 / 闸口'],
+        ['risk_level', 'enum', '发票风险等级 high / mid / low / ok', '付款与抵扣闸口'],
+        ['risk_score', 'int', '综合风险分 0~100', '排序与推送'],
+        ['qty_deviation', 'decimal(6,4)', '票量与磅量偏差率，按品种容差判定', '四流勾稽'],
+        ['red_letter_rate_by_cat', 'decimal(6,4)', '按品类的红冲率，用于 ±2σ 基线判定', '合规规则 IC-06'],
+        ['cross_entity_dup', 'boolean', '跨主体重复入账标记', '闸口二']
+      ],
+      sample: {
+        invoice_key: '24310000000018842317', entity_code: 'E01', seller_key: '91320500MA1DDDD44D',
+        goods_name: '螺纹钢 HRB400E Φ20', quantity: 360, amount_ex_tax: 1147222.80, tax_amount: 149138.96,
+        use_state: 'confirmed_deduct', red_flag: 'normal', qty_deviation: -0.0161,
+        hit_rules: ['FR-01', 'BT-02', 'TX-06'], risk_level: 'high', risk_score: 88, cross_entity_dup: false
+      },
+      consumers: ['发票合规规则引擎', '销方风险画像模型', '票税风控智能体', 'POST /v1/invoice/verify', '四道闸口']
+    },
+
+    {
+      id: 'vatdecl', group: 'tax', groupName: '票税与物流', name: '增值税申报表与财务报表', table: 'ods_tax_declaration → dws_tax_indicator',
+      meta: { way: '财务系统接口 / 申报表文件导入', freq: '月度（申报期后 T+1）', pk: 'entity_code + period', inc: '按期增量', vol: '3 个主体 × 12 期', role: '税负率与三表四方比对' },
+      input: [
+        ['entity_code', 'string(16)', 1, '纳税主体编码', 'E02'],
+        ['period', 'string(7)', 1, '所属期 YYYY-MM', '2026-08'],
+        ['vat_sales_amount', 'decimal(18,2)', 1, '增值税申报销售额（不含税）', '162068000.00'],
+        ['vat_output_tax', 'decimal(18,2)', 1, '销项税额', '21068840.00'],
+        ['vat_input_tax', 'decimal(18,2)', 1, '进项税额', '20890560.00'],
+        ['vat_input_transfer_out', 'decimal(18,2)', 0, '进项税额转出。异常凭证导致的转出应单独标记', '0.00'],
+        ['vat_payable', 'decimal(18,2)', 1, '应纳税额', '178280.00'],
+        ['vat_credit_balance', 'decimal(18,2)', 0, '期末留抵税额。<b>留抵大增但库存未增是票多货少的信号</b>', '4862000.00'],
+        ['cit_revenue', 'decimal(18,2)', 0, '企业所得税申报收入（季度/年度）', '162068000.00'],
+        ['fin_revenue', 'decimal(18,2)', 1, '财务报表营业收入', '162184000.00'],
+        ['fin_cost', 'decimal(18,2)', 1, '营业成本。用于毛利率与税负率背离判定', '156970000.00'],
+        ['fin_expense', 'decimal(18,2)', 0, '期间费用合计', '3240000.00'],
+        ['invoiced_amount', 'decimal(18,2)', 1, '当期开票金额合计（数电口径）', '162010000.00'],
+        ['declare_time', 'datetime', 1, '申报时间', '2026-09-10T14:20:00+08:00']
+      ],
+      rules: [
+        'L1：entity_code + period 重复 → 以最新 declare_time 为准（存在更正申报）',
+        'L1：vat_sales_amount ≤ 0 但存在开票记录 → 拒绝并告警',
+        'L2：四方比对（增值税申报 / 所得税申报 / 财报 / 开票）任两方差异 > 租户配置容忍度（默认 1%）→ 标记 TX-05',
+        'L2：税负率 = vat_payable / vat_sales_amount，落在租户配置区间外 → 标记 TX-01 / TX-02',
+        'L2：税负率环比波动 > 50% → 标记 TX-03',
+        'L2：毛利率 / 税负率 偏离历史中枢 > 2 倍 → 标记 TX-04 背离预警',
+        '<b>基线说明</b>：钢贸增值税税负率正常区间 0.3%~0.8%，为租户可配置项，按主体分别设置。套用制造业 2%~3% 会导致全量误报'
+      ],
+      output: [
+        ['vat_rate', 'decimal(8,6)', '增值税税负率 = 应纳税额 / 不含税销售额', '税务指标看板'],
+        ['gross_margin', 'decimal(8,6)', '毛利率 = (收入 − 成本) / 收入', '背离判定'],
+        ['margin_tax_ratio', 'decimal(8,4)', '毛利率 / 税负率 倍数，与历史中枢比较', 'TX-04 核心指标'],
+        ['vat_rate_mom', 'decimal(8,6)', '税负率环比变动', 'TX-03'],
+        ['three_table_max_diff', 'decimal(8,6)', '四方比对最大差异率', 'TX-05'],
+        ['credit_vs_stock_gap', 'decimal(8,6)', '留抵增幅 − 库存货值增幅', 'TX-08'],
+        ['input_concentration_top1', 'decimal(6,4)', '单一供应商进项占比', 'TX-06']
+      ],
+      sample: {
+        entity_code: 'E02', period: '2026-08', vat_rate: 0.0011, gross_margin: 0.0318,
+        margin_tax_ratio: 28.9, hist_median_ratio: 10.3, vat_rate_mom: -0.3125,
+        three_table_max_diff: 0.0007, credit_vs_stock_gap: 0.163, input_concentration_top1: 0.236,
+        hit_rules: ['TX-04', 'TX-08'], level: 'high'
+      },
+      consumers: ['税负率异常检测模型', '票税风控智能体', 'GET /v1/tax/indicator', '发票风险看板']
+    },
+
+    {
+      id: 'bank', group: 'tax', groupName: '票税与物流', name: '银企直联流水', table: 'ods_bank_flow → dwd_payment_flow', hot: true,
+      meta: { way: '银企直联（已实现）', freq: '每 15 分钟', pk: 'transaction_id', inc: '按 trade_time 增量', vol: '约 420 笔/月', role: '资金流验证与资金回流检测' },
+      input: [
+        ['transaction_id', 'string(64)', 1, '银行流水号', 'BK20260808000052117'],
+        ['entity_code', 'string(16)', 1, '我方主体编码', 'E01'],
+        ['our_account', 'string(32)', 1, '我方账号', '3100****8821'],
+        ['direction', 'enum', 1, 'out 付款 / in 收款', 'out'],
+        ['counterparty_name', 'string(128)', 1, '对方户名。<b>需与发票销方名称精确比对</b>', '中天钢铁销售有限公司'],
+        ['counterparty_account', 'string(32)', 1, '对方账号', '3202****4417'],
+        ['counterparty_bank', 'string(64)', 0, '对方开户行', '中国银行张家港分行'],
+        ['amount', 'decimal(18,2)', 1, '交易金额', '2660004.18'],
+        ['trade_time', 'datetime', 1, '交易时间', '2026-08-08T15:41:22+08:00'],
+        ['summary', 'string(128)', 0, '摘要 / 用途', '货款'],
+        ['biz_no', 'string(64)', 0, '关联业务单号。ERP 付款时回填，缺失则只能按金额时间模糊匹配', 'PO-20260807-0014'],
+        ['receipt_url', 'string(512)', 0, '电子回单地址。<b>证据链归档必需</b>', 's3://receipts/PY-20260808-0052.pdf']
+      ],
+      rules: [
+        'L1：counterparty_name 缺失 → 拒绝（无法做收付款方一致性校验）',
+        'L1：amount ≤ 0 拒绝',
+        'L2：counterparty_name ≠ 发票销方名称 → 标记 BT-14 付款方与受票方不一致（第三方代付需有三方协议）',
+        'L2：<b>资金回流检测</b> —— 付款后 N 日内（默认 15 日）资金经第三方账户回流至我方或关联账户 → 标记 BT-03，这是虚开的铁证',
+        'L2：同一对方账户短期内高频大额往返 → 标记疑似走单',
+        'L3：biz_no 为空 → 进待关联队列，按「金额 + 时间窗 + 对方户名」三要素匹配'
+      ],
+      output: [
+        ['payee_match_seller', 'boolean', '收款方与发票销方是否一致', '闸口二付款前校验'],
+        ['fund_return_flag', 'boolean', '资金回流标记', 'BT-03 高危规则'],
+        ['fund_return_path', 'json', '回流路径（我方 → A → B → 我方关联账户）与金额、时间差', '票税 Agent 推理'],
+        ['payment_settled', 'boolean', '该业务是否已实际付款 —— 决定闸口二能否止损', '闸口二'],
+        ['receipt_archived', 'boolean', '电子回单是否已归档', '证据链完整性']
+      ],
+      sample: {
+        transaction_id: 'BK20260812000071043', entity_code: 'E01', biz_no: 'PO-20260811-0028',
+        counterparty_name: '锦程实业（上海）有限公司', amount: 696199.78,
+        payee_match_seller: true, fund_return_flag: true,
+        fund_return_path: [{ step: 1, from: '华东钢铁贸易', to: '锦程实业', amount: 696199.78, date: '2026-08-12' }, { step: 2, from: '锦程实业', to: '某某咨询', amount: 620000.00, date: '2026-08-13' }, { step: 3, from: '某某咨询', to: '我方关联账户', amount: 620000.00, date: '2026-08-15' }],
+        hit_rules: ['BT-03'], level: 'high'
+      },
+      consumers: ['四流匹配引擎', '票税风控智能体', 'POST /v1/invoice/four-flow', '闸口二 · 付款前校验']
+    },
+
+    {
+      id: 'wms', group: 'tax', groupName: '票税与物流', name: 'WMS 出入库 / 过磅单 / 运单', table: 'ods_wms_doc → dwd_goods_flow', hot: true,
+      meta: { way: 'WMS + ERP 直连（贵方已具备）', freq: '实时（事件驱动）', pk: 'doc_no', inc: '事件推送 + 每日对账', vol: '约 860 单/月', role: '货物流验证 —— 钢贸唯一难以伪造的物理痕迹' },
+      input: [
+        ['doc_no', 'string(32)', 1, '单据号', 'WB-20260807-0142'],
+        ['doc_type', 'enum', 1, 'weigh 过磅单 / inbound 入库单 / outbound 出库单 / transport 运单', 'weigh'],
+        ['biz_no', 'string(64)', 1, '关联业务单号（采购订单 / 销售订单）', 'PO-20260807-0014'],
+        ['entity_code', 'string(16)', 1, '主体编码', 'E01'],
+        ['warehouse_code', 'string(32)', 1, '仓库编码', 'WH-SH-002'],
+        ['sku_code / material / spec / mill', 'string', 1, '物料编码与材质规格钢厂', '螺纹钢HRB400E-20-沙钢-9M'],
+        ['gross_weight', 'decimal(18,3)', 0, '毛重（吨）。过磅单必填', '38.620'],
+        ['tare_weight', 'decimal(18,3)', 0, '皮重（吨）。过磅单必填', '10.240'],
+        ['net_weight', 'decimal(18,3)', 1, '净重（吨）。<b>这是与发票数量比对的基准</b>', '752.600'],
+        ['weigh_time', 'datetime', 0, '过磅时间。异常时点（如凌晨批量过磅）需人工复核', '2026-08-07T09:12:44+08:00'],
+        ['scale_no', 'string(32)', 0, '地磅编号与流水号，用于核验真实性', 'SCALE-02#20260807-0311'],
+        ['photo_url', 'string(512)', 0, '过磅原始照片（含车牌）。<b>证据链归档的核心材料</b>', 's3://weigh/WB-20260807-0142.jpg'],
+        ['plate_no', 'string(16)', 0, '车牌号。用于行程合理性与载重校验', '苏E·A1234'],
+        ['carrier', 'string(128)', 0, '承运方', '某某物流有限公司'],
+        ['rated_load', 'decimal(10,3)', 0, '车辆核定载重（吨）', '31.000'],
+        ['from_place / to_place', 'string(64)', 0, '起运地 / 到达地', '张家港 / 上海宝山'],
+        ['distance_km', 'decimal(10,2)', 0, '运距（公里），用于运费合理性校验', '186.40'],
+        ['quality_cert_no', 'string(64)', 0, '质保书号', 'MTC-SG20260731-2214'],
+        ['location', 'string(32)', 0, '垛位号', 'A-12-03']
+      ],
+      rules: [
+        'L1：biz_no 缺失 → 无法参与四流勾稽，进待关联队列',
+        'L1：net_weight ≤ 0 拒绝',
+        'L2：doc_type = weigh 但 gross/tare/net 三者不满足 净重 = 毛重 − 皮重 → 标记异常',
+        'L2：<b>载重校验</b> —— net_weight > rated_load × 1.3 → 标记 BT-05 运输不合理',
+        'L2：<b>行程校验</b> —— 同一 plate_no 当日多张单据的起讫地与时间差在物理上不可能 → 标记 BT-06',
+        'L2：photo_url 缺失 → 证据链完整性扣分，影响善意取得举证能力',
+        'L2：weigh_time 在非营业时段（如 00:00~05:00）且批量出现 → 人工复核',
+        '<b>票货容差</b>：与发票数量比对时按品种取容差 —— 棒材 ±3%、板卷 ±1.5%、型材 ±2.5%、管材 ±2%（租户可配置）。理计磅计差 1.5%~3% 是钢材固有特性，容差过严会每笔报警'
+      ],
+      output: [
+        ['weigh_qty / wms_qty', 'decimal(18,3)', '过磅净重与 WMS 出入库数量', '四流勾稽'],
+        ['doc_completeness', 'decimal(5,4)', '六单齐备度：合同/订单/过磅/入库/回单/发票', '闸口二'],
+        ['qty_deviation', 'decimal(6,4)', '票量与磅量偏差率', 'BT-04'],
+        ['tolerance_pass', 'boolean', '是否在品种容差内', 'BT-04'],
+        ['transport_anomaly', 'array', '运输异常标记：载重超限 / 行程矛盾 / 车型不符', 'BT-05 ~ BT-07'],
+        ['has_photo_evidence', 'boolean', '是否有过磅原始照片', '证据链完整性'],
+        ['warehouse_transfer_only', 'boolean', '仅仓单过户无实际移库', 'BT-10 / 循环贸易识别']
+      ],
+      sample: {
+        biz_no: 'PO-20260807-0014', weigh_qty: 752.600, wms_qty: 752.600, invoice_qty: 760,
+        qty_deviation: -0.0097, tolerance: 0.03, tolerance_pass: true, category: 'rebar',
+        doc_completeness: 1.0, transport_anomaly: [], has_photo_evidence: true, warehouse_transfer_only: false
+      },
+      consumers: ['四流匹配引擎', '证据链归档', 'POST /v1/invoice/four-flow', '闸口二 · 付款前校验']
+    },
+
+    {
+      id: 'taxrisk', group: 'tax', groupName: '票税与物流', name: '税务风险名单（走逃失联 / 异常凭证）', table: 'ods_tax_risklist → dwd_seller_risk_event', hot: true,
+      meta: { way: '税务公告订阅 + 电子税务局消息 + 复用现有失信检测 API', freq: '每日 + 事件推送', pk: 'risk_event_id', inc: '按 publish_date 增量', vol: '本月命中 2 户', role: '钢贸最致命的风险源 —— 直接决定进项能否保住' },
+      input: [
+        ['risk_event_id', 'string(64)', 1, '风险事件唯一 ID，用于幂等去重', 'TR-20260818-0092'],
+        ['subject_tax_no', 'string(18)', 1, '风险主体统一社会信用代码', '91320500MA1DDDD44D'],
+        ['subject_name', 'string(128)', 1, '风险主体名称', '华鑫钢贸有限公司'],
+        ['risk_type', 'enum', 1, '走逃失联 / 异常扣税凭证 / 重大税收违法失信 / 非正常户 / 纳税信用降级 / 注销吊销', '走逃失联'],
+        ['publish_date', 'date', 1, '公告或通知日期', '2026-08-18'],
+        ['publish_org', 'string(128)', 0, '发布机关', '国家税务总局某某市税务局'],
+        ['doc_no', 'string(64)', 0, '文书编号（如税务事项通知书号）', null],
+        ['scope_start / scope_end', 'date', 0, '异常凭证涉及的开票区间。<b>决定我方哪些发票受影响</b>', '2026-06-01 / 2026-08-18'],
+        ['credit_level_from / to', 'string(4)', 0, '纳税信用等级变动', 'B / C'],
+        ['source_url', 'string(512)', 0, '公告原文链接，供人工核实', 'https://...'],
+        ['raw_text', 'text', 0, '原文摘要，供大模型解读严重度', '—']
+      ],
+      rules: [
+        'L1：risk_event_id 缺失 → 拒绝（无法幂等，会导致同一事件反复触发应急流程）',
+        'L1：subject_tax_no 缺失或非 18 位 → 拒绝',
+        'L2：多渠道重复上报按 subject_tax_no + risk_type + publish_date 二次去重',
+        'risk_type = 走逃失联 或 异常扣税凭证 → <b>立即触发应急处置流程并推送 Webhook</b>，自动定位关联发票与已抵扣金额',
+        '按 scope_start / scope_end 区间反查我方已入账发票，区间外的不纳入影响范围'
+      ],
+      output: [
+        ['seller_key', 'string', '风险主体 uscc', '销方画像 / 闸口'],
+        ['affected_invoices', 'array', '受影响的发票清单与已抵扣税额', '应急处置'],
+        ['total_input_tax_at_risk', 'decimal(18,2)', '面临转出的进项税额合计', 'KPI / 应急测算'],
+        ['unpaid_amount', 'decimal(18,2)', '尚未支付金额 —— 止损空间', '闸口二'],
+        ['estimated_late_fee', 'decimal(18,2)', '预计滞纳金（按日万分之五）', '应急测算'],
+        ['evidence_completeness', 'decimal(5,4)', '关联业务的证据链完整度，决定能否走善意取得举证', '处置路径选择'],
+        ['recommended_path', 'enum', 'appeal 举证申诉 / transfer_out 主动转出并追偿', '处置建议']
+      ],
+      sample: {
+        risk_event_id: 'TR-20260818-0092', seller_key: '91320500MA1DDDD44D', risk_type: 'runaway',
+        publish_date: '2026-08-18', affected_invoice_count: 6, total_input_tax_at_risk: 149138.96,
+        unpaid_amount: 1296361.76, estimated_late_fee: 3400.00, vat_rate_impact: 0.0009,
+        evidence_completeness: 0.83, evidence_gap: ['2 笔业务缺过磅单'], recommended_path: 'mixed'
+      },
+      consumers: ['异常凭证应急处置', '闸口二 / 闸口三', 'Webhook risk.invoice.abnormal_voucher', '销方风险画像']
+    },
+
+    {
+      id: 'sellerprofile', group: 'tax', groupName: '票税与物流', name: '销方工商与涉税信用（复用失信 API 扩展）', table: 'ods_seller_profile → dwd_shell_score',
+      meta: { way: '复用现有企业失信风险检测 API，新增 query_scene = invoice_seller', freq: '分层巡检：高危 4h / 中危 1d / 常规 7d', pk: 'tax_no + snapshot_date', inc: '按巡检批次', vol: '在册销方 186 家', role: '空壳企业画像打分的数据基础' },
+      input: [
+        ['tax_no', 'string(18)', 1, '统一社会信用代码', '91310115MA1EEEE55E'],
+        ['company_name', 'string(128)', 1, '企业全称', '瑞晟金属材料有限公司'],
+        ['establish_date', 'date', 1, '成立日期。成立 < 6 个月却大额开票是空壳典型特征', '2025-09-18'],
+        ['registered_capital / paid_capital', 'decimal(18,2)', 1, '认缴 / 实缴资本。<b>实缴为 0 是重要信号</b>', '10000000 / 0'],
+        ['insured_count', 'int', 1, '社保参保人数。与开票规模严重不匹配即异常', '4'],
+        ['reg_address', 'string(256)', 1, '注册地址', '上海市某某路 8 号 2 层 2118 室'],
+        ['address_type', 'enum', 0, 'independent 独立经营场所 / cluster 集群注册 / virtual 挂靠地址', 'cluster'],
+        ['same_address_count', 'int', 0, '同一地址注册企业数', '27'],
+        ['same_phone_count', 'int', 0, '同一联系电话关联企业数', '4'],
+        ['business_scope', 'string(512)', 1, '经营范围。与钢材业务的匹配度', '金属材料、建筑材料销售'],
+        ['tax_credit_level', 'string(4)', 1, '纳税信用等级 A/B/M/C/D', 'M'],
+        ['legal_person_changes_12m', 'int', 0, '近 12 个月法定代表人变更次数', '1'],
+        ['shareholder_changes_12m', 'int', 0, '近 12 个月股东变更次数', '0'],
+        ['in_tax_haven_park', 'boolean', 0, '是否注册在税收返还园区', 'true'],
+        ['invoice_quota_monthly', 'decimal(18,2)', 0, '数电票月度授信开票额度', '5000000.00'],
+        ['quota_usage_rate', 'decimal(6,4)', 0, '额度使用率。<b>数电时代替代原「顶额开票」特征</b>', '0.7400'],
+        ['quota_increase_times', 'int', 0, '近 6 个月提额申请次数', '2'],
+        ['input_goods_top', 'json', 0, '销方进项主要品名及占比。<b>与销项背离即变名开票</b>', '[{"煤炭":0.426},{"金属矿产品":0.284}]'],
+        ['output_goods_top', 'json', 0, '销方销项主要品名及占比', '[{"螺纹钢":0.712}]'],
+        ['snapshot_date', 'date', 1, '快照日期。<b>证据链归档需要留存付款当日的这份快照</b>', '2026-08-22']
+      ],
+      rules: [
+        'L1：tax_no 缺失或未通过 18 位校验 → 拒绝',
+        'L2：address_type 无法判定时按 same_address_count 推断，≥ 10 视为集群注册',
+        'L2：input_goods_top 与 output_goods_top 主品名不属同一大类 → 标记 FR-06 变名开票',
+        'L2：quota_usage_rate > 85% 或 quota_increase_times ≥ 2 → 标记 IC-12',
+        '<b>快照留存</b>：每次巡检结果按 snapshot_date 全量留存，不做覆盖更新 —— 稽查时需要证明「付款当日他是正常纳税人」',
+        '巡检频率按销方风险等级分层，控制 API 调用成本'
+      ],
+      output: [
+        ['shell_score', 'int', '空壳企业画像综合分 0~100（10 维打分卡加权）', '闸口一 / 闸口二'],
+        ['shell_level', 'enum', 'high ≥75 / warn ≥60 / normal（阈值租户可配置）', '准入决策'],
+        ['name_switching_flag', 'boolean', '变名开票标记', 'FR-06'],
+        ['behavior_features', 'json', '额度使用率、月末集中度、顶额占比', '开票行为异常'],
+        ['related_company_count', 'int', '同址同电话关联企业数', 'FR-08'],
+        ['our_exposure', 'json', '我方对该销方的开票额、进项税额、进项占比', '风险敞口测算'],
+        ['profile_snapshot_id', 'string', '快照 ID，供证据链引用', '证据链归档']
+      ],
+      sample: {
+        tax_no: '91310115MA1EEEE55E', shell_score: 81, shell_level: 'high',
+        card: { setup_months: 12, paid_capital: 12, insured: 8, address: 12, scope: 0, changes: 5, related: 10, credit: 6, quota: 9, name_switching: 7 },
+        name_switching_flag: true, related_company_count: 4,
+        our_exposure: { amount_8m: 964000, input_tax: 111454.98, invoice_cnt: 8, input_share: 0.082 },
+        profile_snapshot_id: 'SUP-20260822-SNAP', snapshot_date: '2026-08-22'
+      },
+      consumers: ['销方风险画像模型', '闸口一 · 供应商准入', '票税风控智能体', 'GET /v1/invoice/seller-risk']
+    },
+
     /* ===================== 四、第三方补充 ===================== */
     {
       id: 'mill', group: 'ext', groupName: '第三方补充', name: '外部钢厂调价', table: 'ods_ext_mill_price → dwd_mill_price',

@@ -99,6 +99,15 @@
               <li class="c-teal">若客户为平台商户，展示其挂牌抛售行为</li>
             </ul>
           </div>
+          <div class="node new">
+            <div class="node-t">发票税务风险看板 <a href="invoice-risk.html?v=20260822" class="tag tag-teal ml-auto">查看详情</a></div>
+            <ul class="node-ul">
+              <li>四大风险域：合规 / 税务指标 / 业务真实性 / 信用欺诈</li>
+              <li>高危销方空壳画像与变名开票检测</li>
+              <li>四流六单勾稽（含过磅单与 WMS 出入库）</li>
+              <li>税负率与毛利率背离、交易图谱环路检测</li>
+            </ul>
+          </div>
           <div class="node">
             <div class="node-t">全局经营风控总看板</div>
             <ul class="node-ul">
@@ -155,6 +164,15 @@
           <div class="node new">
             <div class="node-t">上游供应商风险告警</div>
             <div class="node-b">长期合作上游供货商一旦被失信 API 检测到重大风险事件，立即推送供应链风险预警给采购负责人，提示断货与预付款损失风险。</div>
+          </div>
+          <div class="node new" style="grid-column:span 2">
+            <div class="node-t">发票风控四道闸口 <a href="invoice-gate.html?v=20260822" class="tag tag-teal ml-auto">查看详情</a></div>
+            <div class="node-b">把票税风险卡在业务节点上：<b>供应商准入 → 付款前 → 勾选抵扣前 → 销项开票前</b>，四道闸口全部开放 API 给 ERP 调用，统一为「提示 + 转审批」不强阻断。</div>
+            <ul class="node-ul">
+              <li>付款前是价值最高的一道 —— 款未付、票未抵扣，止损窗口最大</li>
+              <li>配套<b>证据链一键归档</b>：固化付款当日的供应商资质与查验快照，这是善意取得抗辩的核心</li>
+              <li>异常凭证应急处置：自动定位关联业务、测算进项转出与滞纳金、评估举证条件</li>
+            </ul>
           </div>
         </div>
       </div>
@@ -258,6 +276,13 @@
             <div class="fs10 t4" style="margin:7px 0 3px">非结构化（全部纳入私有向量库）</div>
             <ul class="node-ul">
               <li>业务员沟通纪要</li><li>谈判记录</li><li>合同扫描件</li><li>内部研判会议记录</li>
+            </ul>
+            <div class="fs10 t4" style="margin:7px 0 3px">票税与物流（本次新增）</div>
+            <ul class="node-ul">
+              <li class="c-teal">数电票平台进销项明细</li>
+              <li class="c-teal">增值税申报表 + 财务报表</li>
+              <li class="c-teal">银企直联流水（资金回流检测）</li>
+              <li class="c-teal">WMS 出入库 / 过磅单 / 运单</li>
             </ul>
           </div>
 

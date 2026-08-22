@@ -26,7 +26,7 @@
       </div>
 
       <div class="stat-strip mb">
-        <div><div class="ss-t">数据源</div><div class="ss-v c-blue">14 <span class="fs11 t4">类</span></div></div>
+        <div><div class="ss-t">数据源</div><div class="ss-v c-blue">20 <span class="fs11 t4">类</span></div></div>
         <div><div class="ss-t">输入字段定义</div><div class="ss-v" id="cntIn">—</div></div>
         <div><div class="ss-t">输出字段定义</div><div class="ss-v c-teal" id="cntOut">—</div></div>
         <div><div class="ss-t">阻断级校验规则</div><div class="ss-v c-red">L1</div></div>
@@ -189,6 +189,7 @@
     { k: 'in', n: '企业内部 · 结构化', c: 'tag-blue' },
     { k: 'un', n: '企业内部 · 非结构化', c: 'tag-ai' },
     { k: 'plat', n: '自有平台 · 核心增量', c: 'tag-teal' },
+    { k: 'tax', n: '票税与物流 · 发票风控', c: 'tag-orange' },
     { k: 'ext', n: '第三方补充', c: 'tag-grey' }
   ];
   document.getElementById('srcList').innerHTML = groups.map(g => `

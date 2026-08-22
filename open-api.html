@@ -26,8 +26,8 @@
       </div>
 
       <div class="stat-strip mb">
-        <div><div class="ss-t">已开放接口</div><div class="ss-v c-blue">17 <span class="fs11 t4">个 REST</span></div></div>
-        <div><div class="ss-t">Webhook 事件</div><div class="ss-v c-ai">5 <span class="fs11 t4">类</span></div></div>
+        <div><div class="ss-t">已开放接口</div><div class="ss-v c-blue">26 <span class="fs11 t4">个 REST</span></div></div>
+        <div><div class="ss-t">Webhook 事件</div><div class="ss-v c-ai">6 <span class="fs11 t4">类</span></div></div>
         <div><div class="ss-t">嵌入式组件</div><div class="ss-v c-orange">5 <span class="fs11 t4">个</span></div></div>
         <div><div class="ss-t">日均调用量</div><div class="ss-v">28,460</div></div>
         <div><div class="ss-t">P95 响应延迟</div><div class="ss-v c-green">142 <span class="fs11 t4">ms</span></div></div>
@@ -149,9 +149,11 @@
             <button data-tab="purchase">采购与配货场景</button>
             <button data-tab="ar">应收与客户管理场景</button>
             <button data-tab="mgmt">经营报表场景</button>
+            <button data-tab="invoice">发票与税务风控</button>
             <button data-tab="master">主数据与回写</button>
             <button data-tab="hook">Webhook 事件推送</button>
           </div>
+          <div data-panel="invoice" data-group="api" id="g-invoice" style="display:none"></div>
           <div data-panel="sale" data-group="api" id="g-sale"></div>
           <div data-panel="purchase" data-group="api" id="g-purchase" style="display:none"></div>
           <div data-panel="ar" data-group="api" id="g-ar" style="display:none"></div>
@@ -716,6 +718,211 @@ X-SRB-Role:      sales   <span class="c">// 角色决定返回字段范围</span
       }
     ],
 
+    invoice: [
+      {
+        m: 'POST', path: '/v1/invoice/gate/supplier-access', name: '闸口一 · 供应商准入校验',
+        desc: '新增供应商建档或首次开票前调用，返回空壳企业画像打分、涉税信用与变名开票特征，给出准入结论与附加条件',
+        where: 'ERP 供应商档案维护页 —— 保存时自动调用，风险画像渲染在页面右侧',
+        level: '中频计算', p95: '186ms',
+        params: [
+          ['supplierName', 'string', 1, '供应商工商全称'],
+          ['taxNo', 'string', 1, '统一社会信用代码 —— 票税能力的匹配键，缺失则全部风险检测失效'],
+          ['entityCode', 'string', 1, '我方主体编码（多主体模式必填）'],
+          ['expectedAmount', 'number', 0, '预计年度采购额，用于进项集中度预判']
+        ],
+        req: { supplierName: '瑞晟金属材料有限公司', taxNo: '91310115MA1EEEE55E', entityCode: 'E01', expectedAmount: 12000000 },
+        resp: {
+          traceId: 'ivg1-20260822-0044', decision: 'review', decisionText: '建议转税务经理审批后有条件准入',
+          blocked: false, appealable: true, shellScore: 81, shellLevel: 'high', threshold: { warn: 60, high: 75 },
+          profile: { setupMonths: 11, paidCapital: 0, insuredCount: 4, addressType: 'cluster', relatedCompanies: 4, taxCreditLevel: 'M', inTaxHavenPark: true },
+          signals: [
+            { code: 'FR-06', name: '变名开票', detail: '进项以煤炭、矿产品为主，销项全为钢材', severity: 'high' },
+            { code: 'FR-07', name: '集群注册地址', detail: '同一地址注册企业 27 家', severity: 'mid' }
+          ],
+          conditions: ['单笔限额 50 万元', '款到发货不予赊销', '每笔必须提供过磅单与运单']
+        }
+      },
+      {
+        m: 'POST', path: '/v1/invoice/gate/pre-payment', name: '闸口二 · 付款前校验（最关键）',
+        desc: '财务发起付款时调用。款未付是止损窗口最大的时点 —— 此时发票通常尚未申报抵扣，且资金尚可控。一次性返回发票合规、四流勾稽、销方实时复查三组结论',
+        where: 'ERP 付款申请单 —— 提交时调用，风险横幅显示在提交按钮上方',
+        level: '中频计算', p95: '268ms',
+        params: [
+          ['paymentNo', 'string', 1, 'ERP 付款申请单号'],
+          ['entityCode', 'string', 1, '付款主体编码'],
+          ['payeeTaxNo', 'string', 1, '收款方税号，用于与开票方一致性校验'],
+          ['amount', 'number', 1, '付款金额（元）'],
+          ['invoiceNos', 'array', 1, '关联数电发票号码（20 位）'],
+          ['bizNos', 'array', 1, '关联业务单号，用于四流六单勾稽']
+        ],
+        req: { paymentNo: 'PA-20260822-0117', entityCode: 'E01', payeeTaxNo: '91320500MA1DDDD44D', amount: 1296361.76, invoiceNos: ['24310000000018842317'], bizNos: ['PO-20260814-0033'] },
+        resp: {
+          traceId: 'ivg2-20260822-0117', decision: 'red', decisionText: '建议转财务总监审批',
+          blocked: false, approver: '财务总监', appealable: true,
+          compliance: { verifyResult: 'pass', titleMatch: true, crossEntityDuplicate: false, redLetterStatus: 'normal', taxRateCorrect: true },
+          fourFlow: {
+            matchRate: 0.83,
+            docs: { contract: 'ok', order: 'ok', weighNote: 'missing', wmsInbound: 'ok', bankReceipt: 'pending', invoice: 'ok' },
+            qtyCheck: { invoiceQty: 360, weighQty: null, wmsQty: 354.2, deviation: -0.016, tolerance: 0.03, pass: true },
+            payeeMatchSeller: true
+          },
+          sellerRisk: {
+            runawayWarning: true, taxCreditLevel: 'C', taxCreditDowngraded: true, inputShare: 0.236,
+            events: [{ date: '2026-08-15', type: '失信被执行', amount: 21800000 }, { date: '2026-08-18', type: '列入经营异常名录' }]
+          },
+          impact: { unpaidAmount: 1296361.76, deductedInputTax: 149138.96, potentialTransferOut: 149138.96 },
+          suggestions: ['暂停付款转财务总监审批', '该销方已确认抵扣的 14.91 万元进项暂缓申报', '立即固化证据链以备善意取得举证', '补齐过磅单后可重新提交校验']
+        }
+      },
+      {
+        m: 'POST', path: '/v1/invoice/gate/pre-deduction', name: '闸口三 · 勾选抵扣前校验',
+        desc: '月度用途确认或申报前批量调用，返回建议暂缓确认的发票清单，并测算暂缓与不暂缓两种情形下的税负率与转出风险',
+        where: 'ERP 进项税管理 / 用途确认页 —— 批量勾选前一键校验',
+        level: '批量', p95: '412ms',
+        params: [
+          ['entityCode', 'string', 1, '申报主体编码'],
+          ['period', 'string', 1, '所属期 YYYY-MM'],
+          ['invoiceNos', 'array', 1, '拟勾选确认的发票号码，单次上限 500'],
+          ['simulate', 'boolean', 0, '是否返回税负率影响测算，默认 true']
+        ],
+        req: { entityCode: 'E01', period: '2026-08', invoiceNos: ['24310000000018842317', '24310000000018836042', '24310000000018798320'], simulate: true },
+        resp: {
+          traceId: 'ivg3-20260822-0006', total: 3, recommendConfirm: 1, recommendHold: 2, blocked: false,
+          holdList: [
+            { invoiceNo: '24310000000018842317', seller: '华鑫钢贸有限公司', inputTax: 149138.96, reason: '销方走逃失联预警 + 经营异常名录', level: 'red' },
+            { invoiceNo: '24310000000018836042', seller: '瑞晟金属材料有限公司', inputTax: 111454.98, reason: '空壳画像 81 分 + 变名开票特征', level: 'red' }
+          ],
+          simulation: {
+            ifConfirmAll: { vatRate: 0.38 }, ifHoldRecommended: { vatRate: 0.47, extraVatPayable: 260594 },
+            transferOutRiskIfConfirmed: 260593.94, lateFeeRatePerDay: 0.0005
+          }
+        }
+      },
+      {
+        m: 'POST', path: '/v1/invoice/gate/pre-issuing', name: '闸口四 · 销项开票前校验',
+        desc: '我方对外开具数电票前调用，校验税率、税收分类编码、计量单位、购方四要素与开票额度，防止自身开票错误导致下游被动',
+        where: 'ERP 销售开票页 —— 开票前置校验，错误项直接高亮到字段',
+        level: '高频轻量', p95: '86ms',
+        params: [
+          ['entityCode', 'string', 1, '开票主体编码'],
+          ['buyerTaxNo', 'string', 1, '购方税号'],
+          ['lines[].goodsName', 'string', 1, '商品名称'],
+          ['lines[].taxClassCode', 'string', 1, '税收分类编码'],
+          ['lines[].taxRate', 'number', 1, '税率'],
+          ['lines[].unit', 'string', 1, '计量单位（钢材应为吨）'],
+          ['remark', 'string', 0, '备注栏，货物运输发票必填起讫地与车牌']
+        ],
+        req: {
+          entityCode: 'E01', buyerTaxNo: '91310000MA1XXXXX8N',
+          lines: [
+            { goodsName: '螺纹钢 HRB400E Φ20', taxClassCode: '1080405020000000000', taxRate: 0.13, unit: '吨', qty: 300 },
+            { goodsName: '运输费', taxClassCode: '1080405020000000000', taxRate: 0.13, unit: '吨', qty: 300 }
+          ]
+        },
+        resp: {
+          traceId: 'ivg4-20260822-0082', decision: 'review', decisionText: '存在 3 处需修正项', blocked: false,
+          issues: [
+            { line: 2, code: 'IC-07', field: 'taxRate', current: 0.13, suggest: 0.09, msg: '运输服务适用 9% 税率' },
+            { line: 2, code: 'IC-08', field: 'taxClassCode', current: '1080405020000000000', suggest: '3010101010000000000', msg: '应使用运输服务-道路运输服务编码' },
+            { line: 2, code: 'IC-09', field: 'unit', current: '吨', suggest: '次 / 车', msg: '运输服务不应以吨计量' }
+          ],
+          quota: { monthlyLimit: 80000000, used: 48602800, usageRate: 0.6075 },
+          buyerCheck: { titleMatch: true, riskLevel: 'high', note: '购方为高风险客户，建议核对结算方式后开票' }
+        }
+      },
+      {
+        m: 'POST', path: '/v1/invoice/verify', name: '数电票查验与合规校验',
+        desc: '单票查验，返回真伪、票面要素、四要素比对、跨主体查重与命中的合规规则',
+        where: 'ERP 发票录入 / 认证页',
+        level: '高频轻量', p95: '124ms',
+        params: [
+          ['invoiceNo', 'string', 1, '数电发票号码（20 位）'],
+          ['entityCode', 'string', 1, '受票主体编码'],
+          ['amount', 'number', 0, '账面金额，用于比对']
+        ],
+        req: { invoiceNo: '24310000000018836042', entityCode: 'E01', amount: 968800.98 },
+        resp: {
+          invoiceNo: '24310000000018836042', verifyResult: 'pass', invoiceType: '数电票（增值税专用发票）',
+          seller: { name: '瑞晟金属材料有限公司', taxNo: '91310115MA1EEEE55E' },
+          amount: 857346.00, tax: 111454.98, total: 968800.98, taxRate: 0.13,
+          goodsName: '螺纹钢 HRB400E Φ16', taxClassCode: '1080405020000000000', unit: '吨', qty: 280,
+          useState: 'unconfirmed', redLetterStatus: 'normal',
+          checks: { titleMatch: true, crossEntityDuplicate: false, taxRateCorrect: true, taxClassCodeCorrect: true, unitStandard: true },
+          hitRules: [{ code: 'FR-06', name: '变名开票', severity: 'high' }, { code: 'FR-05', name: '空壳画像高危', severity: 'high' }]
+        }
+      },
+      {
+        m: 'POST', path: '/v1/invoice/four-flow', name: '四流一致性校验',
+        desc: '按业务单号做六单勾稽：采购合同、采购订单、过磅单、WMS 入库单、银行付款回单、进项发票，票货数量按品种容差判定',
+        where: 'ERP 付款申请页、内审工作台',
+        level: '中频计算', p95: '224ms',
+        params: [['bizNo', 'string', 1, 'ERP 业务单号'], ['entityCode', 'string', 1, '主体编码']],
+        req: { bizNo: 'PO-20260810-0021', entityCode: 'E02' },
+        resp: {
+          bizNo: 'PO-20260810-0021', matchRate: 0.88,
+          docs: [
+            { type: 'contract', no: 'CG-2026-0805', status: 'ok' },
+            { type: 'weighNote', no: 'WB-20260810-0166', status: 'ok', qty: 113.0 },
+            { type: 'wmsInbound', no: 'IN-20260810-0092', status: 'ok', qty: 113.0 },
+            { type: 'bankReceipt', no: 'PY-20260811-0064', status: 'ok', payeeMatchSeller: true },
+            { type: 'invoice', no: '24320000000012198855', status: 'warn', qty: 120 }
+          ],
+          qtyCheck: { invoiceQty: 120, weighQty: 113.0, deviation: 0.058, tolerance: 0.025, category: 'section', pass: false },
+          conclusion: '六单齐备且资金流与票流一致，但票量超型材类 2.5% 容差，建议红冲重开差额部分或补充说明'
+        }
+      },
+      {
+        m: 'GET', path: '/v1/invoice/seller-risk/{taxNo}', name: '销方票税风险画像',
+        desc: '按税号返回空壳打分卡、开票行为特征、变名开票检测与走逃失联状态',
+        where: 'ERP 供应商档案、付款申请页',
+        level: '高频轻量', p95: '68ms',
+        params: [['taxNo', 'string', 1, '统一社会信用代码'], ['withCard', 'boolean', 0, '是否返回打分卡明细']],
+        req: 'GET /v1/invoice/seller-risk/91310115MA1EEEE55E?withCard=true',
+        resp: {
+          taxNo: '91310115MA1EEEE55E', name: '瑞晟金属材料有限公司', shellScore: 81, level: 'high',
+          runawayWarning: false, abnormalVoucher: false, taxCreditLevel: 'M',
+          behavior: { quotaUsage: 0.74, monthEndConcentration: 0.68, topAmountRatio: 0.61 },
+          nameSwitching: { detected: true, inputTop: ['煤炭', '金属矿产品'], outputTop: ['螺纹钢'] },
+          ourExposure: { amount8m: 964000, inputTax: 111454.98, invoiceCnt: 8, inputShare: 0.082 }
+        }
+      },
+      {
+        m: 'GET', path: '/v1/tax/indicator', name: '税负率与申报指标',
+        desc: '返回各主体增值税税负率、毛利率、背离度与三表四方比对结果。基线区间取租户配置值',
+        where: 'ERP 财务报表 / 经营驾驶舱',
+        level: '低频重算', p95: '196ms',
+        params: [['entityCode', 'string', 0, '主体编码，不传返回全部'], ['period', 'string', 0, '所属期 YYYY-MM']],
+        req: 'GET /v1/tax/indicator?period=2026-08',
+        resp: {
+          period: '2026-08', baseline: { vatRateMin: 0.003, vatRateMax: 0.008, source: 'tenant_config' },
+          entities: [
+            { code: 'E01', vatRate: 0.0042, grossMargin: 0.0342, level: 'ok' },
+            { code: 'E02', vatRate: 0.0011, grossMargin: 0.0318, level: 'high', reason: '毛利 3.18% 但税负仅 0.11%，背离 2.8 倍，疑似虚开进项' },
+            { code: 'E03', vatRate: 0.0094, grossMargin: 0.0106, level: 'mid', reason: '税负高于上限，疑似进项不足（无票采购）' }
+          ],
+          threeTableCheck: { vatDeclared: 486204000, citDeclared: 486204000, financialRevenue: 486552000, invoiced: 486028000, maxDiff: 0.0007, pass: true }
+        }
+      },
+      {
+        m: 'POST', path: '/v1/invoice/evidence-package', name: '证据链一键归档导出',
+        desc: '按业务单号打包合同、订单、过磅单、运单、WMS 入库单、质保书、银行回单、发票，以及<b>付款当日的供应商资质与风险查验快照</b>，生成可提交稽查的证据包',
+        where: '稽查应对、内审、异常凭证举证申诉',
+        level: '低频重算', p95: '1.8s（异步生成，回调通知）',
+        params: [
+          ['bizNos', 'array', 1, '业务单号数组'],
+          ['format', 'enum', 0, 'pdf 带目录 PDF / zip 原始附件包 / both，默认 both'],
+          ['includeSnapshot', 'boolean', 0, '是否包含当时的资质与查验快照，默认 true']
+        ],
+        req: { bizNos: ['PO-20260807-0014'], format: 'both', includeSnapshot: true },
+        resp: {
+          packageId: 'EVP-20260822-0311', bizNo: 'PO-20260807-0014', itemCount: 10, completeness: 1.0,
+          items: ['采购合同', '采购订单', '过磅单（原始照片）', '运输单据', 'WMS入库单', '质保书', '银行付款回单', '数电发票', '供应商资质快照', '风险查验记录'],
+          snapshotDate: '2026-08-08', downloadUrl: 'https://risk-api.your-steel.com/evp/EVP-20260822-0311',
+          note: '快照证明付款当日该供应商为正常纳税人且四流齐备，是善意取得抗辩的核心材料'
+        }
+      }
+    ],
+
     master: [
       {
         m: 'POST', path: '/v1/mapping/sku/resolve', name: 'ERP 物料编码解析',
@@ -839,6 +1046,33 @@ X-SRB-Role:      sales   <span class="c">// 角色决定返回字段范围</span
             marketAvgPrice: 3472, myCostPrice: 3598, priceGap: -126, unrealizedLoss: 537000,
             suggestedAction: '5 日内分 3 批降价出清 60%，并暂停该品类新增采购',
             recommendedErpAction: 'mark_priority_clearance'
+          }
+        }
+      },
+      {
+        m: 'HOOK', path: 'risk.invoice.abnormal_voucher', name: '异常凭证 / 销方走逃失联',
+        desc: '销方被公告为走逃失联户，或收到增值税异常扣税凭证时立即推送。ERP 收到后可自动冻结该供应商在途付款、并把相关发票标记为暂缓抵扣',
+        where: 'ERP 财务待办 + 付款申请自动挂起 + 进项税管理标记',
+        level: '事件推送', p95: '投递 P95 260ms',
+        params: [
+          ['data.sellerTaxNo', 'string', 1, '销方税号'],
+          ['data.eventType', 'enum', 1, 'runaway 走逃失联 / abnormal_voucher 异常凭证 / credit_downgrade 信用降级'],
+          ['data.affectedInvoices', 'array', 1, '受影响的发票与已抵扣税额'],
+          ['data.recommendedErpAction', 'enum', 0, '建议 ERP 侧执行的动作']
+        ],
+        req: 'POST https://erp.your-company.com/webhook/risk\nX-SRB-Event: risk.invoice.abnormal_voucher',
+        resp: {
+          event: 'risk.invoice.abnormal_voucher', eventId: 'evt_iv8f21c4', occurredAt: '2026-08-22T08:10:22+08:00',
+          data: {
+            sellerTaxNo: '91320500MA1DDDD44D', sellerName: '华鑫钢贸有限公司', eventType: 'runaway',
+            trigger: '08-15 新增失信被执行 2,180 万 + 账户冻结；08-18 列入经营异常名录；纳税信用 B→C',
+            affectedInvoices: [
+              { invoiceNo: '24310000000018842317', entityCode: 'E01', inputTax: 149138.96, useState: 'confirmed', payState: 'unpaid' }
+            ],
+            summary: { invoiceCount: 6, totalInputTax: 149138.96, unpaidAmount: 1296361.76, estimatedLateFee: 3400 },
+            evidenceCompleteness: 0.83, evidenceGap: ['2 笔业务缺过磅单'],
+            recommendedErpAction: 'hold_payment_and_suspend_deduction',
+            pushTo: ['财务总监', '税务经理', '采购主管']
           }
         }
       },
